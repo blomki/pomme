@@ -175,7 +175,8 @@ export function ThemeDemo({
   const t = useTranslations("ThemeDemo");
   const showSnackbar = useSnackbar();
   const schemes = useMemo(() => createM3Schemes(config.keyColors), [config.keyColors]);
-  const [quantity, setQuantity] = useState("2");
+  const [quantity, setQuantity] = useState("2"); // valeur du champ
+  const [savedQuantity, setSavedQuantity] = useState("2"); // dernière valeur enregistrée
   const [filters, setFilters] = useState<string[]>(["vegetables"]);
 
   const toggleFilter = (filter: string) =>
@@ -325,11 +326,14 @@ export function ThemeDemo({
               <Button
                 variant="contained"
                 onClick={() => {
-                  const previous = quantity;
+                  // « Annuler » revient à la dernière valeur enregistrée, pas à la saisie en cours.
+                  const previous = savedQuantity;
+                  setSavedQuantity(quantity);
                   showSnackbar({
                     message: t("saved"),
                     onUndo: () => {
                       setQuantity(previous);
+                      setSavedQuantity(previous);
                       showSnackbar({ message: t("undone") });
                     },
                   });
