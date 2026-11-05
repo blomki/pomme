@@ -1,0 +1,107 @@
+# Intégration continue : chaque pull request et chaque fusion sur main passent par ces étapes.
+# Ordre : types et style → tests unitaires, de composants et d'intégration → build → bout en bout,
+# accessibilité et captures. L'analyse de sécurité tourne en parallèle (et CodeQL dans codeql.yml).
+# Une étape en échec bloque la fusion (règle de protection de la branche main).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Un nouveau push sur la même branche annule l'exécution précédente, devenue inutile.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  quality:
+    name: Types et style
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm lint
+      - run: pnpm format:check
+
+  tests:
+    name: Tests unitaires et d'intégration
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Tests unitaires et de composants, avec couverture (≥ 90 % sur domain/)
+        run: pnpm test:coverage
+      - name: Tests d'intégration (PostgreSQL réel dans Docker)
+        run: pnpm test:integration
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: couverture
+          path: coverage/
+          retention-days: 14
+
+  e2e:
+    name: Build, bout en bout, accessibilité et captures
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - name: Installer les navigateurs Playwright
+        run: pnpm exec playwright install --with-deps chromium webkit
+      - name: Tests de bout en bout et d'accessibilité (Chromium, WebKit mobile)
+        run: pnpm test:e2e
+      - name: Captures d'écran comparées (clair et sombre)
+        run: pnpm test:visual
+      - uses: actions/upload-artifact@v4
+        if: ${{ !cancelled() }}
+        with:
+          name: rapport-playwright
+          path: playwright-report/
+          retention-days: 14
+
+  security:
+    name: Sécurité (dépendances et secrets)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # gitleaks parcourt tout l'historique
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          # Pas de cache ici : ce job n'installe pas les dépendances (pnpm audit lit le lockfile).
+          package-manager-cache: false
+      - name: Audit des dépendances (bloquant si faille critique)
+        run: pnpm audit --audit-level critical
+      - name: Recherche de secrets (gitleaks)
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

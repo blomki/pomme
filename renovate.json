@@ -1,0 +1,32 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommits",
+    ":timezone(Europe/Paris)",
+    "schedule:weekends",
+    "group:allNonMajor"
+  ],
+  "labels": ["dépendances"],
+  "rangeStrategy": "bump",
+  "packageRules": [
+    {
+      "description": "Versions majeures : une PR par paquet, créée seulement après accord dans le tableau de bord Renovate",
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Node.js reste sur la LTS 24 (voir ADR 0001)",
+      "matchDepNames": ["node", "@types/node"],
+      "allowedVersions": "<25"
+    }
+  ],
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 6am on monday"]
+  },
+  "vulnerabilityAlerts": {
+    "labels": ["sécurité"],
+    "schedule": ["at any time"]
+  }
+}
