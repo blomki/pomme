@@ -18,7 +18,14 @@ const stateLayer = (opacity: number) => {
 };
 
 /** Rayons M3 (en px) : petit, moyen, grand, très grand, pilule. */
-export const M3_SHAPE = { extraSmall: 4, small: 8, medium: 12, large: 16, extraLarge: 28, full: 9999 };
+export const M3_SHAPE = {
+  extraSmall: 4,
+  small: 8,
+  medium: 12,
+  large: 16,
+  extraLarge: 28,
+  full: 9999,
+};
 
 /** Courbes et durées de mouvement M3. */
 export const M3_EASING = {
@@ -169,7 +176,11 @@ export function createAmapTheme(config: ThemeConfig): Theme {
               color: m3("onSecondaryContainer"),
             },
           },
-          label: { fontSize: "0.75rem", fontWeight: 700, "&.Mui-selected": { fontSize: "0.75rem" } },
+          label: {
+            fontSize: "0.75rem",
+            fontWeight: 700,
+            "&.Mui-selected": { fontSize: "0.75rem" },
+          },
         },
       },
       MuiChip: {

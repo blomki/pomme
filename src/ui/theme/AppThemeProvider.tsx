@@ -17,7 +17,13 @@ import type { ThemeConfig } from "./key-colors";
  * Le mode clair / sombre suit l'appareil par défaut ; le choix fait avec ColorModeToggle est
  * mémorisé dans le navigateur (il le sera dans le profil quand les comptes existeront, A3).
  */
-export function AppThemeProvider({ config, children }: { config: ThemeConfig; children: ReactNode }) {
+export function AppThemeProvider({
+  config,
+  children,
+}: {
+  config: ThemeConfig;
+  children: ReactNode;
+}) {
   const theme = useMemo(() => createAmapTheme(config), [config]);
   return (
     <ThemeProvider theme={theme} defaultMode="system" disableTransitionOnChange>

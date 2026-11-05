@@ -7,7 +7,10 @@ import { amap } from "@/db/schema";
 import { validateAmapSlug } from "@/domain/amap-slug";
 
 /** Informations publiques d'une AMAP : de quoi afficher sa page et appliquer son thème. */
-export type PublicAmap = Pick<typeof amap.$inferSelect, "id" | "slug" | "name" | "theme" | "logoUrl">;
+export type PublicAmap = Pick<
+  typeof amap.$inferSelect,
+  "id" | "slug" | "name" | "theme" | "logoUrl"
+>;
 
 const publicColumns = {
   id: amap.id,

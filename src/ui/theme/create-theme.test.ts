@@ -19,9 +19,7 @@ describe("createAmapTheme", () => {
     expect(colorSchemes.light.palette.primary.main).toBe(schemes.light.primary);
     expect(colorSchemes.dark.palette.primary.main).toBe(schemes.dark.primary);
     expect(colorSchemes.dark.palette.background.default).toBe(schemes.dark.surface);
-    expect(colorSchemes.light.palette.m3.surfaceContainer).toBe(
-      schemes.light.surfaceContainer,
-    );
+    expect(colorSchemes.light.palette.m3.surfaceContainer).toBe(schemes.light.surfaceContainer);
   });
 
   it("expose les couleurs en variables CSS", () => {

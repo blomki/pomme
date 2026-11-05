@@ -55,7 +55,12 @@ export const CONTRAST_PAIRS: ReadonlyArray<readonly [M3Role, M3Role, number]> = 
   ["outline", "surface", 3], // bordures des champs
 ];
 
-export type ContrastFailure = { foreground: M3Role; background: M3Role; ratio: number; min: number };
+export type ContrastFailure = {
+  foreground: M3Role;
+  background: M3Role;
+  ratio: number;
+  min: number;
+};
 
 /** Liste les paires dont le contraste est insuffisant (liste vide = schéma conforme). */
 export function findContrastFailures(scheme: M3Scheme): ContrastFailure[] {

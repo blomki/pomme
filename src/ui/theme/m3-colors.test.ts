@@ -25,7 +25,11 @@ describe("createM3Schemes", () => {
   });
 
   it("utilise la même couleur d'erreur pour toutes les AMAP", () => {
-    const other = createM3Schemes({ primary: "#3f6fb5", secondary: "#7a5c99", tertiary: "#2e8b7a" });
+    const other = createM3Schemes({
+      primary: "#3f6fb5",
+      secondary: "#7a5c99",
+      tertiary: "#2e8b7a",
+    });
     expect(other.light.error).toBe(light.error);
   });
 

@@ -129,7 +129,10 @@ function ContrastTable({ scheme }: { scheme: M3Scheme }) {
                   </Box>
                 ) : (
                   // Paire graphique (bordure, 3:1 suffit) : on montre une bordure, pas du texte.
-                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+                  <Box
+                    component="span"
+                    sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}
+                  >
                     <Box
                       component="span"
                       aria-hidden
@@ -204,11 +207,15 @@ export function ThemeDemo({
         <Typography variant="h1" gutterBottom>
           {t("title", { amap: amapName })}
         </Typography>
-        <Typography sx={{ mb: 2 }}>
-          {t("intro", { font: config.headingFont })}
-        </Typography>
+        <Typography sx={{ mb: 2 }}>{t("intro", { font: config.headingFont })}</Typography>
 
-        <Stack component="nav" aria-label={t("otherAmaps")} direction="row" spacing={1} sx={{ mb: 4 }}>
+        <Stack
+          component="nav"
+          aria-label={t("otherAmaps")}
+          direction="row"
+          spacing={1}
+          sx={{ mb: 4 }}
+        >
           {otherAmaps.map((other) => (
             <Button
               key={other.slug}

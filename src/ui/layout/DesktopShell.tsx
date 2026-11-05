@@ -124,10 +124,7 @@ export function DesktopShell({
                 ) : (
                   <ListItemButton disabled>
                     <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
-                    <ListItemText
-                      primary={t(`${area}.${item.key}`)}
-                      secondary={t("comingSoon")}
-                    />
+                    <ListItemText primary={t(`${area}.${item.key}`)} secondary={t("comingSoon")} />
                   </ListItemButton>
                 )}
               </ListItem>
