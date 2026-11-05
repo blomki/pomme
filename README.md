@@ -97,17 +97,21 @@ pnpm build
 pnpm start
 ```
 
-Pages disponibles pour l'instant :
+Pages disponibles pour l'instant (base démarrée et jeu de données chargé, voir plus haut) :
 
-| Adresse                                      | Page                     |
-| -------------------------------------------- | ------------------------ |
-| http://localhost:3000                        | accueil de la plateforme |
-| http://localhost:3000/hommesdeterre          | page publique de l'AMAP  |
-| http://localhost:3000/hommesdeterre/famille  | espace famille           |
-| http://localhost:3000/hommesdeterre/referent | espace référent          |
-| http://localhost:3000/hommesdeterre/admin    | administration de l'AMAP |
-| http://localhost:3000/producteur             | espace producteur        |
-| http://localhost:3000/plateforme             | gestion de la plateforme |
+| Adresse                                              | Page                                     |
+| ---------------------------------------------------- | ---------------------------------------- |
+| http://localhost:3000                                | accueil de la plateforme                 |
+| http://localhost:3000/hommesdeterre                  | page publique de l'AMAP de démonstration |
+| http://localhost:3000/hommesdeterre/famille          | espace famille (mobile)                  |
+| http://localhost:3000/hommesdeterre/referent         | espace référent (ordinateur)             |
+| http://localhost:3000/hommesdeterre/admin            | administration de l'AMAP (ordinateur)    |
+| http://localhost:3000/producteur                     | espace producteur (mobile)               |
+| http://localhost:3000/plateforme                     | gestion de la plateforme                 |
+| http://localhost:3000/plateforme/theme/hommesdeterre | démonstration du thème (développement)   |
+
+Pour voir les pages mobiles comme sur un téléphone : outils de développement du navigateur
+(F12), puis bouton « appareil mobile ».
 
 ## Tester
 
@@ -117,6 +121,7 @@ pnpm test:watch         # les mêmes, relancés à chaque enregistrement
 pnpm test:coverage      # avec la couverture ; rapport dans coverage/index.html
 pnpm test:integration   # avec un vrai PostgreSQL (Docker doit tourner)
 pnpm test:e2e           # parcours dans Chromium et Safari mobile, avec contrôle d'accessibilité
+                        # (base démarrée et jeu de données chargé : pnpm db:up, pnpm db:seed)
 ```
 
 Après `pnpm test:e2e`, `pnpm exec playwright show-report` ouvre le rapport détaillé.

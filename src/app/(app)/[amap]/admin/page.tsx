@@ -1,13 +1,9 @@
 import { useTranslations } from "next-intl";
 
+import { PlaceholderPage } from "../../../_components/PlaceholderPage";
+
 // Administration d'une AMAP (ordinateur) : [domaine]/<amap>/admin.
 export default function AdminHomePage() {
   const t = useTranslations("Admin");
-  const common = useTranslations("Common");
-  return (
-    <>
-      <h1>{t("title")}</h1>
-      <p>{common("underConstruction")}</p>
-    </>
-  );
+  return <PlaceholderPage title={t("title")} />;
 }

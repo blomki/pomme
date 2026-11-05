@@ -28,6 +28,22 @@ jobs:
       (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main') ||
       (github.event_name == 'pull_request' && github.event.label.name == 'captures' &&
        github.event.pull_request.head.repo.full_name == github.repository)
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: pomme
+          POSTGRES_PASSWORD: pomme_ci
+          POSTGRES_DB: pomme
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomme -d pomme"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+    env:
+      DATABASE_URL: postgres://pomme_app:pomme_app_ci@localhost:5432/pomme
+      DATABASE_MIGRATION_URL: postgres://pomme:pomme_ci@localhost:5432/pomme
+      POMME_DEMO_PAGES: "1"
     steps:
       - uses: actions/checkout@v5
         with:
@@ -38,6 +54,7 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - run: pnpm db:setup && pnpm db:migrate && pnpm db:seed
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:visual:update

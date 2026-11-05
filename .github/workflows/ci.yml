@@ -74,6 +74,23 @@ jobs:
     name: Build, bout en bout, accessibilité et captures
     needs: tests
     runs-on: ubuntu-latest
+    # Base de test, préparée comme en local : rôle applicatif, migrations, jeu de données fictif.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: pomme
+          POSTGRES_PASSWORD: pomme_ci
+          POSTGRES_DB: pomme
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U pomme -d pomme"
+          --health-interval 2s --health-timeout 3s --health-retries 15
+    env:
+      DATABASE_URL: postgres://pomme_app:pomme_app_ci@localhost:5432/pomme
+      DATABASE_MIGRATION_URL: postgres://pomme:pomme_ci@localhost:5432/pomme
+      POMME_DEMO_PAGES: "1"
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -82,6 +99,8 @@ jobs:
           node-version-file: .nvmrc
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      - name: Préparer la base de test
+        run: pnpm db:setup && pnpm db:migrate && pnpm db:seed
       - run: pnpm build
       - name: Installer les navigateurs Playwright
         run: pnpm exec playwright install --with-deps chromium webkit

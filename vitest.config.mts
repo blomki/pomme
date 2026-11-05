@@ -49,7 +49,7 @@ export default defineConfig({
     coverage: {
       provider: "v8",
       include: ["src/**/*.{ts,tsx}"],
-      exclude: ["src/**/*.test.{ts,tsx}", "src/**/README.md"],
+      exclude: ["src/**/*.test.{ts,tsx}", "src/**/README.md", "src/ui/theme/vendor/**"],
       reporter: ["text", "html", "lcov"],
       // Exigence du cahier technique : au moins 90 % du dossier domain/ couvert par les tests.
       // En dessous, la commande échoue (et donc la CI).
