@@ -27,7 +27,12 @@ en langage simple.
   main). Voir ADR 0003.
 - Server Action : `withAmapContext` → `requireRole(tx, ctx, [...])` → action →
   `writeAuditLog(tx, ctx, …)` pour toute action financière ou correction.
-- `src/ui/` : thème et composants partagés.
+- `src/ui/` : thème et composants partagés (voir ADR 0004). Jamais de couleur en dur : palette
+  MUI (`primary.main`, `text.secondary`) ou rôle M3 via `m3("surfaceContainer")`. Variantes de
+  texte M3 (`headlineSmall`, `titleMedium`, `bodyLarge`…). Gabarits `MobileShell` (familles,
+  producteurs) et `DesktopShell` (référents, admins). Confirmation d'action : `useSnackbar()`,
+  avec `onUndo` quand c'est possible. Lien Next dans un bouton MUI :
+  `component={Link} nativeButton={false}`.
 - `src/app/` : routes seulement, le plus mince possible (lit, appelle `server/`, affiche).
 - Dates : `formatDate` de `src/i18n/dates.ts` (français, fuseau Europe/Paris), jamais
   `toLocaleString` ni le fuseau du serveur.

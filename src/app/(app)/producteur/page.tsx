@@ -1,13 +1,9 @@
 import { useTranslations } from "next-intl";
 
-// Espace producteur (mobile), commun à toutes ses AMAP : l'AMAP courante se choisit à l'écran.
+import { PlaceholderPage } from "../../_components/PlaceholderPage";
+
+// Espace producteur (mobile), commun à toutes ses AMAP : l'AMAP courante se choisira à l'écran (C4).
 export default function ProducerHomePage() {
   const t = useTranslations("Producer");
-  const common = useTranslations("Common");
-  return (
-    <>
-      <h1>{t("title")}</h1>
-      <p>{common("underConstruction")}</p>
-    </>
-  );
+  return <PlaceholderPage title={t("title")} />;
 }

@@ -5,19 +5,119 @@
   },
   "Common": {
     "skipToContent": "Aller au contenu",
-    "underConstruction": "Écran en construction."
+    "underConstruction": "Écran en construction.",
+    "loading": "Chargement…"
   },
   "Home": {
     "title": "Pomme",
     "intro": "Application de création et de gestion d'AMAP."
   },
   "Amap": {
-    "title": "AMAP « {amap} »",
     "intro": "Page publique de l'AMAP : présentation, producteurs, blog et demande d'adhésion."
   },
-  "Family": { "title": "Espace famille" },
-  "Referent": { "title": "Espace référent" },
-  "Admin": { "title": "Administration de l'AMAP" },
-  "Producer": { "title": "Espace producteur" },
-  "Platform": { "title": "Gestion de la plateforme" }
+  "Family": {
+    "title": "Espace famille"
+  },
+  "Referent": {
+    "title": "Espace référent"
+  },
+  "Admin": {
+    "title": "Administration de l'AMAP"
+  },
+  "Producer": {
+    "title": "Espace producteur"
+  },
+  "Platform": {
+    "title": "Gestion de la plateforme",
+    "shortTitle": "Pomme"
+  },
+  "ColorMode": {
+    "label": "Apparence",
+    "light": "Clair",
+    "system": "Automatique (comme l'appareil)",
+    "dark": "Sombre"
+  },
+  "Snackbar": {
+    "undo": "Annuler",
+    "close": "Fermer le message"
+  },
+  "NotFound": {
+    "title": "Page introuvable",
+    "text": "Cette adresse ne correspond à aucune page ni à aucune AMAP."
+  },
+  "Nav": {
+    "comingSoon": "à venir",
+    "producer": {
+      "label": "Navigation de l'espace producteur",
+      "home": "Accueil",
+      "catalogue": "Catalogue",
+      "toPrepare": "À préparer",
+      "payments": "Paiements"
+    },
+    "admin": {
+      "label": "Menu de l'administration",
+      "dashboard": "Tableau de bord",
+      "reports": "Signalements",
+      "planning": "Planning des permanences",
+      "producers": "Producteurs et référents",
+      "households": "Foyers et adhésions",
+      "pages": "Pages"
+    },
+    "referent": {
+      "label": "Menu du référent",
+      "dashboard": "Tableau de bord",
+      "cheques": "Pointage des chèques",
+      "credits": "Avoirs",
+      "orders": "Bons de commande",
+      "catalogues": "Catalogues"
+    },
+    "platform": {
+      "label": "Menu de la plateforme",
+      "dashboard": "Tableau de bord",
+      "themeDemo": "Thème (démonstration)"
+    },
+    "areaSwitch": {
+      "label": "Changer d'espace",
+      "admin": "Administration",
+      "referent": "Référent"
+    }
+  },
+  "ThemeDemo": {
+    "title": "Thème de {amap}",
+    "intro": "Couleurs Material Design 3 calculées à partir des couleurs clés de l'AMAP, police des titres : {font}. Les composants suivent le mode d'affichage choisi en haut de page.",
+    "otherAmaps": "Autres AMAP",
+    "colors": "Couleurs",
+    "light": "Mode clair",
+    "dark": "Mode sombre",
+    "contrastCaption": "Contrastes texte / fond (minimum WCAG)",
+    "pair": "Texte / fond",
+    "ratio": "Contraste",
+    "ratioPass": "{ratio}:1 — conforme (≥ {min}:1)",
+    "ratioFail": "{ratio}:1 — insuffisant (< {min}:1)",
+    "typography": "Typographie",
+    "sample": "Les paniers de la semaine",
+    "buttons": "Boutons",
+    "filled": "Plein",
+    "tonal": "Tonal",
+    "outlined": "Contour",
+    "text": "Texte",
+    "disabled": "Désactivé",
+    "secondary": "Secondaire",
+    "tertiary": "Tertiaire",
+    "error": "Erreur",
+    "components": "Composants",
+    "filtersLegend": "Filtrer les produits",
+    "filter": {
+      "vegetables": "Légumes",
+      "fruits": "Fruits",
+      "dairy": "Produits laitiers"
+    },
+    "cardTitle": "Pain au levain",
+    "cardText": "Miche de 1 kg, livrée chaque semaine.",
+    "quantity": "Quantité",
+    "save": "Enregistrer",
+    "saved": "Quantité enregistrée.",
+    "undone": "Modification annulée.",
+    "skeleton": "Squelette de chargement"
+  }
 }

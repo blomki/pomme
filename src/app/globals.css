@@ -1,0 +1,37 @@
+/* Styles globaux hors thème MUI : ils s'appliquent avant le chargement du thème. */
+
+/* Lien « Aller au contenu » : invisible jusqu'à ce qu'il reçoive le focus au clavier. */
+.skip-link {
+  position: absolute;
+  left: 16px;
+  top: -100px;
+  z-index: 2000;
+  padding: 12px 24px;
+  border-radius: 9999px;
+  background: #1d1b20;
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+.skip-link:focus {
+  top: 16px;
+  outline: 3px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Le contenu atteint par le lien d'évitement n'est pas masqué par la barre du haut. */
+html {
+  scroll-padding-top: 80px;
+}
+
+/* « Réduire les animations » : aucune animation ni transition, où qu'elle soit déclarée. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
