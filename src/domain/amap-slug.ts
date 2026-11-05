@@ -15,11 +15,7 @@ export const AMAP_SLUG_MIN_LENGTH = 3;
 export const AMAP_SLUG_MAX_LENGTH = 40;
 
 export type AmapSlugError =
-  | "too_short"
-  | "too_long"
-  | "invalid_characters"
-  | "misplaced_hyphen"
-  | "reserved";
+  "too_short" | "too_long" | "invalid_characters" | "misplaced_hyphen" | "reserved";
 
 /**
  * Vérifie une adresse d'AMAP. Renvoie null si elle est valable, sinon la raison du refus

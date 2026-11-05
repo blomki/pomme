@@ -22,9 +22,12 @@ describe("validateAmapSlug", () => {
     },
   );
 
-  it.each(["-amap", "amap-", "amap--cambremer"])("refuse le tiret mal placé dans « %s »", (slug) => {
-    expect(validateAmapSlug(slug)).toBe("misplaced_hyphen");
-  });
+  it.each(["-amap", "amap-", "amap--cambremer"])(
+    "refuse le tiret mal placé dans « %s »",
+    (slug) => {
+      expect(validateAmapSlug(slug)).toBe("misplaced_hyphen");
+    },
+  );
 
   it.each(["producteur", "plateforme", "api"])("refuse le mot réservé « %s »", (slug) => {
     expect(validateAmapSlug(slug)).toBe("reserved");
