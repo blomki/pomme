@@ -48,11 +48,24 @@ en langage simple.
   `fix(avoirs): arrondi des centimes`. Contrôlé par commitlint au moment du commit.
 - La PR référence sa fiche (`Closes #12`) et coche ses critères d'acceptation.
 
+## Tests
+
+- Unitaires et composants à côté du code (`x.ts` → `x.test.ts`, `Y.tsx` → `Y.test.tsx`).
+- Intégration (vrai PostgreSQL) dans `tests/integration/`, avec `startPostgres()`.
+- Bout en bout dans `tests/e2e/` : chaque nouvel écran est ajouté à `pages.spec.ts` (ou à son
+  propre fichier) et passe `expectNoSeriousA11yViolations`.
+- Écran clé : l'ajouter à `tests/visual/screens.spec.ts` ; les références sont produites par le
+  workflow « Mettre à jour les captures », jamais en local (voir ADR 0002).
+- Tester le comportement visible (rôles, textes), pas les détails d'implémentation.
+
 ## Avant de proposer une PR
 
 ```bash
-pnpm check   # types, ESLint, mise en forme
+pnpm check              # types, ESLint, mise en forme
+pnpm test:coverage      # unitaires + composants, couverture ≥ 90 % sur domain/
+pnpm test:integration   # si la fiche touche la base (Docker requis)
 pnpm build
+pnpm test:e2e
 ```
 
 ## Références

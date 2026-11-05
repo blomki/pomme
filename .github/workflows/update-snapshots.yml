@@ -1,0 +1,44 @@
+# Met à jour les images de référence des tests visuels, sur la branche choisie.
+# À lancer à la main (onglet Actions › « Mettre à jour les captures » › Run workflow) quand un
+# changement d'écran est voulu, ou pour créer les références d'un nouvel écran.
+# Les images sont produites ici, dans le même environnement que la CI, pour être comparables.
+name: Mettre à jour les captures
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  NEXT_TELEMETRY_DISABLED: 1
+
+jobs:
+  update:
+    name: Régénérer les captures de référence
+    runs-on: ubuntu-latest
+    if: ${{ github.ref != 'refs/heads/main' }} # jamais directement sur main
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:visual:update
+        env:
+          CI: "true"
+      - name: Commiter les nouvelles références
+        run: |
+          git add tests/visual/__screenshots__
+          if git diff --cached --quiet; then
+            echo "Aucune capture modifiée."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "test(visuel): mettre à jour les captures de référence"
+          git push

@@ -18,7 +18,14 @@
     "format:check": "prettier --check .",
     "typecheck": "tsc --noEmit",
     "check": "pnpm typecheck && pnpm lint && pnpm format:check",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test": "vitest run --project unit --project components",
+    "test:watch": "vitest --project unit --project components",
+    "test:coverage": "vitest run --project unit --project components --coverage",
+    "test:integration": "vitest run --project integration",
+    "test:e2e": "playwright test --project=chromium --project=webkit-mobile",
+    "test:visual": "playwright test --project=visual",
+    "test:visual:update": "playwright test --project=visual --update-snapshots"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
@@ -29,18 +36,31 @@
     "react-dom": "^19.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
     "@commitlint/cli": "^20.0.0",
     "@commitlint/config-conventional": "^20.0.0",
+    "@playwright/test": "^1.56.0",
+    "@testcontainers/postgresql": "^11.0.0",
+    "@testing-library/dom": "^10.4.0",
+    "@testing-library/jest-dom": "^6.6.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.15.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "@vitest/coverage-v8": "^4.0.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.2.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-jsx-a11y": "^6.10.0",
     "eslint-plugin-security": "^3.0.0",
     "husky": "^9.1.0",
+    "jsdom": "^27.0.0",
+    "pg": "^8.16.0",
     "prettier": "^3.6.0",
-    "typescript": "^6.0.0"
+    "typescript": "^6.0.0",
+    "vitest": "^4.0.0"
   }
 }
