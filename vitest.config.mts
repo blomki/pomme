@@ -1,3 +1,5 @@
+// Extension .mts : indique à Node et à Vite que ce fichier est un module ES (import/export),
+// sans avoir à passer tout le projet en "type": "module".
 import path from "node:path";
 
 import react from "@vitejs/plugin-react";
