@@ -43,6 +43,6 @@ CodeQL et la protection de la branche `main`.
 ## Conséquences
 
 - Docker doit tourner sur le poste pour `pnpm test:integration`.
-- Un changement d'écran voulu demande de relancer « Mettre à jour les captures » sur la branche,
+- Un changement d'écran voulu demande d'ajouter l'étiquette `captures` à la PR (workflow « Mettre à jour les captures »),
   puis de relancer la CI (un commit fait par GitHub Actions ne relance pas la CI tout seul).
 - La couverture du dossier `domain/` doit rester ≥ 90 %, sinon la CI échoue.

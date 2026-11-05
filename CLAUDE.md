@@ -55,7 +55,7 @@ en langage simple.
 - Bout en bout dans `tests/e2e/` : chaque nouvel écran est ajouté à `pages.spec.ts` (ou à son
   propre fichier) et passe `expectNoSeriousA11yViolations`.
 - Écran clé : l'ajouter à `tests/visual/screens.spec.ts` ; les références sont produites par le
-  workflow « Mettre à jour les captures », jamais en local (voir ADR 0002).
+  workflow « Mettre à jour les captures » (étiquette `captures` sur la PR), jamais en local (voir ADR 0002).
 - Tester le comportement visible (rôles, textes), pas les détails d'implémentation.
 
 ## Avant de proposer une PR

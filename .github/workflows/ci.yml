@@ -97,6 +97,8 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version-file: .nvmrc
+          # Pas de cache ici : ce job n'installe pas les dépendances (pnpm audit lit le lockfile).
+          package-manager-cache: false
       - name: Audit des dépendances (bloquant si faille critique)
         run: pnpm audit --audit-level critical
       - name: Recherche de secrets (gitleaks)

@@ -1,11 +1,16 @@
-# Met à jour les images de référence des tests visuels, sur la branche choisie.
-# À lancer à la main (onglet Actions › « Mettre à jour les captures » › Run workflow) quand un
-# changement d'écran est voulu, ou pour créer les références d'un nouvel écran.
+# Met à jour les images de référence des tests visuels, sur la branche d'une pull request.
+# Deux façons de le lancer, quand un changement d'écran est voulu ou qu'un écran est nouveau :
+# - ajouter l'étiquette « captures » à la pull request (le plus simple) ;
+# - onglet Actions › « Mettre à jour les captures » › Run workflow, en choisissant la branche.
 # Les images sont produites ici, dans le même environnement que la CI, pour être comparables.
+# Ensuite, relancer la CI de la pull request (Re-run jobs) : un commit fait par GitHub Actions
+# ne relance pas la CI tout seul.
 name: Mettre à jour les captures
 
 on:
   workflow_dispatch:
+  pull_request:
+    types: [labeled]
 
 permissions:
   contents: write
@@ -17,9 +22,16 @@ jobs:
   update:
     name: Régénérer les captures de référence
     runs-on: ubuntu-latest
-    if: ${{ github.ref != 'refs/heads/main' }} # jamais directement sur main
+    # Jamais directement sur main ; pour une PR, seulement avec l'étiquette « captures »
+    # et si la branche est dans ce dépôt (pas une copie extérieure).
+    if: >-
+      (github.event_name == 'workflow_dispatch' && github.ref != 'refs/heads/main') ||
+      (github.event_name == 'pull_request' && github.event.label.name == 'captures' &&
+       github.event.pull_request.head.repo.full_name == github.repository)
     steps:
       - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v5
         with:

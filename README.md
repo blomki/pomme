@@ -99,9 +99,11 @@ pnpm test:e2e           # parcours dans Chromium et Safari mobile, avec contrôl
 Après `pnpm test:e2e`, `pnpm exec playwright show-report` ouvre le rapport détaillé.
 
 Les captures d'écran comparées (`pnpm test:visual`) tournent seulement dans la CI : le rendu des
-polices diffère entre WSL et les serveurs de GitHub. Quand un écran change volontairement :
-onglet **Actions** › **Mettre à jour les captures** › **Run workflow** › choisir la branche ; puis
-relancer la CI de la pull request (**Re-run jobs**).
+polices diffère entre WSL et les serveurs de GitHub. Quand un écran change volontairement ou
+qu'un écran est nouveau : ajouter l'étiquette **captures** à la pull request (les références sont
+recalculées et commitées sur la branche), retirer l'étiquette, puis relancer la CI de la pull
+request (**Re-run jobs**). Avant de valider, regarder les nouvelles images dans l'onglet
+**Files changed**.
 
 ## Vérifier avant une pull request
 
