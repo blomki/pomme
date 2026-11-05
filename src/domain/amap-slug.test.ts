@@ -29,7 +29,7 @@ describe("validateAmapSlug", () => {
     },
   );
 
-  it.each(["admin", "api", "connexion", "plateforme", "producteur"])(
+  it.each(["admin", "api", "compte", "connexion", "plateforme", "producteur"])(
     "refuse le mot réservé « %s »",
     (slug) => {
       expect(validateAmapSlug(slug)).toBe("reserved");

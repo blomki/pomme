@@ -26,7 +26,7 @@
     "test:e2e": "playwright test --project=chromium --project=webkit-mobile",
     "test:visual": "playwright test --project=visual",
     "test:visual:update": "playwright test --project=visual --update-snapshots",
-    "db:up": "docker compose up -d --wait postgres",
+    "db:up": "docker compose up -d --wait postgres mailpit",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:setup": "tsx --env-file-if-exists=.env src/db/scripts/setup.ts",
@@ -36,6 +36,7 @@
     "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
+    "@better-auth/passkey": "^1.7.0",
     "@date-fns/tz": "^1.2.0",
     "@emotion/cache": "^11.14.0",
     "@emotion/react": "^11.14.0",
@@ -43,13 +44,16 @@
     "@mui/icons-material": "^9.5.0",
     "@mui/material": "^9.5.0",
     "@mui/material-nextjs": "^9.5.0",
+    "better-auth": "^1.7.0",
     "date-fns": "^4.1.0",
-    "drizzle-orm": "^0.44.0",
+    "drizzle-orm": "^0.45.2",
     "next": "^16.2.0",
     "next-intl": "^4.0.0",
+    "nodemailer": "^7.0.0",
     "pg": "^8.16.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "zod": "^4.1.0"
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.10.0",
@@ -62,6 +66,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.0",
     "@types/node": "^24.0.0",
+    "@types/nodemailer": "^7.0.0",
     "@types/pg": "^8.15.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",

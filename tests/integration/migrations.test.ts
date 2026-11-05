@@ -15,11 +15,20 @@ describe("Migrations", () => {
     await db?.stop();
   });
 
-  it("créent les tables de départ", async () => {
+  it("créent les tables", async () => {
     const result = await db.owner.execute<{ tablename: string }>(
       sql`select tablename from pg_tables where schemaname = 'public' order by tablename`,
     );
-    expect(result.rows.map((r) => r.tablename)).toEqual(["amap", "amap_role", "audit_log", "user"]);
+    expect(result.rows.map((r) => r.tablename)).toEqual([
+      "account",
+      "amap",
+      "amap_role",
+      "audit_log",
+      "passkey",
+      "session",
+      "user",
+      "verification",
+    ]);
   });
 
   it("activent la Row Level Security sur toutes les tables", async () => {

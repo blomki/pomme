@@ -10,7 +10,8 @@
   },
   "Home": {
     "title": "Pomme",
-    "intro": "Application de création et de gestion d'AMAP."
+    "intro": "Application de création et de gestion d'AMAP.",
+    "signIn": "Se connecter"
   },
   "Amap": {
     "intro": "Page publique de l'AMAP : présentation, producteurs, blog et demande d'adhésion."
@@ -119,5 +120,60 @@
     "saved": "Quantité enregistrée.",
     "undone": "Modification annulée.",
     "skeleton": "Squelette de chargement"
+  },
+  "Auth": {
+    "login": {
+      "title": "Connexion",
+      "intro": "Pas de mot de passe : recevez un lien de connexion par email, ou utilisez une passkey enregistrée sur cet appareil.",
+      "email": "Adresse email",
+      "emailHelp": "L'adresse connue de votre AMAP.",
+      "invalid": "Cette adresse email n'est pas valide.",
+      "submit": "Recevoir un lien de connexion",
+      "sent": "Si un compte correspond à cette adresse, un lien de connexion vient d'être envoyé. Il est valable 15 minutes et ne sert qu'une fois.",
+      "rateLimited": "Trop de demandes. Réessayez dans un quart d'heure.",
+      "or": "ou",
+      "passkey": "Se connecter avec une passkey",
+      "passkeyError": "La connexion avec une passkey n'a pas abouti. Réessayez, ou demandez un lien par email.",
+      "notice": {
+        "linkError": "Ce lien de connexion n'est plus valable (déjà utilisé ou expiré). Demandez-en un nouveau.",
+        "signedOut": "Vous êtes déconnecté.",
+        "signedOutEverywhere": "Vous êtes déconnecté de tous vos appareils."
+      }
+    },
+    "welcome": {
+      "title": "Bienvenue, {name}",
+      "intro": "Pour vous connecter plus vite la prochaine fois, enregistrez une passkey sur cet appareil.",
+      "explain": "Une passkey utilise le déverrouillage de votre appareil (empreinte, visage ou code) : rien à retenir, rien à recevoir par email.",
+      "create": "Créer une passkey",
+      "later": "Plus tard",
+      "error": "La passkey n'a pas été créée. Vous pourrez réessayer depuis « Mon compte »."
+    },
+    "account": {
+      "title": "Mon compte",
+      "signedInAs": "Connecté avec l'adresse {email}.",
+      "passkeys": "Passkeys",
+      "passkeysHelp": "Chaque appareil où une passkey est enregistrée peut vous connecter sans email.",
+      "noPasskey": "Aucune passkey enregistrée.",
+      "passkeyName": "Passkey {n}",
+      "createdOn": "Ajoutée le {date}",
+      "deletePasskey": "Supprimer « {name} »",
+      "addPasskey": "Ajouter une passkey sur cet appareil",
+      "passkeyAdded": "Passkey ajoutée.",
+      "passkeyAddError": "La passkey n'a pas été ajoutée.",
+      "passkeyDeleted": "Passkey supprimée.",
+      "sessions": "Déconnexion",
+      "signOut": "Me déconnecter",
+      "signOutEverywhere": "Me déconnecter de tous mes appareils"
+    }
+  },
+  "Email": {
+    "magicLink": {
+      "subject": "Votre lien de connexion à Pomme",
+      "greeting": "Bonjour,",
+      "intro": "Voici votre lien pour vous connecter à Pomme :",
+      "button": "Me connecter",
+      "validity": "Ce lien est valable {minutes} minutes et ne fonctionne qu'une fois.",
+      "ignore": "Si vous n'avez rien demandé, ignorez cet email : personne ne peut se connecter sans ce lien."
+    }
   }
 }

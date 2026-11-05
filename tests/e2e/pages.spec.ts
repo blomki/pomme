@@ -7,6 +7,7 @@ import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
 // fictif (pnpm db:seed). La liste s'allongera avec les écrans de chaque fiche.
 const pages = [
   { path: "/", title: "Pomme" },
+  { path: "/connexion", title: "Connexion" },
   { path: "/hommesdeterre", title: "AMAP de démonstration de Cambremer" },
   { path: "/pays-d-auge-demo", title: "AMAP fictive du Pays d'Auge" },
   { path: "/hommesdeterre/famille", title: "Espace famille" },

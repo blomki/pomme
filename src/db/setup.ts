@@ -1,18 +1,20 @@
 import { Client } from "pg";
 
 /**
- * Prépare le rôle PostgreSQL de l'application (pomme_app), une fois par base.
+ * Prépare un rôle PostgreSQL de connexion restreint, une fois par base.
  *
- * Deux rôles, deux usages (voir ADR 0003) :
+ * Trois rôles, trois usages (voir ADR 0003 et 0005) :
  * - le propriétaire (pomme en local) crée les tables via les migrations ; PostgreSQL ne lui
  *   applique pas la Row Level Security de ses propres tables ;
- * - pomme_app, utilisé par l'application, peut lire et écrire les tables mais n'en est pas
- *   propriétaire : il ne peut ni désactiver la RLS, ni la contourner (NOBYPASSRLS), ni créer
- *   ou modifier des tables.
+ * - pomme_app, utilisé par l'application, et pomme_auth, utilisé par Better Auth, peuvent lire
+ *   et écrire les tables que leurs politiques RLS leur ouvrent, mais n'en sont pas
+ *   propriétaires : ils ne peuvent ni désactiver la RLS, ni la contourner (NOBYPASSRLS), ni
+ *   créer ou modifier des tables.
  *
  * Idempotent : peut être relancé sans risque (par exemple pour changer le mot de passe).
+ * À lancer AVANT les migrations : les politiques RLS citent pomme_auth.
  */
-export async function setupAppRole(params: {
+export async function setupRole(params: {
   ownerUrl: string;
   appUser: string;
   appPassword: string;
@@ -51,13 +53,13 @@ export async function setupAppRole(params: {
   }
 }
 
-/** Lit le nom et le mot de passe du rôle applicatif dans son adresse de connexion. */
+/** Lit le nom et le mot de passe d'un rôle dans son adresse de connexion. */
 export function parseAppCredentials(databaseUrl: string): { appUser: string; appPassword: string } {
   const url = new URL(databaseUrl);
   const appUser = decodeURIComponent(url.username);
   const appPassword = decodeURIComponent(url.password);
   if (!appUser || !appPassword) {
-    throw new Error("DATABASE_URL doit contenir un utilisateur et un mot de passe.");
+    throw new Error("L'adresse de connexion doit contenir un utilisateur et un mot de passe.");
   }
   return { appUser, appPassword };
 }
