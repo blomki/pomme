@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import type { TypographyVariantsOptions } from "@mui/material/styles";
 
 import type { HeadingFont } from "./key-colors";
 
@@ -12,7 +12,10 @@ export function headingFontFamily(font: HeadingFont): string {
 
 const rem = (px: number) => `${px / 16}rem`;
 
-function style(size: number, lineHeight: number, weight: number, tracking = 0): CSSProperties {
+/** Style d'une variante, au format attendu par MUI. */
+type VariantStyle = NonNullable<TypographyVariantsOptions["body1"]>;
+
+function style(size: number, lineHeight: number, weight: number, tracking = 0): VariantStyle {
   return {
     fontSize: rem(size),
     lineHeight: `${lineHeight / size}`,
@@ -27,7 +30,7 @@ function style(size: number, lineHeight: number, weight: number, tracking = 0): 
  * de Typography ; les variantes MUI habituelles (h1…, body1…) y sont rattachées.
  * Le texte courant fait au moins 16 px (bodyLarge) : Carlito est une police compacte.
  */
-export function createM3Typography(headingFont: HeadingFont) {
+export function createM3Typography(headingFont: HeadingFont): TypographyVariantsOptions {
   const heading = { fontFamily: headingFontFamily(headingFont) };
   // Pattaya n'existe qu'en graisse normale : on n'en demande pas d'autre.
   const headingWeight = 400;
@@ -67,20 +70,20 @@ export function createM3Typography(headingFont: HeadingFont) {
   };
 }
 
-export type M3TypographyVariant = keyof Omit<
-  ReturnType<typeof createM3Typography>,
-  | "fontFamily"
-  | "h1"
-  | "h2"
-  | "h3"
-  | "h4"
-  | "h5"
-  | "h6"
-  | "subtitle1"
-  | "subtitle2"
-  | "body1"
-  | "body2"
-  | "caption"
-  | "overline"
-  | "button"
->;
+/** Noms des variantes typographiques M3 (utilisables dans <Typography variant=…>). */
+export type M3TypographyVariant =
+  | "displayLarge"
+  | "displayMedium"
+  | "displaySmall"
+  | "headlineLarge"
+  | "headlineMedium"
+  | "headlineSmall"
+  | "titleLarge"
+  | "titleMedium"
+  | "titleSmall"
+  | "bodyLarge"
+  | "bodyMedium"
+  | "bodySmall"
+  | "labelLarge"
+  | "labelMedium"
+  | "labelSmall";

@@ -2,17 +2,24 @@ import { describe, expect, it } from "vitest";
 
 import { createAmapTheme } from "./create-theme";
 import { PLATFORM_THEME } from "./key-colors";
-import { createM3Schemes } from "./m3-colors";
+import { createM3Schemes, type M3Scheme } from "./m3-colors";
+
+/** Palettes claire et sombre, présentes à l'exécution mais absentes du type Theme de MUI. */
+type ColorSchemes = Record<
+  "light" | "dark",
+  { palette: { primary: { main: string }; background: { default: string }; m3: M3Scheme } }
+>;
 
 describe("createAmapTheme", () => {
   const theme = createAmapTheme(PLATFORM_THEME);
+  const { colorSchemes } = theme as unknown as { colorSchemes: ColorSchemes };
   const schemes = createM3Schemes(PLATFORM_THEME.keyColors);
 
   it("place les rôles M3 dans les palettes claire et sombre", () => {
-    expect(theme.colorSchemes.light?.palette.primary.main).toBe(schemes.light.primary);
-    expect(theme.colorSchemes.dark?.palette.primary.main).toBe(schemes.dark.primary);
-    expect(theme.colorSchemes.dark?.palette.background.default).toBe(schemes.dark.surface);
-    expect(theme.colorSchemes.light?.palette.m3.surfaceContainer).toBe(
+    expect(colorSchemes.light.palette.primary.main).toBe(schemes.light.primary);
+    expect(colorSchemes.dark.palette.primary.main).toBe(schemes.dark.primary);
+    expect(colorSchemes.dark.palette.background.default).toBe(schemes.dark.surface);
+    expect(colorSchemes.light.palette.m3.surfaceContainer).toBe(
       schemes.light.surfaceContainer,
     );
   });
