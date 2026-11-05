@@ -1,18 +1,40 @@
-# Build and Release Folders
-bin-debug/
-bin-release/
-[Oo]bj/
-[Bb]in/
+# Dépendances
+node_modules/
+.pnpm-store/
 
-# Other files and folders
-.settings/
+# Next.js
+.next/
+out/
+next-env.d.ts
+*.tsbuildinfo
 
-# Executables
-*.swf
-*.air
-*.ipa
-*.apk
+# Build
+build/
+dist/
 
-# Project files, i.e. `.project`, `.actionScriptProperties` and `.flexProperties`
-# should NOT be excluded as they contain compiler settings and other important
-# information for Eclipse / Flash Builder.
+# Tests
+coverage/
+playwright-report/
+test-results/
+blob-report/
+
+# Variables d'environnement (secrets) : seul .env.example est versionné
+.env
+.env.*
+!.env.example
+
+# Journaux
+npm-debug.log*
+pnpm-debug.log*
+*.log
+
+# Systèmes et éditeurs
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+
+# Déploiement
+.vercel

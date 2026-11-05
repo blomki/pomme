@@ -1,0 +1,23 @@
+{
+  "Metadata": {
+    "title": "Pomme",
+    "description": "Gestion d'AMAP : commandes, chèques, permanences."
+  },
+  "Common": {
+    "skipToContent": "Aller au contenu",
+    "underConstruction": "Écran en construction."
+  },
+  "Home": {
+    "title": "Pomme",
+    "intro": "Application de création et de gestion d'AMAP."
+  },
+  "Amap": {
+    "title": "AMAP « {amap} »",
+    "intro": "Page publique de l'AMAP : présentation, producteurs, blog et demande d'adhésion."
+  },
+  "Family": { "title": "Espace famille" },
+  "Referent": { "title": "Espace référent" },
+  "Admin": { "title": "Administration de l'AMAP" },
+  "Producer": { "title": "Espace producteur" },
+  "Platform": { "title": "Gestion de la plateforme" }
+}
