@@ -25,13 +25,23 @@
     "test:integration": "vitest run --project integration",
     "test:e2e": "playwright test --project=chromium --project=webkit-mobile",
     "test:visual": "playwright test --project=visual",
-    "test:visual:update": "playwright test --project=visual --update-snapshots"
+    "test:visual:update": "playwright test --project=visual --update-snapshots",
+    "db:up": "docker compose up -d --wait postgres",
+    "db:down": "docker compose down",
+    "db:generate": "drizzle-kit generate",
+    "db:setup": "tsx --env-file-if-exists=.env src/db/scripts/setup.ts",
+    "db:migrate": "tsx --env-file-if-exists=.env src/db/scripts/migrate.ts",
+    "db:seed": "tsx --env-file-if-exists=.env src/db/scripts/seed.ts",
+    "db:reset": "docker compose down -v && pnpm db:up && pnpm db:setup && pnpm db:migrate && pnpm db:seed",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@date-fns/tz": "^1.2.0",
     "date-fns": "^4.1.0",
+    "drizzle-orm": "^0.44.0",
     "next": "^16.2.0",
     "next-intl": "^4.0.0",
+    "pg": "^8.16.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -51,6 +61,7 @@
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",
     "@vitest/coverage-v8": "^4.0.0",
+    "drizzle-kit": "^0.31.0",
     "eslint": "^9.0.0",
     "eslint-config-next": "^16.2.0",
     "eslint-config-prettier": "^10.0.0",
@@ -58,8 +69,8 @@
     "eslint-plugin-security": "^3.0.0",
     "husky": "^9.1.0",
     "jsdom": "^27.0.0",
-    "pg": "^8.16.0",
     "prettier": "^3.6.0",
+    "tsx": "^4.20.0",
     "typescript": "^6.0.0",
     "vitest": "^4.0.0"
   }

@@ -29,9 +29,12 @@ describe("validateAmapSlug", () => {
     },
   );
 
-  it.each(["producteur", "plateforme", "api"])("refuse le mot réservé « %s »", (slug) => {
-    expect(validateAmapSlug(slug)).toBe("reserved");
-  });
+  it.each(["admin", "api", "connexion", "plateforme", "producteur"])(
+    "refuse le mot réservé « %s »",
+    (slug) => {
+      expect(validateAmapSlug(slug)).toBe("reserved");
+    },
+  );
 });
 
 describe("suggestAmapSlug", () => {

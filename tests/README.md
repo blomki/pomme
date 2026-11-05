@@ -3,7 +3,7 @@
 | Dossier        | Contenu                                                            | Commande                |
 | -------------- | ------------------------------------------------------------------ | ----------------------- |
 | `setup/`       | préparation des tests de composants (`renderWithIntl`…)            | —                       |
-| `integration/` | tests avec un vrai PostgreSQL dans Docker (Testcontainers)         | `pnpm test:integration` |
+| `integration/` | vrai PostgreSQL dans Docker (Testcontainers), RLS, requireRole     | `pnpm test:integration` |
 | `e2e/`         | parcours dans Chromium et WebKit mobile, avec contrôle axe-core    | `pnpm test:e2e`         |
 | `visual/`      | captures d'écran comparées aux références (`__screenshots__/`), CI | `pnpm test:visual`      |
 

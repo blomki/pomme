@@ -1,0 +1,23 @@
+# Services de développement local. L'application elle-même tourne directement dans WSL (pnpm dev).
+# Démarrer : pnpm db:up — Arrêter : pnpm db:down — Tout effacer et recréer : pnpm db:reset
+services:
+  postgres:
+    image: postgres:17-alpine # même version majeure qu'en production
+    environment:
+      # Compte propriétaire de la base : sert aux migrations et au jeu de données fictif.
+      # L'application, elle, se connecte avec le rôle restreint pomme_app (voir ADR 0003).
+      POSTGRES_USER: pomme
+      POSTGRES_PASSWORD: pomme_dev
+      POSTGRES_DB: pomme
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pomme -d pomme"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  pgdata:
