@@ -155,10 +155,14 @@ describe("Isolation des données par AMAP (RLS)", () => {
     });
 
     it("ne laisse ni modifier ni effacer le journal", async () => {
-      const result = await withAmapContext(db.app, { amapId: amapB.id, userId: bobB.id }, async (tx) => ({
-        updated: await tx.update(auditLog).set({ action: "effacé" }).returning(),
-        deleted: await tx.delete(auditLog).returning(),
-      }));
+      const result = await withAmapContext(
+        db.app,
+        { amapId: amapB.id, userId: bobB.id },
+        async (tx) => ({
+          updated: await tx.update(auditLog).set({ action: "effacé" }).returning(),
+          deleted: await tx.delete(auditLog).returning(),
+        }),
+      );
       expect(result).toEqual({ updated: [], deleted: [] });
     });
   });

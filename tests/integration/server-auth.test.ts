@@ -90,10 +90,7 @@ describe("requireRole et journal", () => {
           after: { name: "AMAP A renommée" },
         });
       });
-      const entries = await db.owner
-        .select()
-        .from(auditLog)
-        .where(eq(auditLog.entityId, amapA.id));
+      const entries = await db.owner.select().from(auditLog).where(eq(auditLog.entityId, amapA.id));
       expect(entries).toHaveLength(1);
       expect(entries[0]).toMatchObject({ actorUserId: admin.id, action: "update" });
     });
