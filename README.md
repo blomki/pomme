@@ -20,6 +20,14 @@ de WSL (par exemple `~/Documents/code/pomme`), pas dans `/mnt/c/…` : c'est bie
    corepack enable   # active pnpm, dans la version fixée par package.json
    ```
 
+   Pour que les commits faits depuis VS Code trouvent aussi `pnpm` (contrôle des messages de
+   commit), indiquer à husky de charger nvm avant chaque vérification :
+
+   ```bash
+   mkdir -p ~/.config/husky
+   printf 'export NVM_DIR="$HOME/.nvm"\n[ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"\n' > ~/.config/husky/init.sh
+   ```
+
 3. Récupérer le projet et l'ouvrir dans VS Code :
 
    ```bash
