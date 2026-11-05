@@ -10,11 +10,9 @@
  * Comme les tons sont fixes, le contraste entre un rôle et son « on… » ne dépend pas de la
  * couleur choisie par l'AMAP : un jaune très clair donne, au ton 40, un jaune foncé lisible.
  */
-// Imports ciblés plutôt que le point d'entrée du paquet : en version 0.4.0, l'un des modules
-// chargés par ce point d'entrée importe un fichier sans son extension « .js », ce que Node
-// refuse (les tests échouent). Les deux modules utilisés ici sont, eux, corrects.
-import { TonalPalette } from "@material/material-color-utilities/palettes/tonal_palette.js";
-import { argbFromHex, hexFromArgb } from "@material/material-color-utilities/utils/string_utils.js";
+// Copie locale de la bibliothèque de Google (voir vendor/material-color-utilities/README.md).
+import { TonalPalette } from "./vendor/material-color-utilities/palettes/tonal_palette.js";
+import { argbFromHex, hexFromArgb } from "./vendor/material-color-utilities/utils/string_utils.js";
 
 /** Couleurs clés saisies par l'AMAP (comme dans le Material Theme Builder). */
 export type KeyColors = {

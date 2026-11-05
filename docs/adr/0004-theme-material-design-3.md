@@ -11,7 +11,8 @@ implémente Material Design 2 : il n'existe pas de bibliothèque M3 mûre pour R
 
 ## Décision
 
-1. **Couleurs** : `@material/material-color-utilities` (Google) tire de chaque couleur clé de
+1. **Couleurs** : la bibliothèque `material-color-utilities` de Google (copie partielle dans
+   `src/ui/theme/vendor/`, le paquet npm 0.4.0 étant mal publié) tire de chaque couleur clé de
    l'AMAP une palette tonale (ton 0 à 100) ; chaque rôle M3 (`primary`, `onPrimary`, `surface`…)
    prend un **ton fixe** de sa palette, comme le schéma de référence M3 (`src/ui/theme/m3-colors.ts`).
    Neutres dérivés de la primaire s'ils ne sont pas saisis ; rouge d'erreur M3 commun.

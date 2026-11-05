@@ -16,6 +16,7 @@ const eslintConfig = [
       "playwright-report/**",
       "test-results/**",
       "blob-report/**",
+      "src/ui/theme/vendor/**",
       "next-env.d.ts",
     ],
   },
