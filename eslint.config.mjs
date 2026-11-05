@@ -29,6 +29,14 @@ const eslintConfig = [
     rules: jsxA11y.flatConfigs.recommended.rules,
   },
   security.configs.recommended,
+  {
+    // detect-object-injection signale toute lecture objet[variable], sans voir les types.
+    // En TypeScript, la clé est presque toujours d'un type fermé (ex. scheme[role] avec
+    // role: M3Role) : la règle ne produit que des faux positifs, qui masqueraient les vrais
+    // avertissements. Les entrées venant de l'extérieur sont, elles, validées par Zod.
+    files: ["**/*.{ts,tsx,mts}"],
+    rules: { "security/detect-object-injection": "off" },
+  },
   prettier,
 ];
 
