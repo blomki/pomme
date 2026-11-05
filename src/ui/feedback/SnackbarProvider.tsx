@@ -50,8 +50,11 @@ export function SnackbarProvider({ children }: { children: ReactNode }) {
               <Button
                 color="inherit"
                 onClick={() => {
-                  current.onUndo?.();
+                  // Fermer d'abord : l'annulation peut afficher son propre message, qui ne
+                  // doit pas être effacé aussitôt.
+                  const undo = current.onUndo;
                   close();
+                  undo?.();
                 }}
               >
                 {t("undo")}

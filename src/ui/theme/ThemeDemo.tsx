@@ -114,17 +114,36 @@ function ContrastTable({ scheme }: { scheme: M3Scheme }) {
           return (
             <tr key={`${foreground}-${background}`}>
               <Box component="td" sx={{ py: 0.5 }}>
-                <Box
-                  component="span"
-                  sx={{
-                    backgroundColor: scheme[background],
-                    color: scheme[foreground],
-                    px: 1,
-                    borderRadius: 1,
-                  }}
-                >
-                  {foreground} / {background}
-                </Box>
+                {min >= 4.5 ? (
+                  // Paire de texte : le libellé est écrit dans ces couleurs.
+                  <Box
+                    component="span"
+                    sx={{
+                      backgroundColor: scheme[background],
+                      color: scheme[foreground],
+                      px: 1,
+                      borderRadius: 1,
+                    }}
+                  >
+                    {foreground} / {background}
+                  </Box>
+                ) : (
+                  // Paire graphique (bordure, 3:1 suffit) : on montre une bordure, pas du texte.
+                  <Box component="span" sx={{ display: "inline-flex", alignItems: "center", gap: 1 }}>
+                    <Box
+                      component="span"
+                      aria-hidden
+                      sx={{
+                        width: 24,
+                        height: 16,
+                        backgroundColor: scheme[background],
+                        border: `2px solid ${scheme[foreground]}`,
+                        borderRadius: 0.5,
+                      }}
+                    />
+                    {foreground} / {background}
+                  </Box>
+                )}
               </Box>
               <Box component="td" sx={{ textAlign: "right", py: 0.5 }}>
                 {t(ratio >= min ? "ratioPass" : "ratioFail", {
