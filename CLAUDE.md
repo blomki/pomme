@@ -33,6 +33,9 @@ en langage simple.
   producteurs) et `DesktopShell` (référents, admins). Confirmation d'action : `useSnackbar()`,
   avec `onUndo` quand c'est possible. Lien Next dans un bouton MUI :
   `component={Link} nativeButton={false}`.
+- Connexion (ADR 0005) : `getCurrentSession()` / `requireSession()` de `src/server/auth/session.ts`
+  ; Better Auth seul touche aux tables `session`, `account`, `verification`, `passkey` (rôle
+  `pomme_auth`). Aucun mot de passe, nulle part.
 - `src/app/` : routes seulement, le plus mince possible (lit, appelle `server/`, affiche).
 - Dates : `formatDate` de `src/i18n/dates.ts` (français, fuseau Europe/Paris), jamais
   `toLocaleString` ni le fuseau du serveur.
@@ -49,7 +52,7 @@ en langage simple.
 - **Une décision technique importante = un ADR** dans `docs/adr/` (copier `0000-modele.md`,
   numéroter à la suite).
 - Adresses réservées, interdites comme adresse d'AMAP : `RESERVED_AMAP_SLUGS` dans
-  `src/domain/amap-slug.ts` (`admin`, `api`, `connexion`, `plateforme`, `producteur`) ; une
+  `src/domain/amap-slug.ts` (`admin`, `api`, `compte`, `connexion`, `plateforme`, `producteur`) ; une
   nouvelle route à la racine doit y être ajoutée (voir ADR 0001).
 
 ## Git

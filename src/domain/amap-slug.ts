@@ -13,6 +13,7 @@
 export const RESERVED_AMAP_SLUGS: readonly string[] = [
   "admin",
   "api",
+  "compte",
   "connexion",
   "plateforme",
   "producteur",

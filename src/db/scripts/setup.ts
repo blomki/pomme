@@ -1,10 +1,14 @@
-// pnpm db:setup — crée ou met à jour le rôle applicatif pomme_app (une fois par base).
-import { parseAppCredentials, setupAppRole } from "../setup";
+// pnpm db:setup — crée ou met à jour les rôles pomme_app (application) et pomme_auth
+// (Better Auth), une fois par base, avant les migrations.
+import { parseAppCredentials, setupRole } from "../setup";
 
 import { requireEnv, runScript } from "./env";
 
 runScript(async () => {
-  const { appUser, appPassword } = parseAppCredentials(requireEnv("DATABASE_URL"));
-  await setupAppRole({ ownerUrl: requireEnv("DATABASE_MIGRATION_URL"), appUser, appPassword });
-  console.log(`Rôle ${appUser} prêt.`);
+  const ownerUrl = requireEnv("DATABASE_MIGRATION_URL");
+  for (const variable of ["DATABASE_URL", "DATABASE_AUTH_URL"]) {
+    const { appUser, appPassword } = parseAppCredentials(requireEnv(variable));
+    await setupRole({ ownerUrl, appUser, appPassword });
+    console.log(`Rôle ${appUser} prêt.`);
+  }
 });

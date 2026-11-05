@@ -40,9 +40,20 @@ jobs:
         options: >-
           --health-cmd "pg_isready -U pomme -d pomme"
           --health-interval 2s --health-timeout 3s --health-retries 15
+      mailpit:
+        image: axllent/mailpit:v1.27
+        ports:
+          - 1025:1025
+          - 8025:8025
     env:
       DATABASE_URL: postgres://pomme_app:pomme_app_ci@localhost:5432/pomme
       DATABASE_MIGRATION_URL: postgres://pomme:pomme_ci@localhost:5432/pomme
+      DATABASE_AUTH_URL: postgres://pomme_auth:pomme_auth_ci@localhost:5432/pomme
+      BETTER_AUTH_URL: http://localhost:3000
+      BETTER_AUTH_SECRET: secret-de-la-ci-uniquement-pour-les-tests-e2e
+      SMTP_URL: smtp://localhost:1025
+      EMAIL_FROM: Pomme <ne-pas-repondre@example.org>
+      AUTH_RATE_LIMIT_FACTOR: "10"
       POMME_DEMO_PAGES: "1"
     steps:
       - uses: actions/checkout@v5

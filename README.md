@@ -65,13 +65,18 @@ PostgreSQL 17 tourne dans Docker (Docker Desktop doit être lancé). Première i
 
 ```bash
 cp .env.example .env   # adresses de connexion locales (jamais commité)
-pnpm db:up             # démarre PostgreSQL
-pnpm db:setup          # crée le rôle de l'application (pomme_app)
+pnpm db:up             # démarre PostgreSQL et Mailpit (emails de test)
+pnpm db:setup          # crée les rôles de l'application (pomme_app, pomme_auth)
 pnpm db:migrate        # crée les tables
 pnpm db:seed           # charge le jeu de données fictif
 ```
 
-Ensuite, `pnpm db:up` suffit après un redémarrage. `pnpm db:reset` efface tout et recommence
+Ensuite, `pnpm db:up` suffit après un redémarrage.
+
+Se connecter en local : http://localhost:3000/connexion avec un compte de démonstration
+(`admin.demo@example.org`, `referent.demo@example.org`, `amapien.demo@example.org`). Aucun email
+ne part vraiment : le lien arrive dans **Mailpit**, la boîte de réception de test,
+sur http://localhost:8025. `pnpm db:reset` efface tout et recommence
 (utile après un changement de schéma ou pour retrouver des données propres).
 
 Modifier le schéma : changer `src/db/schema/index.ts`, puis `pnpm db:generate` produit la
