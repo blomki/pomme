@@ -9,7 +9,13 @@ import prettier from "eslint-config-prettier/flat";
 
 const eslintConfig = [
   {
-    ignores: [".next/**", "node_modules/**", "coverage/**", "playwright-report/**", "next-env.d.ts"],
+    ignores: [
+      ".next/**",
+      "node_modules/**",
+      "coverage/**",
+      "playwright-report/**",
+      "next-env.d.ts",
+    ],
   },
   ...nextVitals,
   ...nextTypescript,
