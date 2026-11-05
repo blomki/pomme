@@ -6,10 +6,17 @@
  */
 
 /**
- * Mots déjà utilisés par des pages de la plateforme au même niveau que les AMAP
- * (voir ADR 0001). Une AMAP qui s'appellerait « producteur » masquerait l'espace producteur.
+ * Mots utilisés (ou prévus) par des pages de la plateforme au même niveau que les AMAP
+ * (voir ADR 0001 et le modèle de données, section 3). Une AMAP qui s'appellerait
+ * « producteur » masquerait l'espace producteur.
  */
-export const RESERVED_AMAP_SLUGS: readonly string[] = ["producteur", "plateforme", "api"];
+export const RESERVED_AMAP_SLUGS: readonly string[] = [
+  "admin",
+  "api",
+  "connexion",
+  "plateforme",
+  "producteur",
+];
 
 export const AMAP_SLUG_MIN_LENGTH = 3;
 export const AMAP_SLUG_MAX_LENGTH = 40;

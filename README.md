@@ -40,8 +40,9 @@ de WSL (par exemple `~/Documents/code/pomme`), pas dans `/mnt/c/…` : c'est bie
 4. Accepter les extensions recommandées que propose VS Code (ESLint, Prettier, EditorConfig).
 
 5. Installer Docker Desktop sous Windows et activer l'intégration WSL
-   (_Settings › Resources › WSL integration_). Docker sert aux tests d'intégration (PostgreSQL
-   jetable) et, à partir de la fiche S3, à la base de développement.
+   (_Settings › Resources › WSL integration_), ainsi que _Settings › General › Start Docker
+   Desktop when you sign in_. Docker fait tourner la base de développement et les bases jetables
+   des tests d'intégration.
 6. Installer les navigateurs des tests de bout en bout (une fois, puis à chaque mise à jour de
    Playwright) :
 
@@ -57,6 +58,28 @@ pnpm install
 
 À relancer après chaque `git pull` qui modifie `package.json` ou `pnpm-lock.yaml`.
 `pnpm-lock.yaml` fige les versions exactes : il est toujours commité.
+
+## Base de données
+
+PostgreSQL 17 tourne dans Docker (Docker Desktop doit être lancé). Première installation :
+
+```bash
+cp .env.example .env   # adresses de connexion locales (jamais commité)
+pnpm db:up             # démarre PostgreSQL
+pnpm db:setup          # crée le rôle de l'application (pomme_app)
+pnpm db:migrate        # crée les tables
+pnpm db:seed           # charge le jeu de données fictif
+```
+
+Ensuite, `pnpm db:up` suffit après un redémarrage. `pnpm db:reset` efface tout et recommence
+(utile après un changement de schéma ou pour retrouver des données propres).
+
+Modifier le schéma : changer `src/db/schema/index.ts`, puis `pnpm db:generate` produit la
+migration SQL dans `src/db/migrations/` (à relire et commiter), et `pnpm db:migrate` l'applique.
+`pnpm db:studio` ouvre un explorateur de la base dans le navigateur.
+
+Sécurité : l'application se connecte avec un rôle restreint, soumis à la Row Level Security de
+PostgreSQL, qui isole les données de chaque AMAP (voir [ADR 0003](docs/adr/0003-isolation-par-amap-rls.md)).
 
 ## Afficher l'application
 
@@ -139,6 +162,14 @@ secrets et CodeQL. La fusion dans `main` n'est possible que si tout est au vert.
 | `pnpm test:integration` | tests avec PostgreSQL (Docker)                      |
 | `pnpm test:e2e`         | bout en bout et accessibilité                       |
 | `pnpm test:visual`      | captures comparées (CI seulement)                   |
+| `pnpm db:up`            | démarre PostgreSQL (Docker)                         |
+| `pnpm db:down`          | arrête PostgreSQL                                   |
+| `pnpm db:setup`         | crée le rôle de l'application                       |
+| `pnpm db:generate`      | écrit la migration d'un changement de schéma        |
+| `pnpm db:migrate`       | applique les migrations                             |
+| `pnpm db:seed`          | charge le jeu de données fictif                     |
+| `pnpm db:reset`         | efface la base et recharge tout                     |
+| `pnpm db:studio`        | explorateur de la base                              |
 
 ## Travailler avec Git
 

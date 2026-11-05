@@ -36,6 +36,16 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm lint
       - run: pnpm format:check
+      - name: Migrations à jour avec le schéma
+        # Si le schéma (src/db/schema) a changé sans « pnpm db:generate », drizzle-kit produit
+        # ici une nouvelle migration : l'étape échoue et liste les fichiers manquants.
+        run: |
+          pnpm db:generate
+          if [ -n "$(git status --porcelain -- src/db/migrations)" ]; then
+            git status --porcelain -- src/db/migrations
+            echo "::error::Migration manquante : lancer « pnpm db:generate » et commiter le résultat."
+            exit 1
+          fi
 
   tests:
     name: Tests unitaires et d'intégration

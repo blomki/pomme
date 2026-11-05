@@ -43,8 +43,8 @@ une petite équipe ; PHP — l'ancien outil a été piraté plusieurs fois.
 ## Conséquences
 
 - Adresses : `[domaine]/<amap>` (page publique), `[domaine]/<amap>/famille|referent|admin`,
-  `[domaine]/producteur`, `[domaine]/plateforme`. Les mots `producteur`, `plateforme`, `api` et
-  ceux commençant par `_` sont donc **réservés** et interdits comme adresse d'AMAP (à contrôler
-  à la création d'AMAP, story J1).
+  `[domaine]/producteur`, `[domaine]/plateforme`. Les mots `producteur`, `plateforme`, `api`,
+  `admin`, `connexion` (liste `RESERVED_AMAP_SLUGS`) et ceux commençant par `_` sont donc
+  **réservés** et interdits comme adresse d'AMAP (à contrôler à la création d'AMAP, story J1).
 - Une seule langue en V1 : pas de préfixe `/fr` dans les adresses.
 - Les dépendances sont figées par `pnpm-lock.yaml` ; les mises à jour passeront par Renovate et la CI.

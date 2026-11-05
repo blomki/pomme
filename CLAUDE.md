@@ -21,6 +21,12 @@ en langage simple.
 - `src/server/` : Server Actions et lectures ; validation Zod de chaque entrée ; `requireRole`
   dans chaque action.
 - `src/db/` : schéma Drizzle, migrations, politiques RLS (isolation par `amap_id`).
+  Toute requête sur des données d'AMAP passe par `withAmapContext(getDatabase(), ctx, fn)`.
+  Nouvelle table : `id` UUID v7, `amap_id`, `created_at`/`updated_at`, `archived_at` plutôt que
+  suppression, politiques `pgPolicy`, puis `pnpm db:generate` (jamais de migration écrite à la
+  main). Voir ADR 0003.
+- Server Action : `withAmapContext` → `requireRole(tx, ctx, [...])` → action →
+  `writeAuditLog(tx, ctx, …)` pour toute action financière ou correction.
 - `src/ui/` : thème et composants partagés.
 - `src/app/` : routes seulement, le plus mince possible (lit, appelle `server/`, affiche).
 - Dates : `formatDate` de `src/i18n/dates.ts` (français, fuseau Europe/Paris), jamais
@@ -37,8 +43,9 @@ en langage simple.
   en développement.
 - **Une décision technique importante = un ADR** dans `docs/adr/` (copier `0000-modele.md`,
   numéroter à la suite).
-- Adresses réservées, interdites comme adresse d'AMAP : `producteur`, `plateforme`, `api`, et tout
-  ce qui commence par `_` (voir ADR 0001).
+- Adresses réservées, interdites comme adresse d'AMAP : `RESERVED_AMAP_SLUGS` dans
+  `src/domain/amap-slug.ts` (`admin`, `api`, `connexion`, `plateforme`, `producteur`) ; une
+  nouvelle route à la racine doit y être ajoutée (voir ADR 0001).
 
 ## Git
 
@@ -51,7 +58,9 @@ en langage simple.
 ## Tests
 
 - Unitaires et composants à côté du code (`x.ts` → `x.test.ts`, `Y.tsx` → `Y.test.tsx`).
-- Intégration (vrai PostgreSQL) dans `tests/integration/`, avec `startPostgres()`.
+- Intégration (vrai PostgreSQL) dans `tests/integration/`, avec `startDatabase()` : connexion
+  `owner` pour préparer les données (sans RLS), connexion `app` pour tester (avec RLS).
+  Chaque nouvelle table a son test d'isolation entre AMAP.
 - Bout en bout dans `tests/e2e/` : chaque nouvel écran est ajouté à `pages.spec.ts` (ou à son
   propre fichier) et passe `expectNoSeriousA11yViolations`.
 - Écran clé : l'ajouter à `tests/visual/screens.spec.ts` ; les références sont produites par le
