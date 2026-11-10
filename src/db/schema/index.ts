@@ -51,6 +51,11 @@ const currentUserId = sql`nullif(current_setting('app.user_id', true), '')::uuid
  */
 export const authRole = pgRole("pomme_auth").existing();
 
+/** L'utilisateur connecté est admin de l'AMAP courante (amap_role est filtrée par sa RLS). */
+const isCurrentAmapAdmin = sql`exists (
+  select 1 from amap_role where amap_role.user_id = ${currentUserId} and amap_role.role = 'admin'
+)`;
+
 /** Accès complet pour Better Auth, qui gère lui-même les comptes et les sessions. */
 const authFullAccess = (name: string) =>
   pgPolicy(name, { for: "all", to: authRole, using: sql`true`, withCheck: sql`true` });
@@ -107,6 +112,8 @@ export const user = pgTable(
     // Noms de propriétés imposés par Better Auth (emailVerified, image).
     emailVerified: boolean("email_verified").notNull().default(false),
     image: text("image"),
+    // Application d'authentification (TOTP) activée : nom imposé par le plugin twoFactor.
+    twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
@@ -133,6 +140,18 @@ export const user = pgTable(
       for: "update",
       using: sql`"user"."id" = ${currentUserId}`,
       withCheck: sql`"user"."id" = ${currentUserId} and "user"."is_platform_admin" = false`,
+    }),
+    // Correction de l'email d'un membre par un admin de l'AMAP courante (story A1). Les deux
+    // sous-requêtes sur amap_role sont filtrées par sa RLS : elles ne voient que l'AMAP courante.
+    // Le compte d'un gestionnaire de la plateforme ne peut pas être modifié ainsi.
+    pgPolicy("user_update_by_amap_admin", {
+      for: "update",
+      using: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_role where amap_role.user_id = "user"."id")
+        and "user"."is_platform_admin" = false`,
+      withCheck: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_role where amap_role.user_id = "user"."id")
+        and "user"."is_platform_admin" = false`,
     }),
     // Better Auth retrouve un compte par son email avant toute connexion (sans contexte).
     authFullAccess("user_auth"),
@@ -205,6 +224,9 @@ export const amapRole = pgTable(
       using: sql`${t.amapId} = ${currentAmapId}`,
       withCheck: sql`${t.amapId} = ${currentAmapId}`,
     }),
+    // Lecture seule pour la connexion : savoir si un compte est admin d'au moins une AMAP,
+    // donc soumis à la deuxième vérification.
+    pgPolicy("amap_role_auth_select", { for: "select", to: authRole, using: sql`true` }),
   ],
 );
 
@@ -258,6 +280,9 @@ export const session = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
+    // Deuxième vérification faite sur cette session (passkey, code TOTP ou code de secours) ;
+    // vide après un simple lien magique. Exigée des admins et gestionnaires (story A1).
+    secondFactorVerifiedAt: timestamp("second_factor_verified_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -324,4 +349,29 @@ export const passkey = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }),
   },
   (t) => [index("passkey_user_idx").on(t.userId), authFullAccess("passkey_auth")],
+);
+
+/**
+ * Application d'authentification (TOTP) d'un utilisateur, gérée par le plugin twoFactor.
+ * Secret et codes de secours chiffrés avec BETTER_AUTH_SECRET.
+ */
+export const twoFactor = pgTable(
+  "two_factor",
+  {
+    id: uuid("id").primaryKey(),
+    secret: text("secret").notNull(),
+    backupCodes: text("backup_codes").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    // Faux tant que le premier code n'a pas été saisi (activation en cours).
+    verified: boolean("verified").notNull().default(true),
+    failedVerificationCount: integer("failed_verification_count").notNull().default(0),
+    lockedUntil: timestamp("locked_until", { withTimezone: true }),
+  },
+  (t) => [
+    index("two_factor_user_idx").on(t.userId),
+    index("two_factor_secret_idx").on(t.secret),
+    authFullAccess("two_factor_auth"),
+  ],
 );

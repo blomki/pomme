@@ -2,16 +2,47 @@ import { passkey } from "@better-auth/passkey";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
-import { magicLink } from "better-auth/plugins";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import { magicLink, twoFactor } from "better-auth/plugins";
 
 import { createDatabase, type Database } from "@/db/client";
-import { account, passkey as passkeyTable, session, user, verification } from "@/db/schema";
+import {
+  account,
+  passkey as passkeyTable,
+  session,
+  twoFactor as twoFactorTable,
+  user,
+  verification,
+} from "@/db/schema";
+import { canManageFactors } from "@/domain/second-factor";
 import { uuidv7 } from "@/db/uuid";
 
 import { magicLinkEmail } from "../email/magic-link-email";
 import { sendEmail } from "../email/mailer";
 
 import { AUTH_RATE_LIMIT_FACTOR } from "./rate-limit-factor";
+import { loadAccountFactors, markSessionVerified, toFacts } from "./second-factor-facts";
+
+/** Connexions qui valent deuxième vérification : passkey, ou activation de l'application. */
+const SECOND_FACTOR_PATHS = new Set([
+  "/passkey/verify-authentication",
+  "/passkey/authenticate",
+  "/two-factor/verify-totp",
+]);
+
+/** Ajouter ou retirer un moyen de vérification (voir canManageFactors). */
+const FACTOR_MANAGEMENT_PATHS = new Set([
+  "/passkey/generate-register-options",
+  "/passkey/verify-registration",
+  "/passkey/register",
+  "/passkey/delete-passkey",
+  "/two-factor/enable",
+  "/two-factor/disable",
+  "/two-factor/generate-backup-codes",
+]);
+
+/** Fin de l'enregistrement d'une passkey. */
+const PASSKEY_REGISTERED_PATHS = new Set(["/passkey/verify-registration", "/passkey/register"]);
 
 /** Durée de validité d'un lien de connexion : 15 minutes. */
 export const MAGIC_LINK_TTL_MINUTES = 15;
@@ -36,7 +67,10 @@ export type AuthOptions = {
  * - passkeys : clé enregistrée sur l'appareil (empreinte, visage, code du téléphone) ;
  * - sessions : cookie HttpOnly, SameSite=Lax, Secure en HTTPS ; nouvelle session (nouveau
  *   jeton) à chaque connexion ;
- * - aucun mot de passe : la connexion email + mot de passe est désactivée.
+ * - aucun mot de passe : la connexion email + mot de passe est désactivée ;
+ * - deuxième vérification (admins et gestionnaires) : passkey ou application d'authentification
+ *   (TOTP), notée sur la session (second_factor_verified_at). Better Auth ne la demande
+ *   qu'après un mot de passe : Pomme l'impose elle-même après un lien magique (ADR 0005).
  */
 export function createAuth(options: AuthOptions) {
   const url = new URL(options.baseURL);
@@ -46,12 +80,63 @@ export function createAuth(options: AuthOptions) {
     secret: options.secret,
     database: drizzleAdapter(options.db, {
       provider: "pg",
-      schema: { user, session, account, verification, passkey: passkeyTable },
+      schema: {
+        user,
+        session,
+        account,
+        verification,
+        passkey: passkeyTable,
+        twoFactor: twoFactorTable,
+      },
     }),
     // Better Auth attend un champ « name » : on lui donne le prénom.
     user: { fields: { name: "firstName" } },
     emailAndPassword: { enabled: false },
-    session: { expiresIn: SESSION_DAYS * 24 * 60 * 60, updateAge: 24 * 60 * 60 },
+    session: {
+      expiresIn: SESSION_DAYS * 24 * 60 * 60,
+      updateAge: 24 * 60 * 60,
+      additionalFields: {
+        secondFactorVerifiedAt: { type: "date", required: false, input: false },
+      },
+    },
+    databaseHooks: {
+      session: {
+        create: {
+          // Une session ouverte par passkey, ou recréée à l'activation de l'application
+          // d'authentification (premier code juste), est vérifiée d'emblée.
+          before: async (data, ctx) =>
+            ctx?.path && SECOND_FACTOR_PATHS.has(ctx.path)
+              ? { data: { ...data, secondFactorVerifiedAt: new Date() } }
+              : undefined,
+        },
+      },
+    },
+    hooks: {
+      // Ajouter ou retirer une passkey ou l'application : refusé à un admin qui a déjà un moyen
+      // de vérification mais ne s'en est pas servi sur cette session.
+      before: createAuthMiddleware(async (ctx) => {
+        if (!FACTOR_MANAGEMENT_PATHS.has(ctx.path)) return;
+        const current = await getSessionFromCtx(ctx);
+        if (!current) return; // Better Auth refusera lui-même (connexion requise)
+        const factors = await loadAccountFactors(options.db, current.user.id);
+        const verifiedAt = (current.session as { secondFactorVerifiedAt?: Date | null })
+          .secondFactorVerifiedAt;
+        if (!canManageFactors(toFacts(factors, verifiedAt ?? null))) {
+          throw new APIError("FORBIDDEN", { message: "SECOND_FACTOR_REQUIRED" });
+        }
+      }),
+      // Première passkey d'un admin, créée juste après un lien magique : la session est
+      // vérifiée (choix validé pour la story A1, voir ADR 0005).
+      after: createAuthMiddleware(async (ctx) => {
+        if (!PASSKEY_REGISTERED_PATHS.has(ctx.path)) return;
+        const current = await getSessionFromCtx(ctx);
+        if (!current) return;
+        const factors = await loadAccountFactors(options.db, current.user.id);
+        if (factors.required && factors.passkeys === 1 && !factors.totp) {
+          await markSessionVerified(options.db, current.session.token);
+        }
+      }),
+    },
     advanced: {
       cookiePrefix: "pomme",
       useSecureCookies: url.protocol === "https:",
@@ -69,6 +154,13 @@ export function createAuth(options: AuthOptions) {
         rateLimit: { window: 60, max: 5 * AUTH_RATE_LIMIT_FACTOR },
       }),
       passkey({ rpID: url.hostname, rpName: "Pomme", origin: url.origin }),
+      twoFactor({
+        issuer: "Pomme",
+        // Pas de mot de passe dans Pomme : l'activation se fait depuis une session ouverte.
+        allowPasswordless: true,
+        // Codes de secours à usage unique, stockés chiffrés.
+        backupCodeOptions: { amount: 10, storeBackupCodes: "encrypted" },
+      }),
       // Permet aux Server Actions de poser et d'effacer les cookies de session.
       nextCookies(),
     ],

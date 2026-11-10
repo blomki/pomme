@@ -9,7 +9,7 @@ runScript(async () => {
   assertSeedAllowed(url, process.env);
   const db = createDatabase(url);
   try {
-    const summary = await seedDatabase(db);
+    const summary = await seedDatabase(db, requireEnv("BETTER_AUTH_SECRET"));
     console.log(
       `Jeu de données chargé : ${summary.amaps} AMAP, ${summary.users} utilisateurs, ` +
         `${summary.roles} rôles.`,

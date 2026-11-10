@@ -15,3 +15,14 @@ export class ForbiddenError extends Error {
     this.name = "ForbiddenError";
   }
 }
+
+/**
+ * Action réservée aux admins, sans deuxième vérification sur cette session (HTTP 403).
+ * L'interface renvoie alors vers /connexion/verification.
+ */
+export class SecondFactorRequiredError extends ForbiddenError {
+  constructor() {
+    super("Deuxième vérification requise.");
+    this.name = "SecondFactorRequiredError";
+  }
+}

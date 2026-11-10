@@ -74,10 +74,17 @@ pnpm db:seed           # charge le jeu de données fictif
 Ensuite, `pnpm db:up` suffit après un redémarrage.
 
 Se connecter en local : http://localhost:3000/connexion avec un compte de démonstration
-(`admin.demo@example.org`, `referent.demo@example.org`, `amapien.demo@example.org`). Aucun email
-ne part vraiment : le lien arrive dans **Mailpit**, la boîte de réception de test,
-sur http://localhost:8025. `pnpm db:reset` efface tout et recommence
-(utile après un changement de schéma ou pour retrouver des données propres).
+(`admin.demo@example.org`, `referent.demo@example.org`, `amapien.demo@example.org`,
+`gestionnaire.demo@example.org`…). Aucun email ne part vraiment : le lien arrive dans
+**Mailpit**, la boîte de réception de test, sur http://localhost:8025. `pnpm db:reset` efface
+tout et recommence (utile après un changement de schéma ou pour retrouver des données propres).
+
+Les admins et gestionnaires font une deuxième vérification après le lien. Pour `admin.demo` et
+`gestionnaire.demo`, l'application d'authentification est déjà activée avec une clé **publique,
+réservée aux données fictives** : ajouter dans l'application (Google Authenticator, Aegis…)
+un compte « Pomme démo » avec la clé `KBXW23LFIRSW232UN52HATTFKBQXGVLUNFWGS43FOJCW4UDSN5SA`,
+ou utiliser un code de secours `DEMO0-00001` à `DEMO0-00010` (chacun une seule fois).
+`admin2.demo` n'a encore aucun moyen de vérification : Pomme lui demande d'en créer un.
 
 Modifier le schéma : changer `src/db/schema/index.ts`, puis `pnpm db:generate` produit la
 migration SQL dans `src/db/migrations/` (à relire et commiter), et `pnpm db:migrate` l'applique.

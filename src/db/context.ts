@@ -8,6 +8,11 @@ export type AmapContext = {
   amapId: string | null;
   /** Utilisateur connecté ; null pour un visiteur. */
   userId: string | null;
+  /**
+   * Deuxième vérification faite sur la session (passkey ou code). Exigée par requireRole pour
+   * les actions réservées aux admins. Absent = non.
+   */
+  secondFactorVerified?: boolean;
 };
 
 /**

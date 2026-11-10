@@ -4,12 +4,18 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { getAuth } from "@/server/auth/auth";
-import { requireSession } from "@/server/auth/session";
+import { getSecondFactorState, verificationUrl } from "@/server/auth/second-factor";
 import { PasskeyOffer } from "@/ui/auth/PasskeyOffer";
 
-// Arrivée après un lien magique : on propose une passkey à qui n'en a pas encore.
+// Arrivée après un lien magique : deuxième vérification d'abord pour un admin ou un
+// gestionnaire ; ensuite, on propose une passkey à qui n'en a pas encore.
 export default async function WelcomePage() {
-  const { user } = await requireSession();
+  const state = await getSecondFactorState();
+  if (!state) redirect("/connexion");
+  if (state.status === "challenge" || state.status === "enroll") {
+    redirect(verificationUrl("/compte"));
+  }
+  const { user } = state;
   const passkeys = await getAuth().api.listPasskeys({ headers: await headers() });
   if (passkeys.length > 0) redirect("/compte");
   const t = await getTranslations("Auth.welcome");

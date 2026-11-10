@@ -26,6 +26,7 @@ describe("Migrations", () => {
       "audit_log",
       "passkey",
       "session",
+      "two_factor",
       "user",
       "verification",
     ]);

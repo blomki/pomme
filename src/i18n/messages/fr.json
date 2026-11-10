@@ -23,7 +23,27 @@
     "title": "Espace référent"
   },
   "Admin": {
-    "title": "Administration de l'AMAP"
+    "title": "Administration de l'AMAP",
+    "members": {
+      "title": "Membres",
+      "intro": "Les personnes qui ont un rôle dans l'AMAP. Les foyers et les invitations arriveront avec la gestion des adhésions.",
+      "name": "Nom",
+      "email": "Adresse email",
+      "roles": "Rôles",
+      "actions": "Actions",
+      "correctEmail": "Corriger l'email",
+      "correctEmailOf": "Corriger l'email de {name}",
+      "dialogTitle": "Corriger l'email de {name}",
+      "dialogIntro": "Pour une personne qui n'a plus accès à son ancienne adresse. Elle est déconnectée de tous ses appareils et se connectera avec la nouvelle adresse. La correction est inscrite au journal.",
+      "newEmail": "Nouvelle adresse email",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saved": "Email de {name} corrigé.",
+      "invalid": "Cette adresse email n'est pas valide.",
+      "same": "C'est déjà l'adresse de cette personne.",
+      "taken": "Cette adresse est déjà utilisée par un autre compte.",
+      "forbidden": "Vous ne pouvez pas corriger l'email de cette personne."
+    }
   },
   "Producer": {
     "title": "Espace producteur"
@@ -62,7 +82,8 @@
       "planning": "Planning des permanences",
       "producers": "Producteurs et référents",
       "households": "Foyers et adhésions",
-      "pages": "Pages"
+      "pages": "Pages",
+      "members": "Membres"
     },
     "referent": {
       "label": "Menu du référent",
@@ -163,7 +184,51 @@
       "passkeyDeleted": "Passkey supprimée.",
       "sessions": "Déconnexion",
       "signOut": "Me déconnecter",
-      "signOutEverywhere": "Me déconnecter de tous mes appareils"
+      "signOutEverywhere": "Me déconnecter de tous mes appareils",
+      "totpTitle": "Application d'authentification",
+      "totpHelp": "Un code à 6 chiffres, en deuxième vérification après un lien de connexion.",
+      "totpActive": "Activée.",
+      "totpDisable": "Désactiver l'application",
+      "totpDisabled": "Application d'authentification désactivée.",
+      "totpEnabled": "Application d'authentification activée.",
+      "verifyFirst": "Pour ajouter ou retirer une passkey ou l'application, faites d'abord la deuxième vérification.",
+      "verifyNow": "Faire la deuxième vérification"
+    },
+    "verification": {
+      "title": "Deuxième vérification",
+      "intro": "Votre compte peut agir sur toute une AMAP : après le lien reçu par email, confirmez que c'est bien vous.",
+      "usePasskey": "Utiliser ma passkey",
+      "passkeyError": "La vérification avec la passkey n'a pas abouti. Réessayez, ou utilisez un code.",
+      "or": "ou",
+      "totpLabel": "Code de l'application d'authentification",
+      "totpHelp": "Les 6 chiffres affichés par l'application, pour Pomme.",
+      "verify": "Vérifier",
+      "useBackup": "Utiliser un code de secours",
+      "backupLabel": "Code de secours",
+      "backupHelp": "Un des 10 codes notés à l'activation de l'application. Chaque code ne sert qu'une fois.",
+      "invalidFormat": "Ce code n'a pas le bon format.",
+      "wrongCode": "Ce code n'est pas le bon. Vérifiez l'heure de votre téléphone, puis réessayez.",
+      "rateLimited": "Trop d'essais. Réessayez dans un quart d'heure.",
+      "lost": "Plus d'accès à votre passkey ni à votre application ? Demandez à un autre admin de votre AMAP ou au gestionnaire de la plateforme.",
+      "enrollTitle": "Sécurisez votre compte",
+      "enrollIntro": "Votre compte peut agir sur toute une AMAP : une deuxième vérification est demandée à chaque connexion par email. Choisissez comment vous la ferez.",
+      "enrollPasskey": "Créer une passkey sur cet appareil",
+      "enrollPasskeyHelp": "Le plus simple : le déverrouillage de votre appareil (empreinte, visage ou code).",
+      "enrollPasskeyError": "La passkey n'a pas été créée. Réessayez, ou utilisez une application d'authentification.",
+      "enrollTotp": "Utiliser une application d'authentification",
+      "enrollTotpHelp": "Une application qui affiche un code à 6 chiffres renouvelé toutes les 30 secondes."
+    },
+    "totp": {
+      "start": "Activer l'application d'authentification",
+      "startError": "L'activation n'a pas pu commencer. Rechargez la page et réessayez.",
+      "scan": "1. Scannez ce QR code avec votre application d'authentification.",
+      "qrAlt": "QR code à scanner avec l'application d'authentification",
+      "manual": "Pas de lecteur de QR code ? Saisissez cette clé dans l'application :",
+      "enterCode": "3. Saisissez le code à 6 chiffres affiché par l'application.",
+      "codeLabel": "Code à 6 chiffres",
+      "confirm": "Confirmer",
+      "backupTitle": "2. Notez vos codes de secours",
+      "backupIntro": "Gardez ces 10 codes en lieu sûr (sur papier, ou dans un gestionnaire de mots de passe). Chacun vous permet de vous connecter une fois si vous perdez votre téléphone. Ils ne seront plus affichés."
     }
   },
   "Email": {
@@ -175,5 +240,9 @@
       "validity": "Ce lien est valable {minutes} minutes et ne fonctionne qu'une fois.",
       "ignore": "Si vous n'avez rien demandé, ignorez cet email : personne ne peut se connecter sans ce lien."
     }
+  },
+  "Roles": {
+    "admin": "Admin",
+    "referent": "Référent"
   }
 }
