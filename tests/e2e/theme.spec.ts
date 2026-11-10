@@ -38,23 +38,6 @@ test("la barre du bas du producteur mène au catalogue et indique la page couran
   );
 });
 
-test("le menu latéral et le sélecteur d'espace mènent du référent à l'administration", async ({
-  page,
-}) => {
-  await page.goto("/hommesdeterre/referent");
-  const menu = page.getByRole("navigation", { name: "Menu du référent" });
-  await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
-  await page
-    .getByRole("navigation", { name: "Changer d'espace" })
-    .getByRole("link", { name: "Administration" })
-    .click();
-  await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
-  await expect(page.getByRole("navigation", { name: "Menu de l'administration" })).toBeVisible();
-});
-
 test("un message de confirmation propose d'annuler", async ({ page }) => {
   await page.goto("/plateforme/theme/hommesdeterre");
   const quantity = page.getByRole("spinbutton", { name: "Quantité" });

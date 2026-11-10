@@ -14,13 +14,21 @@ describe("buildSeedData", () => {
   });
 
   it("crée 40 amapiens par AMAP et un gestionnaire de la plateforme", () => {
-    expect(data.users).toHaveLength(2 * MEMBERS_PER_AMAP + 1 + DEMO_ACCOUNTS.length);
+    expect(data.users).toHaveLength(2 * MEMBERS_PER_AMAP + DEMO_ACCOUNTS.length);
     expect(data.users.filter((u) => u.isPlatformAdmin)).toHaveLength(1);
   });
 
   it("contient les comptes de démonstration aux adresses fixes", () => {
     const emails = data.users.map((u) => u.email);
     for (const demo of DEMO_ACCOUNTS) expect(emails).toContain(demo.email);
+  });
+
+  it("active l'application d'authentification des comptes de démonstration admin et gestionnaire", () => {
+    const emails = data.users
+      .filter((u) => data.totpUserIds.includes(u.id))
+      .map((u) => u.email)
+      .sort();
+    expect(emails).toEqual(["admin.demo@example.org", "gestionnaire.demo@example.org"]);
   });
 
   it("est reproductible", () => {

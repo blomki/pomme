@@ -37,7 +37,7 @@ describe("requireRole et journal", () => {
     it("laisse passer un utilisateur qui a le rôle demandé", async () => {
       const roles = await withAmapContext(
         db.app,
-        { amapId: amapA.id, userId: admin.id },
+        { amapId: amapA.id, userId: admin.id, secondFactorVerified: true },
         (tx, ctx) => requireRole(tx, ctx, ["admin"]),
       );
       expect(roles).toEqual(["admin"]);
@@ -79,17 +79,21 @@ describe("requireRole et journal", () => {
 
   describe("writeAuditLog", () => {
     it("écrit l'action et son journal ensemble", async () => {
-      await withAmapContext(db.app, { amapId: amapA.id, userId: admin.id }, async (tx, ctx) => {
-        await requireRole(tx, ctx, ["admin"]);
-        await tx.update(amap).set({ name: "AMAP A renommée" }).where(eq(amap.id, amapA.id));
-        await writeAuditLog(tx, ctx, {
-          entityType: "amap",
-          entityId: amapA.id,
-          action: "update",
-          before: { name: "AMAP amap-a" },
-          after: { name: "AMAP A renommée" },
-        });
-      });
+      await withAmapContext(
+        db.app,
+        { amapId: amapA.id, userId: admin.id, secondFactorVerified: true },
+        async (tx, ctx) => {
+          await requireRole(tx, ctx, ["admin"]);
+          await tx.update(amap).set({ name: "AMAP A renommée" }).where(eq(amap.id, amapA.id));
+          await writeAuditLog(tx, ctx, {
+            entityType: "amap",
+            entityId: amapA.id,
+            action: "update",
+            before: { name: "AMAP amap-a" },
+            after: { name: "AMAP A renommée" },
+          });
+        },
+      );
       const entries = await db.owner.select().from(auditLog).where(eq(auditLog.entityId, amapA.id));
       expect(entries).toHaveLength(1);
       expect(entries[0]).toMatchObject({ actorUserId: admin.id, action: "update" });
@@ -98,11 +102,15 @@ describe("requireRole et journal", () => {
     it("annule le journal si l'action échoue, et l'action si le journal échoue", async () => {
       const before = await db.owner.select().from(auditLog);
       await expect(
-        withAmapContext(db.app, { amapId: amapA.id, userId: admin.id }, async (tx, ctx) => {
-          await tx.update(amap).set({ name: "Jamais enregistré" }).where(eq(amap.id, amapA.id));
-          await writeAuditLog(tx, ctx, { entityType: "amap", entityId: amapA.id, action: "x" });
-          throw new Error("échec de l'action");
-        }),
+        withAmapContext(
+          db.app,
+          { amapId: amapA.id, userId: admin.id, secondFactorVerified: true },
+          async (tx, ctx) => {
+            await tx.update(amap).set({ name: "Jamais enregistré" }).where(eq(amap.id, amapA.id));
+            await writeAuditLog(tx, ctx, { entityType: "amap", entityId: amapA.id, action: "x" });
+            throw new Error("échec de l'action");
+          },
+        ),
       ).rejects.toThrow("échec de l'action");
 
       const after = await db.owner.select().from(auditLog);

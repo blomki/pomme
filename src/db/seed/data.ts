@@ -1,8 +1,8 @@
 /**
  * Jeu de données fictif, construit sans base de données (fonction pure, testée).
  *
- * Contenu actuel : 2 AMAP, 1 gestionnaire de la plateforme, 4 comptes de démonstration aux
- * adresses fixes (DEMO_ACCOUNTS), 40 amapiens par AMAP,
+ * Contenu actuel : 2 AMAP, 6 comptes de démonstration aux adresses fixes (DEMO_ACCOUNTS, dont
+ * le gestionnaire de la plateforme), 40 amapiens par AMAP,
  * des administrateurs et des référents, et une personne présente dans les deux AMAP.
  * À compléter au fil des stories : foyers et adhésions (40 par AMAP, A2/B1),
  * producteurs (6, C1), catalogues, commandes…
@@ -41,7 +41,26 @@ export type SeedAmap = {
 
 export type SeedRole = { id: string; amapId: string; userId: string; role: AmapRoleName };
 
-export type SeedData = { users: SeedUser[]; amaps: SeedAmap[]; roles: SeedRole[] };
+export type SeedData = {
+  users: SeedUser[];
+  amaps: SeedAmap[];
+  roles: SeedRole[];
+  /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
+  totpUserIds: string[];
+};
+
+/**
+ * Secret de l'application d'authentification des comptes de démonstration admin et
+ * gestionnaire. PUBLIC, connu de tous : uniquement pour des données fictives, en local et dans
+ * les tests. Clé à saisir dans une application (Base32) : voir le README.
+ */
+export const DEMO_TOTP_SECRET = "PommeDemoTotpNePasUtiliserEnProd";
+
+/** Codes de secours des mêmes comptes (tout aussi publics). */
+export const DEMO_BACKUP_CODES = Array.from(
+  { length: 10 },
+  (_, i) => `DEMO0-${String(i + 1).padStart(5, "0")}`,
+);
 
 const FIRST_NAMES = [
   "Camille",
@@ -109,14 +128,29 @@ const LAST_NAMES = [
   "Lemaire",
 ] as const;
 
-/** Comptes de démonstration (première AMAP). Les amapiens n'ont pas de rôle : ils en auront
- * un par leur foyer (story A2). */
+/**
+ * Comptes de démonstration (rôles dans la première AMAP). Les amapiens n'ont pas de rôle : ils
+ * en auront un par leur foyer (story A2).
+ * - admin.demo et gestionnaire.demo : application d'authentification déjà activée
+ *   (DEMO_TOTP_SECRET) pour passer la deuxième vérification ;
+ * - admin2.demo : admin sans moyen de vérification, pour tester sa création.
+ */
 export const DEMO_ACCOUNTS: ReadonlyArray<{
   email: string;
   firstName: string;
   role: AmapRoleName | null;
+  isPlatformAdmin?: boolean;
+  totp?: boolean;
 }> = [
-  { email: "admin.demo@example.org", firstName: "Alix", role: "admin" },
+  {
+    email: "gestionnaire.demo@example.org",
+    firstName: "Noa",
+    role: null,
+    isPlatformAdmin: true,
+    totp: true,
+  },
+  { email: "admin.demo@example.org", firstName: "Alix", role: "admin", totp: true },
+  { email: "admin2.demo@example.org", firstName: "Dominique", role: "admin" },
   { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
   { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
   { email: "amapien2.demo@example.org", firstName: "Charlie", role: null },
@@ -169,7 +203,7 @@ export function buildSeedData(): SeedData {
 
   const usedEmails = new Set<string>();
   let phoneCounter = 0;
-  const makeUser = (isPlatformAdmin = false): SeedUser => {
+  const makeUser = (): SeedUser => {
     const firstName = random.pick(FIRST_NAMES);
     const lastName = random.pick(LAST_NAMES);
     const base = `${toEmailPart(firstName)}.${toEmailPart(lastName)}`;
@@ -183,16 +217,13 @@ export function buildSeedData(): SeedData {
       firstName,
       lastName,
       phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
-      isPlatformAdmin,
+      isPlatformAdmin: false,
     };
   };
 
   const users: SeedUser[] = [];
   const amaps: SeedAmap[] = [];
   const roles: SeedRole[] = [];
-
-  const platformAdmin = makeUser(true);
-  users.push(platformAdmin);
 
   // Comptes de démonstration aux adresses fixes, pour se connecter facilement en local et dans
   // les tests de bout en bout (lien reçu dans Mailpit, http://localhost:8025).
@@ -204,10 +235,10 @@ export function buildSeedData(): SeedData {
       firstName: demo.firstName,
       lastName: "Démo",
       phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
-      isPlatformAdmin: false,
+      isPlatformAdmin: demo.isPlatformAdmin ?? false,
     };
     usedEmails.add(demo.email);
-    return { demoUser, role: demo.role };
+    return { demoUser, role: demo.role, totp: demo.totp ?? false };
   });
   users.push(...demoUsers.map(({ demoUser }) => demoUser));
 
@@ -254,5 +285,6 @@ export function buildSeedData(): SeedData {
   for (const amapRecord of amaps) {
     if (validateAmapSlug(amapRecord.slug)) throw new Error(`Adresse invalide : ${amapRecord.slug}`);
   }
-  return { users, amaps, roles };
+  const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
+  return { users, amaps, roles, totpUserIds };
 }

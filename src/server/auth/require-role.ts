@@ -4,8 +4,9 @@ import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
 import { amapRole } from "@/db/schema";
 import { hasAnyRole, type AmapRoleName } from "@/domain/roles";
+import { actionNeedsSecondFactor } from "@/domain/second-factor";
 
-import { ForbiddenError, UnauthenticatedError } from "./errors";
+import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from "./errors";
 
 /**
  * Vérifie que l'utilisateur connecté a l'un des rôles demandés dans l'AMAP courante,
@@ -17,6 +18,8 @@ import { ForbiddenError, UnauthenticatedError } from "./errors";
  *
  * @throws UnauthenticatedError si personne n'est connecté
  * @throws ForbiddenError si l'utilisateur n'a aucun des rôles demandés
+ * @throws SecondFactorRequiredError si seul son rôle d'admin lui donne accès et que la session
+ *   n'a pas eu de deuxième vérification (story A1)
  */
 export async function requireRole(
   tx: Transaction,
@@ -33,5 +36,8 @@ export async function requireRole(
   const roles = rows.map((row) => row.role);
 
   if (!hasAnyRole(roles, allowed)) throw new ForbiddenError();
+  if (actionNeedsSecondFactor(roles, allowed) && !ctx.secondFactorVerified) {
+    throw new SecondFactorRequiredError();
+  }
   return roles;
 }

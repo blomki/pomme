@@ -1,16 +1,23 @@
+import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
+import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { redirect } from "next/navigation";
 
 import { signOutAction, signOutEverywhereAction } from "@/server/auth/actions";
-import { requireSession } from "@/server/auth/session";
+import { getSecondFactorState, verificationUrl } from "@/server/auth/second-factor";
 import { PasskeyManager } from "@/ui/auth/PasskeyManager";
+import { TotpSection } from "@/ui/auth/TotpSection";
 
-// [domaine]/compte : mon compte (passkeys, déconnexion). Le profil complet viendra avec A3.
+// [domaine]/compte : mon compte (passkeys, application d'authentification, déconnexion).
+// Le profil complet viendra avec A3.
 export default async function AccountPage() {
-  const { user } = await requireSession();
+  const state = await getSecondFactorState();
+  if (!state) redirect("/connexion");
+  const { user, factors } = state;
   const t = await getTranslations("Auth.account");
   return (
     <Stack spacing={4}>
@@ -21,7 +28,29 @@ export default async function AccountPage() {
         <Typography>{t("signedInAs", { email: user.email })}</Typography>
       </div>
 
+      {state.status === "challenge" && (
+        <Alert
+          severity="info"
+          action={
+            <Button
+              component={Link}
+              href={verificationUrl("/compte")}
+              nativeButton={false}
+              color="inherit"
+              size="small"
+            >
+              {t("verifyNow")}
+            </Button>
+          }
+        >
+          {t("verifyFirst")}
+        </Alert>
+      )}
+
       <PasskeyManager />
+
+      {/* L'application ne sert qu'aux comptes soumis à la deuxième vérification. */}
+      {(factors.required || factors.totp) && <TotpSection active={factors.totp} />}
 
       <Divider />
 
