@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
-import { countMessagesTo, magicLinkSince } from "./helpers/mailpit";
+import { countMessagesTo, inboxSnapshot, newMagicLink } from "./helpers/mailpit";
 
 // Connexion sans mot de passe, avec les comptes de démonstration du jeu de données
 // (pnpm db:seed). Chaque projet de navigateur a son compte, pour ne pas se gêner.
@@ -24,11 +24,11 @@ test("connexion par lien magique au clavier, puis déconnexion de tous les appar
   // Clavier seul : saisie puis Entrée.
   await page.getByRole("textbox", { name: "Adresse email" }).focus();
   await page.keyboard.type(email);
-  const since = new Date();
+  const before = await inboxSnapshot(request, email);
   await page.keyboard.press("Enter");
   await expect(page.getByText(/un lien de connexion vient d'être envoyé/)).toBeVisible();
 
-  await page.goto(await magicLinkSince(request, email, since));
+  await page.goto(await newMagicLink(request, email, before));
   await expect(page).toHaveURL(/\/connexion\/bienvenue$/);
   await expect(page.getByRole("heading", { level: 1, name: /^Bienvenue/ })).toBeVisible();
   await expectNoSeriousA11yViolations(page);
@@ -48,9 +48,9 @@ test("un lien déjà utilisé est refusé", async ({ page, request }, testInfo) 
   const email = emailFor(testInfo.project.name);
   await page.goto("/connexion");
   await page.getByRole("textbox", { name: "Adresse email" }).fill(email);
-  const since = new Date();
+  const before = await inboxSnapshot(request, email);
   await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
-  const link = await magicLinkSince(request, email, since);
+  const link = await newMagicLink(request, email, before);
   await page.goto(link);
   await expect(page).toHaveURL(/\/connexion\/bienvenue$/);
   await page.context().clearCookies();
@@ -88,9 +88,9 @@ test("passkey : création après connexion, puis connexion sans email", async ({
   const email = emailFor(testInfo.project.name);
   await page.goto("/connexion");
   await page.getByRole("textbox", { name: "Adresse email" }).fill(email);
-  const since = new Date();
+  const before = await inboxSnapshot(request, email);
   await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
-  await page.goto(await magicLinkSince(request, email, since));
+  await page.goto(await newMagicLink(request, email, before));
 
   await page.getByRole("button", { name: "Créer une passkey" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
