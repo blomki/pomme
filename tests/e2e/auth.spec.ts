@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
 import { countMessagesTo, magicLinkSince } from "./helpers/mailpit";

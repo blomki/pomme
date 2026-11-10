@@ -101,7 +101,7 @@ export const user = pgTable(
     id: id(),
     email: text("email").notNull().unique(),
     firstName: text("first_name").notNull(),
-    lastName: text("last_name").notNull(),
+    lastName: text("last_name").notNull().default(""),
     // Format international (+33…) : nécessaire pour les liens « Écrire sur Signal ».
     phone: text("phone"),
     // Noms de propriétés imposés par Better Auth (emailVerified, image).
@@ -292,14 +292,17 @@ export const account = pgTable(
 export const verification = pgTable(
   "verification",
   {
-    id: uuid("id").primaryKey(),
+    id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
-  (t) => [index("verification_identifier_idx").on(t.identifier), authFullAccess("verification_auth")],
+  (t) => [
+    index("verification_identifier_idx").on(t.identifier),
+    authFullAccess("verification_auth"),
+  ],
 );
 
 /** Passkey enregistrée par un utilisateur (clé publique seulement : la clé privée reste sur l'appareil). */

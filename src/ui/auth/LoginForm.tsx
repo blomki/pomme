@@ -16,7 +16,11 @@ import type { RequestMagicLinkState } from "@/server/auth/request-magic-link";
 import { authClient } from "./auth-client";
 
 /** Formulaire de connexion : lien magique par email, ou passkey. */
-export function LoginForm({ notice }: { notice?: "linkError" | "signedOut" | "signedOutEverywhere" }) {
+export function LoginForm({
+  notice,
+}: {
+  notice?: "linkError" | "signedOut" | "signedOutEverywhere";
+}) {
   const t = useTranslations("Auth.login");
   const router = useRouter();
   const [state, formAction, pending] = useActionState<RequestMagicLinkState, FormData>(
@@ -39,7 +43,9 @@ export function LoginForm({ notice }: { notice?: "linkError" | "signedOut" | "si
   return (
     <Stack spacing={3} sx={{ maxWidth: 480 }}>
       {notice && (
-        <Alert severity={notice === "linkError" ? "warning" : "info"}>{t(`notice.${notice}`)}</Alert>
+        <Alert severity={notice === "linkError" ? "warning" : "info"}>
+          {t(`notice.${notice}`)}
+        </Alert>
       )}
 
       <Stack component="form" action={formAction} spacing={2} noValidate>

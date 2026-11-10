@@ -16,7 +16,11 @@ describe("Connexion sans mot de passe (Better Auth)", () => {
 
   const requestLink = async (email: string) => {
     await auth.api.signInMagicLink({
-      body: { email, callbackURL: "/connexion/bienvenue", errorCallbackURL: "/connexion?erreur=lien" },
+      body: {
+        email,
+        callbackURL: "/connexion/bienvenue",
+        errorCallbackURL: "/connexion?erreur=lien",
+      },
       headers: new Headers(),
     });
     const last = sent.at(-1);
@@ -33,9 +37,7 @@ describe("Connexion sans mot de passe (Better Auth)", () => {
     });
 
   const sessionCookie = (response: Response) =>
-    response.headers
-      .getSetCookie()
-      .find((cookie) => cookie.startsWith("pomme.session_token="));
+    response.headers.getSetCookie().find((cookie) => cookie.startsWith("pomme.session_token="));
 
   beforeAll(async () => {
     db = await startDatabase();

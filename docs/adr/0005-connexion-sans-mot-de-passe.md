@@ -33,7 +33,7 @@ de passe, et une deuxième vérification pour les administrateurs.
 ## Pourquoi
 
 - Le lien magique repose sur la boîte email, déjà protégée par la plupart des gens ; la
-   passkey est résistante à l'hameçonnage et plus rapide au quotidien.
+  passkey est résistante à l'hameçonnage et plus rapide au quotidien.
 - Better Auth est maintenu, typé, fonctionne avec Drizzle et Next.js, et couvre les trois
   besoins (lien, passkey, 2FA) sans service tiers.
 - Isoler les jetons dans un rôle dédié limite les dégâts d'une faille dans le reste du code.

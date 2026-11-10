@@ -27,14 +27,20 @@ export function PasskeyManager() {
   const showSnackbar = useSnackbar();
   const [passkeys, setPasskeys] = useState<Passkey[] | null>(null);
 
-  const load = useCallback(async () => {
+  const fetchPasskeys = useCallback(async () => {
     const result = await authClient.passkey.listUserPasskeys();
-    setPasskeys((result.data as Passkey[] | null) ?? []);
+    return (result.data as Passkey[] | null) ?? [];
   }, []);
 
   useEffect(() => {
-    void load();
-  }, [load]);
+    let active = true;
+    void fetchPasskeys().then((items) => {
+      if (active) setPasskeys(items);
+    });
+    return () => {
+      active = false;
+    };
+  }, [fetchPasskeys]);
 
   const add = async () => {
     const result = await authClient.passkey.addPasskey();
@@ -43,13 +49,13 @@ export function PasskeyManager() {
       return;
     }
     showSnackbar({ message: t("passkeyAdded") });
-    await load();
+    setPasskeys(await fetchPasskeys());
   };
 
   const remove = async (id: string) => {
     await authClient.passkey.deletePasskey({ id });
     showSnackbar({ message: t("passkeyDeleted") });
-    await load();
+    setPasskeys(await fetchPasskeys());
   };
 
   return (
@@ -69,7 +75,9 @@ export function PasskeyManager() {
               secondaryAction={
                 <IconButton
                   edge="end"
-                  aria-label={t("deletePasskey", { name: item.name || t("passkeyName", { n: index + 1 }) })}
+                  aria-label={t("deletePasskey", {
+                    name: item.name || t("passkeyName", { n: index + 1 }),
+                  })}
                   onClick={() => remove(item.id)}
                 >
                   <DeleteOutlined />
@@ -81,7 +89,9 @@ export function PasskeyManager() {
               </ListItemIcon>
               <ListItemText
                 primary={item.name || t("passkeyName", { n: index + 1 })}
-                secondary={item.createdAt ? t("createdOn", { date: formatDate(item.createdAt) }) : null}
+                secondary={
+                  item.createdAt ? t("createdOn", { date: formatDate(item.createdAt) }) : null
+                }
               />
             </ListItem>
           ))}
