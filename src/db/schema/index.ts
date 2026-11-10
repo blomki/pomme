@@ -21,7 +21,9 @@ import {
   index,
   jsonb,
   pgEnum,
+  integer,
   pgPolicy,
+  pgRole,
   pgTable,
   text,
   timestamp,
@@ -41,6 +43,17 @@ import { uuidv7 } from "../uuid";
 const currentAmapId = sql`nullif(current_setting('app.amap_id', true), '')::uuid`;
 /** Utilisateur connecté. */
 const currentUserId = sql`nullif(current_setting('app.user_id', true), '')::uuid`;
+
+/**
+ * Rôle PostgreSQL de Better Auth (comptes, sessions, passkeys), créé par « pnpm db:setup ».
+ * Seul à pouvoir lire les tables de connexion : même une faille dans le reste de
+ * l'application (rôle pomme_app) ne donnerait pas accès aux jetons de session.
+ */
+export const authRole = pgRole("pomme_auth").existing();
+
+/** Accès complet pour Better Auth, qui gère lui-même les comptes et les sessions. */
+const authFullAccess = (name: string) =>
+  pgPolicy(name, { for: "all", to: authRole, using: sql`true`, withCheck: sql`true` });
 
 // --- Colonnes communes -----------------------------------------------------------------------
 
@@ -79,8 +92,8 @@ export type AmapSettings = {
 };
 
 // --- user : utilisateur ----------------------------------------------------------------------
-// Compte unique sur la plateforme, partagé entre AMAP. Les sessions et jetons de connexion
-// seront gérés par Better Auth (story A1), dans ses propres tables.
+// Compte unique sur la plateforme, partagé entre AMAP. Better Auth lit et met à jour cette
+// table (connexion) ; ses sessions et jetons sont dans les tables de la fin de ce fichier.
 
 export const user = pgTable(
   "user",
@@ -88,10 +101,12 @@ export const user = pgTable(
     id: id(),
     email: text("email").notNull().unique(),
     firstName: text("first_name").notNull(),
-    lastName: text("last_name").notNull(),
+    lastName: text("last_name").notNull().default(""),
     // Format international (+33…) : nécessaire pour les liens « Écrire sur Signal ».
     phone: text("phone"),
-    emailVerifiedAt: timestamp("email_verified_at", { withTimezone: true }),
+    // Noms de propriétés imposés par Better Auth (emailVerified, image).
+    emailVerified: boolean("email_verified").notNull().default(false),
+    image: text("image"),
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
@@ -119,6 +134,8 @@ export const user = pgTable(
       using: sql`"user"."id" = ${currentUserId}`,
       withCheck: sql`"user"."id" = ${currentUserId} and "user"."is_platform_admin" = false`,
     }),
+    // Better Auth retrouve un compte par son email avant toute connexion (sans contexte).
+    authFullAccess("user_auth"),
   ],
 );
 
@@ -223,4 +240,88 @@ export const auditLog = pgTable(
         and ${t.actorUserId} is not distinct from ${currentUserId}`,
     }),
   ],
+);
+
+// --- Tables de Better Auth (connexion) -------------------------------------------------------
+// Structure imposée par Better Auth (noms de propriétés), colonnes en snake_case.
+// RLS : seul le rôle pomme_auth y a accès ; le rôle de l'application, aucun.
+
+/** Session ouverte sur un appareil (cookie HttpOnly). */
+export const session = pgTable(
+  "session",
+  {
+    id: uuid("id").primaryKey(),
+    token: text("token").notNull().unique(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("session_user_idx").on(t.userId), authFullAccess("session_auth")],
+);
+
+/** Moyens de connexion rattachés à un compte (Better Auth en a besoin même sans mot de passe). */
+export const account = pgTable(
+  "account",
+  {
+    id: uuid("id").primaryKey(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    accountId: text("account_id").notNull(),
+    providerId: text("provider_id").notNull(),
+    accessToken: text("access_token"),
+    refreshToken: text("refresh_token"),
+    idToken: text("id_token"),
+    accessTokenExpiresAt: timestamp("access_token_expires_at", { withTimezone: true }),
+    refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { withTimezone: true }),
+    scope: text("scope"),
+    // Toujours vide : Pomme n'utilise aucun mot de passe. Colonne exigée par Better Auth.
+    password: text("password"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [index("account_user_idx").on(t.userId), authFullAccess("account_auth")],
+);
+
+/** Jetons à usage unique (liens magiques), stockés hachés. */
+export const verification = pgTable(
+  "verification",
+  {
+    id: text("id").primaryKey(),
+    identifier: text("identifier").notNull(),
+    value: text("value").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("verification_identifier_idx").on(t.identifier),
+    authFullAccess("verification_auth"),
+  ],
+);
+
+/** Passkey enregistrée par un utilisateur (clé publique seulement : la clé privée reste sur l'appareil). */
+export const passkey = pgTable(
+  "passkey",
+  {
+    id: uuid("id").primaryKey(),
+    name: text("name"),
+    publicKey: text("public_key").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    credentialID: text("credential_id").notNull().unique(),
+    counter: integer("counter").notNull(),
+    deviceType: text("device_type").notNull(),
+    backedUp: boolean("backed_up").notNull(),
+    transports: text("transports"),
+    aaguid: text("aaguid"),
+    createdAt: timestamp("created_at", { withTimezone: true }),
+  },
+  (t) => [index("passkey_user_idx").on(t.userId), authFullAccess("passkey_auth")],
 );

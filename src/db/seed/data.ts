@@ -1,7 +1,8 @@
 /**
  * Jeu de données fictif, construit sans base de données (fonction pure, testée).
  *
- * Contenu actuel : 2 AMAP, 1 gestionnaire de la plateforme, 40 amapiens par AMAP,
+ * Contenu actuel : 2 AMAP, 1 gestionnaire de la plateforme, 4 comptes de démonstration aux
+ * adresses fixes (DEMO_ACCOUNTS), 40 amapiens par AMAP,
  * des administrateurs et des référents, et une personne présente dans les deux AMAP.
  * À compléter au fil des stories : foyers et adhésions (40 par AMAP, A2/B1),
  * producteurs (6, C1), catalogues, commandes…
@@ -108,6 +109,19 @@ const LAST_NAMES = [
   "Lemaire",
 ] as const;
 
+/** Comptes de démonstration (première AMAP). Les amapiens n'ont pas de rôle : ils en auront
+ * un par leur foyer (story A2). */
+export const DEMO_ACCOUNTS: ReadonlyArray<{
+  email: string;
+  firstName: string;
+  role: AmapRoleName | null;
+}> = [
+  { email: "admin.demo@example.org", firstName: "Alix", role: "admin" },
+  { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
+  { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
+  { email: "amapien2.demo@example.org", firstName: "Charlie", role: null },
+];
+
 const DEFAULT_SETTINGS: AmapSettings = {
   volunteersPerDistribution: 3,
   experiencedThreshold: 6,
@@ -180,6 +194,23 @@ export function buildSeedData(): SeedData {
   const platformAdmin = makeUser(true);
   users.push(platformAdmin);
 
+  // Comptes de démonstration aux adresses fixes, pour se connecter facilement en local et dans
+  // les tests de bout en bout (lien reçu dans Mailpit, http://localhost:8025).
+  const demoUsers = DEMO_ACCOUNTS.map((demo) => {
+    phoneCounter += 1;
+    const demoUser: SeedUser = {
+      id: nextId(),
+      email: demo.email,
+      firstName: demo.firstName,
+      lastName: "Démo",
+      phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
+      isPlatformAdmin: false,
+    };
+    usedEmails.add(demo.email);
+    return { demoUser, role: demo.role };
+  });
+  users.push(...demoUsers.map(({ demoUser }) => demoUser));
+
   const membersByAmap: SeedUser[][] = [];
   for (const definition of AMAPS) {
     const amapRecord: SeedAmap = {
@@ -203,6 +234,13 @@ export function buildSeedData(): SeedData {
     members.slice(definition.admins, definition.admins + definition.referents).forEach((member) => {
       roles.push({ id: nextId(), amapId: amapRecord.id, userId: member.id, role: "referent" });
     });
+  }
+
+  const firstAmap = amaps[0];
+  if (firstAmap) {
+    for (const { demoUser, role } of demoUsers) {
+      if (role) roles.push({ id: nextId(), amapId: firstAmap.id, userId: demoUser.id, role });
+    }
   }
 
   // Cas multi-AMAP : le premier administrateur de la première AMAP est aussi référent

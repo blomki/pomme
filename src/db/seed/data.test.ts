@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { validateAmapSlug } from "@/domain/amap-slug";
 
-import { buildSeedData, MEMBERS_PER_AMAP } from "./data";
+import { buildSeedData, DEMO_ACCOUNTS, MEMBERS_PER_AMAP } from "./data";
 import { assertSeedAllowed } from "./index";
 
 describe("buildSeedData", () => {
@@ -14,8 +14,13 @@ describe("buildSeedData", () => {
   });
 
   it("crée 40 amapiens par AMAP et un gestionnaire de la plateforme", () => {
-    expect(data.users).toHaveLength(2 * MEMBERS_PER_AMAP + 1);
+    expect(data.users).toHaveLength(2 * MEMBERS_PER_AMAP + 1 + DEMO_ACCOUNTS.length);
     expect(data.users.filter((u) => u.isPlatformAdmin)).toHaveLength(1);
+  });
+
+  it("contient les comptes de démonstration aux adresses fixes", () => {
+    const emails = data.users.map((u) => u.email);
+    for (const demo of DEMO_ACCOUNTS) expect(emails).toContain(demo.email);
   });
 
   it("est reproductible", () => {
