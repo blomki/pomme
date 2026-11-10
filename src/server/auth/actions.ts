@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 
 import { user } from "@/db/schema";
 
+import { CAPTCHA_FIELD, captchaConfig, verifyCaptcha } from "../captcha";
 import { createRateLimiter } from "../rate-limit";
 
 import { getAuthInstance } from "./auth";
@@ -29,6 +30,7 @@ export async function requestMagicLinkAction(
   return requestMagicLink(
     { email: formData.get("email"), ip: clientIp(requestHeaders) },
     {
+      verifyCaptcha: () => verifyCaptcha(formData.get(CAPTCHA_FIELD), captchaConfig()),
       emailLimiter,
       ipLimiter,
       userExists: async (email) => {

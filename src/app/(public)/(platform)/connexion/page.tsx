@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
 import { getCurrentSession } from "@/server/auth/session";
+import { captchaConfig } from "@/server/captcha";
 import { LoginForm } from "@/ui/auth/LoginForm";
 
 type Props = { searchParams: Promise<{ erreur?: string; deconnexion?: string }> };
@@ -26,7 +27,7 @@ export default async function LoginPage({ searchParams }: Props) {
         {t("title")}
       </Typography>
       <Typography sx={{ mb: 3 }}>{t("intro")}</Typography>
-      <LoginForm notice={notice} />
+      <LoginForm notice={notice} captchaSitekey={captchaConfig()?.sitekey ?? null} />
     </>
   );
 }

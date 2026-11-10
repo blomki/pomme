@@ -13,13 +13,18 @@ import { useActionState, useState } from "react";
 import { requestMagicLinkAction } from "@/server/auth/actions";
 import type { RequestMagicLinkState } from "@/server/auth/request-magic-link";
 
+import { Captcha } from "../forms/Captcha";
+
 import { authClient } from "./auth-client";
 
 /** Formulaire de connexion : lien magique par email, ou passkey. */
 export function LoginForm({
   notice,
+  captchaSitekey,
 }: {
   notice?: "linkError" | "signedOut" | "signedOutEverywhere";
+  /** Clé publique Friendly Captcha ; null si le captcha est désactivé. */
+  captchaSitekey: string | null;
 }) {
   const t = useTranslations("Auth.login");
   const router = useRouter();
@@ -58,12 +63,14 @@ export function LoginForm({
           error={state.status === "invalid"}
           helperText={state.status === "invalid" ? t("invalid") : t("emailHelp")}
         />
+        <Captcha sitekey={captchaSitekey} resetKey={state} />
         <Button type="submit" variant="contained" disabled={pending}>
           {t("submit")}
         </Button>
         <div role="status" aria-live="polite">
           {state.status === "sent" && <Alert severity="success">{t("sent")}</Alert>}
           {state.status === "rate_limited" && <Alert severity="warning">{t("rateLimited")}</Alert>}
+          {state.status === "captcha" && <Alert severity="warning">{t("captcha")}</Alert>}
         </div>
       </Stack>
 

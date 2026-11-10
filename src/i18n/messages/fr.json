@@ -159,7 +159,8 @@
         "linkError": "Ce lien de connexion n'est plus valable (déjà utilisé ou expiré). Demandez-en un nouveau.",
         "signedOut": "Vous êtes déconnecté.",
         "signedOutEverywhere": "Vous êtes déconnecté de tous vos appareils."
-      }
+      },
+      "captcha": "La vérification anti-robot n'est pas terminée ou n'a pas abouti. Patientez quelques secondes, puis renvoyez le formulaire."
     },
     "welcome": {
       "title": "Bienvenue, {name}",
