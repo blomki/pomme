@@ -11,6 +11,8 @@ import { uuidv7 } from "@/db/uuid";
 import { magicLinkEmail } from "../email/magic-link-email";
 import { sendEmail } from "../email/mailer";
 
+import { AUTH_RATE_LIMIT_FACTOR } from "./rate-limit-factor";
+
 /** Durée de validité d'un lien de connexion : 15 minutes. */
 export const MAGIC_LINK_TTL_MINUTES = 15;
 /** Durée d'une session sans activité avant reconnexion : 30 jours, prolongée chaque jour d'usage. */
@@ -61,6 +63,10 @@ export function createAuth(options: AuthOptions) {
         disableSignUp: true,
         storeToken: "hashed",
         sendMagicLink: ({ email, url: link }) => options.sendMagicLink(email, link),
+        // Limiteur propre à Better Auth, actif en production seulement : 5 ouvertures de lien
+        // par minute et par adresse IP (contre les essais de jetons au hasard). Assoupli comme
+        // le nôtre pour les tests de bout en bout, qui tournent avec `pnpm start` en CI.
+        rateLimit: { window: 60, max: 5 * AUTH_RATE_LIMIT_FACTOR },
       }),
       passkey({ rpID: url.hostname, rpName: "Pomme", origin: url.origin }),
       // Permet aux Server Actions de poser et d'effacer les cookies de session.

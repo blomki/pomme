@@ -10,13 +10,12 @@ import { createRateLimiter } from "../rate-limit";
 
 import { getAuthInstance } from "./auth";
 import { clientIp } from "./client-ip";
+import { AUTH_RATE_LIMIT_FACTOR } from "./rate-limit-factor";
 import { requestMagicLink, type RequestMagicLinkState } from "./request-magic-link";
 
 // Par quart d'heure : 3 liens par adresse email et 10 demandes par adresse IP en production.
-// Plus souple en développement et dans les tests de bout en bout (AUTH_RATE_LIMIT_FACTOR),
-// qui demandent beaucoup de liens pour les mêmes comptes de démonstration.
-const factor =
-  Number(process.env.AUTH_RATE_LIMIT_FACTOR) || (process.env.NODE_ENV === "production" ? 1 : 10);
+// Plus souple en développement et dans les tests de bout en bout (voir rate-limit-factor.ts).
+const factor = AUTH_RATE_LIMIT_FACTOR;
 const emailLimiter = createRateLimiter({ limit: 3 * factor, windowMs: 15 * 60 * 1000 });
 const ipLimiter = createRateLimiter({ limit: 10 * factor, windowMs: 15 * 60 * 1000 });
 

@@ -38,3 +38,8 @@ Thumbs.db
 
 # Déploiement
 .vercel
+
+# Spécifications (PDF, gardés en local, hors du dépôt public)
+docs/specs/
+# Fichiers parasites de Windows (WSL)
+*:Zone.Identifier
