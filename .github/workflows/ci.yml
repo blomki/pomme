@@ -100,7 +100,7 @@ jobs:
       BETTER_AUTH_SECRET: secret-de-la-ci-uniquement-pour-les-tests-e2e
       SMTP_URL: smtp://localhost:1025
       EMAIL_FROM: Pomme <ne-pas-repondre@example.org>
-      AUTH_RATE_LIMIT_FACTOR: "10"
+      RATE_LIMIT_FACTOR: "10"
       POMME_DEMO_PAGES: "1"
     steps:
       - uses: actions/checkout@v5

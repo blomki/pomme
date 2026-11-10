@@ -47,7 +47,7 @@ de passe, et une deuxième vérification pour les administrateurs.
    personne fermées. La RLS (`user_update_by_amap_admin`) limite la correction aux personnes
    qui ont un rôle dans l'AMAP courante, et l'interdit sur le compte d'un gestionnaire.
 9. **Emails** par SMTP : Mailpit en local (http://localhost:8025), relais SMTP de Brevo en
-   production (fiche S5, avec le journal des envois et les modèles aux couleurs de l'AMAP).
+   production ; journal des envois et gabarit commun : voir ADR 0006.
 
 ## Pourquoi
 

@@ -10,14 +10,14 @@ import { normalizeTotpCode } from "@/domain/second-factor";
 import { createRateLimiter } from "../rate-limit";
 
 import { getAuthInstance } from "./auth";
-import { AUTH_RATE_LIMIT_FACTOR } from "./rate-limit-factor";
+import { RATE_LIMIT_FACTOR } from "../rate-limit-factor";
 import { markSessionVerified } from "./second-factor-facts";
 import { getCurrentSession } from "./session";
 import { verifySecondFactor, type VerifySecondFactorState } from "./verify-second-factor";
 
 // 5 codes par compte et par quart d'heure : deviner un code à 6 chiffres devient impossible.
 const codeLimiter = createRateLimiter({
-  limit: 5 * AUTH_RATE_LIMIT_FACTOR,
+  limit: 5 * RATE_LIMIT_FACTOR,
   windowMs: 15 * 60 * 1000,
 });
 

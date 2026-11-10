@@ -235,10 +235,12 @@
     "magicLink": {
       "subject": "Votre lien de connexion à Pomme",
       "greeting": "Bonjour,",
-      "intro": "Voici votre lien pour vous connecter à Pomme :",
+      "intro": "Voici votre lien pour vous connecter à Pomme.",
       "button": "Me connecter",
       "validity": "Ce lien est valable {minutes} minutes et ne fonctionne qu'une fois.",
-      "ignore": "Si vous n'avez rien demandé, ignorez cet email : personne ne peut se connecter sans ce lien."
+      "ignore": "Si vous n'avez rien demandé, ignorez cet email : personne ne peut se connecter sans ce lien.",
+      "preview": "Votre lien de connexion, valable {minutes} minutes.",
+      "footer": "Vous recevez cet email parce qu'une connexion a été demandée avec votre adresse."
     }
   },
   "Roles": {
