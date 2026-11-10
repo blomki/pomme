@@ -24,6 +24,7 @@ describe("Migrations", () => {
       "amap",
       "amap_role",
       "audit_log",
+      "notification_log",
       "passkey",
       "session",
       "two_factor",

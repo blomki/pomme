@@ -3,6 +3,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { nextCookies } from "better-auth/next-js";
 import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
+import { eq } from "drizzle-orm";
 import { magicLink, twoFactor } from "better-auth/plugins";
 
 import { createDatabase, type Database } from "@/db/client";
@@ -18,9 +19,9 @@ import { canManageFactors } from "@/domain/second-factor";
 import { uuidv7 } from "@/db/uuid";
 
 import { magicLinkEmail } from "../email/magic-link-email";
-import { sendEmail } from "../email/mailer";
+import { sendNotification } from "../email/notify";
 
-import { AUTH_RATE_LIMIT_FACTOR } from "./rate-limit-factor";
+import { RATE_LIMIT_FACTOR } from "../rate-limit-factor";
 import { loadAccountFactors, markSessionVerified, toFacts } from "./second-factor-facts";
 
 /** Connexions qui valent deuxième vérification : passkey, ou activation de l'application. */
@@ -151,7 +152,7 @@ export function createAuth(options: AuthOptions) {
         // Limiteur propre à Better Auth, actif en production seulement : 5 ouvertures de lien
         // par minute et par adresse IP (contre les essais de jetons au hasard). Assoupli comme
         // le nôtre pour les tests de bout en bout, qui tournent avec `pnpm start` en CI.
-        rateLimit: { window: 60, max: 5 * AUTH_RATE_LIMIT_FACTOR },
+        rateLimit: { window: 60, max: 5 * RATE_LIMIT_FACTOR },
       }),
       passkey({ rpID: url.hostname, rpName: "Pomme", origin: url.origin }),
       twoFactor({
@@ -185,8 +186,18 @@ export function getAuthInstance(): { auth: Auth; db: Database } {
       db,
       baseURL: requireEnv("BETTER_AUTH_URL"),
       secret: requireEnv("BETTER_AUTH_SECRET"),
-      sendMagicLink: (email, link) =>
-        sendEmail(email, magicLinkEmail(link, MAGIC_LINK_TTL_MINUTES)),
+      sendMagicLink: async (email, link) => {
+        // Email de la plateforme (aucune AMAP), tracé avec la connexion de Better Auth.
+        const [account] = await db.select({ id: user.id }).from(user).where(eq(user.email, email));
+        const result = await sendNotification(db, {
+          amapId: null,
+          userId: account?.id ?? null,
+          template: "magic_link",
+          to: email,
+          content: magicLinkEmail(link, MAGIC_LINK_TTL_MINUTES),
+        });
+        if (result.status === "failed") throw new Error("Le lien de connexion n'a pas pu partir.");
+      },
     });
     instance = { auth, db };
   }

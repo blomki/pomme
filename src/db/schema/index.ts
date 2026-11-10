@@ -28,9 +28,11 @@ import {
   text,
   timestamp,
   unique,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
+import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { AMAP_ROLES } from "@/domain/roles";
 
 import { uuidv7 } from "../uuid";
@@ -260,6 +262,61 @@ export const auditLog = pgTable(
       for: "insert",
       withCheck: sql`${t.amapId} = ${currentAmapId}
         and ${t.actorUserId} is not distinct from ${currentUserId}`,
+    }),
+  ],
+);
+
+// --- notification_log : journal des emails --------------------------------------------------
+// Une ligne par email envoyé (ou tenté) : sert à tracer les envois et à ne jamais relancer deux
+// fois (index unique sur la clé de dédoublonnage). Jamais supprimée ni archivée : c'est un
+// journal, comme audit_log. Le contenu de l'email n'est pas conservé (il peut contenir un lien
+// de connexion).
+
+export const notificationStatus = pgEnum("notification_status", NOTIFICATION_STATUSES);
+
+export const notificationLog = pgTable(
+  "notification_log",
+  {
+    id: id(),
+    // Vide pour les emails de la plateforme (lien de connexion), qui ne dépendent d'aucune AMAP.
+    amapId: uuid("amap_id").references(() => amap.id),
+    // Destinataire (compte), s'il est connu.
+    userId: uuid("user_id").references(() => user.id, { onDelete: "set null" }),
+    template: text("template").notNull(), // ex. "magic_link", "order_reminder"
+    // Même clé = même email pour la même occasion : envoyé une seule fois (voir domain/notifications).
+    dedupeKey: text("dedupe_key"),
+    status: notificationStatus("status").notNull().default("pending"),
+    providerId: text("provider_id"), // identifiant du message chez Brevo
+    error: text("error"),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    uniqueIndex("notification_log_dedupe_idx")
+      .on(t.amapId, t.dedupeKey)
+      .where(sql`${t.dedupeKey} is not null and ${t.status} in ('pending', 'sent')`),
+    index("notification_log_user_idx").on(t.userId),
+    // Emails d'une AMAP : seulement dans l'AMAP courante. Pas de suppression (journal).
+    pgPolicy("notification_log_select", {
+      for: "select",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+    pgPolicy("notification_log_insert", {
+      for: "insert",
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+    pgPolicy("notification_log_update", {
+      for: "update",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+    // Emails de la plateforme (connexion) : écrits par Better Auth, rôle pomme_auth.
+    pgPolicy("notification_log_platform_auth", {
+      for: "all",
+      to: authRole,
+      using: sql`${t.amapId} is null`,
+      withCheck: sql`${t.amapId} is null`,
     }),
   ],
 );
