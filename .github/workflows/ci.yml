@@ -101,6 +101,8 @@ jobs:
       SMTP_URL: smtp://localhost:1025
       EMAIL_FROM: Pomme <ne-pas-repondre@example.org>
       RATE_LIMIT_FACTOR: "10"
+      # Build de production sans clés Friendly Captcha : captcha désactivé (ADR 0007).
+      CAPTCHA_DISABLED: "1"
       POMME_DEMO_PAGES: "1"
     steps:
       - uses: actions/checkout@v5
