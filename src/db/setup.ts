@@ -1,5 +1,7 @@
 import { Client } from "pg";
 
+import { poolConfig } from "./client";
+
 /**
  * Prépare un rôle PostgreSQL de connexion restreint, une fois par base.
  *
@@ -8,8 +10,11 @@ import { Client } from "pg";
  *   applique pas la Row Level Security de ses propres tables ;
  * - pomme_app, utilisé par l'application, et pomme_auth, utilisé par Better Auth, peuvent lire
  *   et écrire les tables que leurs politiques RLS leur ouvrent, mais n'en sont pas
- *   propriétaires : ils ne peuvent ni désactiver la RLS, ni la contourner (NOBYPASSRLS), ni
- *   créer ou modifier des tables.
+ *   propriétaires : ils ne peuvent ni désactiver la RLS, ni la contourner (pas de BYPASSRLS,
+ *   vérifié par assertRestricted), ni créer ou modifier des tables.
+ *
+ * Le propriétaire n'a pas besoin d'être super-utilisateur : le droit CREATEROLE suffit (c'est
+ * le cas de l'utilisateur admin de Scaleway, ADR 0008).
  *
  * Idempotent : peut être relancé sans risque (par exemple pour changer le mot de passe).
  * À lancer AVANT les migrations : les politiques RLS citent pomme_auth.
@@ -22,7 +27,7 @@ export async function setupRole(params: {
   const { appUser, appPassword } = params;
   if (!/^[a-z_][a-z0-9_]*$/.test(appUser)) throw new Error(`Nom de rôle invalide : ${appUser}`);
 
-  const client = new Client({ connectionString: params.ownerUrl });
+  const client = new Client(poolConfig(params.ownerUrl));
   await client.connect();
   try {
     const role = client.escapeIdentifier(appUser);
@@ -34,9 +39,10 @@ export async function setupRole(params: {
     // le nom et le mot de passe sont protégés par escapeIdentifier et escapeLiteral.
     if (exists.rowCount === 0) await client.query(`create role ${role}`);
     await client.query(
-      `alter role ${role} with login nosuperuser nocreatedb nocreaterole noreplication
-         nobypassrls password ${client.escapeLiteral(appPassword)}`,
+      `alter role ${role} with login nocreatedb nocreaterole
+         password ${client.escapeLiteral(appPassword)}`,
     );
+    await assertRestricted(client, appUser);
     await client.query(`grant connect on database ${database} to ${role}`);
     await client.query(`grant usage on schema public to ${role}`);
     await client.query(
@@ -50,6 +56,29 @@ export async function setupRole(params: {
     );
   } finally {
     await client.end();
+  }
+}
+
+/**
+ * Vérifie que le rôle n'a aucun pouvoir de contournement.
+ *
+ * On ne peut pas les retirer nous-mêmes : chez Scaleway (ADR 0008), le propriétaire n'est pas
+ * super-utilisateur, et PostgreSQL lui interdit même d'ÉCRIRE « nosuperuser » ou « nobypassrls ».
+ * Un rôle qu'il crée n'a de toute façon pas ces pouvoirs. Si quelqu'un les lui avait donnés
+ * (à la main), on s'arrête plutôt que de démarrer avec une isolation entre AMAP percée.
+ */
+async function assertRestricted(client: Client, appUser: string): Promise<void> {
+  const { rows } = await client.query<Record<string, boolean>>(
+    `select rolsuper, rolbypassrls, rolreplication, rolcreaterole, rolcreatedb
+       from pg_roles where rolname = $1`,
+    [appUser],
+  );
+  const powers = Object.entries(rows[0] ?? {}).filter(([, granted]) => granted);
+  if (powers.length > 0) {
+    throw new Error(
+      `Le rôle ${appUser} a des droits qu'il ne doit pas avoir (${powers.map(([p]) => p).join(", ")}) : ` +
+        "les retirer avec un super-utilisateur.",
+    );
   }
 }
 

@@ -55,5 +55,5 @@ seulement dans le code (un oubli suffit à exposer des données).
 - Retrouver un compte existant par son email, hors de l'AMAP courante (invitation, story A2),
   et créer une AMAP (story J1) demanderont chacun une fonction de base dédiée
   (`SECURITY DEFINER`), aux droits limités à cette seule opération.
-- En production, l'hébergeur doit permettre de créer le rôle `pomme_app` (à vérifier avec
-  Clever Cloud, fiche S7).
+- En production, l'hébergeur doit permettre de créer les rôles `pomme_app` et `pomme_auth` :
+  ce n'est pas le cas de la base de Clever Cloud, d'où une base chez Scaleway (ADR 0008).
