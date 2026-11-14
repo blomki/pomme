@@ -1,0 +1,74 @@
+# Mise en production, par un bouton : Actions › « Déployer en production » › Run workflow
+# (ADR 0008, docs/deploiement.md).
+#
+# Garde-fous :
+# 1. le commit demandé doit avoir été déployé avec succès en pré-production (job de ci.yml) ;
+# 2. l'environnement GitHub « production » exige l'approbation du responsable du projet.
+name: Déployer en production
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "Commit à mettre en production (déjà déployé en pré-production)"
+        required: true
+        type: string
+
+# Une seule mise en production à la fois, jamais interrompue.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  verify:
+    name: Version testée en pré-production ?
+    runs-on: ubuntu-latest
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - id: check
+        env:
+          GH_TOKEN: ${{ github.token }}
+          COMMIT: ${{ inputs.commit }}
+        run: |
+          set -euo pipefail
+          # Accepte un identifiant court : on le complète.
+          sha=$(gh api "repos/$GITHUB_REPOSITORY/commits/$COMMIT" --jq .sha)
+          # Déploiements de ce commit en pré-production, et l'état final de chacun.
+          ok=false
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=preprod&sha=$sha" --jq '.[].id'); do
+            state=$(gh api "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" --jq '.[0].state')
+            if [ "$state" = "success" ]; then ok=true; fi
+          done
+          if [ "$ok" != "true" ]; then
+            echo "::error::Le commit $sha n'a pas été déployé avec succès en pré-production."
+            exit 1
+          fi
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Déploiement en production
+    needs: verify
+    runs-on: ubuntu-latest
+    # L'approbation est demandée ici (réglage de l'environnement dans GitHub).
+    environment:
+      name: production
+      url: https://app-7c2265ed-74dd-4db6-a5c2-597625514a38.cleverapps.io
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ needs.verify.outputs.sha }}
+          fetch-depth: 0 # Clever Cloud reçoit le code par git push : historique complet
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Déployer sur pomme-prod
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+        run: bash clevercloud/deploy.sh app_7c2265ed-74dd-4db6-a5c2-597625514a38

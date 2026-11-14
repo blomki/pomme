@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-import { captchaConfig, verifyCaptcha, type CaptchaConfig } from "./captcha";
+import { captchaConfig, captchaWidgetConfig, verifyCaptcha, type CaptchaConfig } from "./captcha";
 
 const config: CaptchaConfig = { sitekey: "FCtest", apiKey: "cle-api", endpoint: "eu" };
 
@@ -31,6 +31,13 @@ describe("captchaConfig", () => {
 
   it("peut être désactivé explicitement (CI)", () => {
     expect(captchaConfig({ NODE_ENV: "production", CAPTCHA_DISABLED: "1" })).toBeNull();
+  });
+});
+
+describe("captchaWidgetConfig", () => {
+  it("ne transmet au navigateur que la clé de site et le point d'accès", () => {
+    expect(captchaWidgetConfig(config)).toEqual({ sitekey: "FCtest", endpoint: "eu" });
+    expect(captchaWidgetConfig(null)).toBeNull();
   });
 });
 
