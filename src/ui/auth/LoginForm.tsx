@@ -12,6 +12,7 @@ import { useActionState, useState } from "react";
 
 import { requestMagicLinkAction } from "@/server/auth/actions";
 import type { RequestMagicLinkState } from "@/server/auth/request-magic-link";
+import type { CaptchaWidgetConfig } from "@/server/captcha";
 
 import { Captcha } from "../forms/Captcha";
 
@@ -20,11 +21,11 @@ import { authClient } from "./auth-client";
 /** Formulaire de connexion : lien magique par email, ou passkey. */
 export function LoginForm({
   notice,
-  captchaSitekey,
+  captcha,
 }: {
   notice?: "linkError" | "signedOut" | "signedOutEverywhere";
-  /** Clé publique Friendly Captcha ; null si le captcha est désactivé. */
-  captchaSitekey: string | null;
+  /** Clé de site et point d'accès Friendly Captcha ; null si le captcha est désactivé. */
+  captcha: CaptchaWidgetConfig | null;
 }) {
   const t = useTranslations("Auth.login");
   const router = useRouter();
@@ -63,7 +64,7 @@ export function LoginForm({
           error={state.status === "invalid"}
           helperText={state.status === "invalid" ? t("invalid") : t("emailHelp")}
         />
-        <Captcha sitekey={captchaSitekey} resetKey={state} />
+        <Captcha sitekey={captcha?.sitekey ?? null} endpoint={captcha?.endpoint} resetKey={state} />
         <Button type="submit" variant="contained" disabled={pending}>
           {t("submit")}
         </Button>

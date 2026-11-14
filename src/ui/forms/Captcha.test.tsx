@@ -21,11 +21,12 @@ describe("Captcha", () => {
     expect(createWidget).not.toHaveBeenCalled();
   });
 
-  it("crée le widget en français, lancé dès qu'on remplit le formulaire", async () => {
-    render(<Captcha sitekey="FCtest" />);
+  it("crée le widget en français, sur le point d'accès choisi, lancé dès qu'on remplit le formulaire", async () => {
+    render(<Captcha sitekey="FCtest" endpoint="eu" />);
     await waitFor(() => expect(createWidget).toHaveBeenCalledOnce());
     expect(createWidget.mock.calls[0]?.[0]).toMatchObject({
       sitekey: "FCtest",
+      apiEndpoint: "eu",
       language: "fr",
       startMode: "focus",
     });

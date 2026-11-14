@@ -16,7 +16,16 @@ type Widget = { reset(): void; destroy(): void };
  * `resetKey` : changer sa valeur (par exemple après une réponse du serveur) redémarre le calcul,
  * car une réponse de captcha ne sert qu'une fois.
  */
-export function Captcha({ sitekey, resetKey }: { sitekey: string | null; resetKey?: unknown }) {
+export function Captcha({
+  sitekey,
+  endpoint = "global",
+  resetKey,
+}: {
+  sitekey: string | null;
+  /** Point d'accès, le même que celui de la vérification côté serveur (server/captcha.ts). */
+  endpoint?: "eu" | "global";
+  resetKey?: unknown;
+}) {
   const element = useRef<HTMLDivElement>(null);
   const widget = useRef<Widget | null>(null);
   const { colorScheme } = useColorScheme();
@@ -32,6 +41,7 @@ export function Captcha({ sitekey, resetKey }: { sitekey: string | null; resetKe
       widget.current = new FriendlyCaptchaSDK().createWidget({
         element: mount,
         sitekey,
+        apiEndpoint: endpoint,
         language: "fr",
         startMode: "focus",
         theme,
@@ -43,7 +53,7 @@ export function Captcha({ sitekey, resetKey }: { sitekey: string | null; resetKe
       widget.current = null;
       mount.replaceChildren();
     };
-  }, [sitekey, theme]);
+  }, [sitekey, endpoint, theme]);
 
   useEffect(() => {
     widget.current?.reset();

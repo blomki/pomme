@@ -44,6 +44,13 @@ export function captchaConfig(env: Env = process.env): CaptchaConfig | null {
   return { sitekey, apiKey, endpoint: env.FRIENDLY_CAPTCHA_ENDPOINT === "eu" ? "eu" : "global" };
 }
 
+/** Partie publique de la configuration, transmise au widget : jamais la clé d'API. */
+export type CaptchaWidgetConfig = Pick<CaptchaConfig, "sitekey" | "endpoint">;
+
+export function captchaWidgetConfig(config = captchaConfig()): CaptchaWidgetConfig | null {
+  return config && { sitekey: config.sitekey, endpoint: config.endpoint };
+}
+
 export type CaptchaVerdict = "passed" | "missing" | "rejected";
 
 type FetchFn = (url: string, init: RequestInit) => Promise<Response>;
