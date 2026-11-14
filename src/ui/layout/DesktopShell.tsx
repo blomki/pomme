@@ -2,7 +2,6 @@
 
 import AgricultureOutlined from "@mui/icons-material/AgricultureOutlined";
 import ArticleOutlined from "@mui/icons-material/ArticleOutlined";
-import BadgeOutlined from "@mui/icons-material/BadgeOutlined";
 import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
 import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
@@ -53,8 +52,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "reports", icon: <ReportProblemOutlined /> },
         { key: "planning", icon: <CalendarMonthOutlined /> },
         { key: "producers", icon: <AgricultureOutlined /> },
-        { key: "households", icon: <GroupsOutlined /> },
-        { key: "members", icon: <BadgeOutlined />, href: `${base}/admin/membres` },
+        { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
         { key: "pages", icon: <ArticleOutlined /> },
       ];
     case "referent":

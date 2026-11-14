@@ -22,10 +22,13 @@ import { authClient } from "./auth-client";
 export function LoginForm({
   notice,
   captcha,
+  defaultEmail,
 }: {
   notice?: "linkError" | "signedOut" | "signedOutEverywhere";
   /** Clé de site et point d'accès Friendly Captcha ; null si le captcha est désactivé. */
   captcha: CaptchaWidgetConfig | null;
+  /** Adresse déjà remplie (lien de l'email d'invitation). */
+  defaultEmail?: string;
 }) {
   const t = useTranslations("Auth.login");
   const router = useRouter();
@@ -60,6 +63,7 @@ export function LoginForm({
           type="email"
           label={t("email")}
           autoComplete="email webauthn"
+          defaultValue={defaultEmail}
           required
           error={state.status === "invalid"}
           helperText={state.status === "invalid" ? t("invalid") : t("emailHelp")}

@@ -2,10 +2,10 @@
  * Jeu de données fictif, construit sans base de données (fonction pure, testée).
  *
  * Contenu actuel : 2 AMAP, 6 comptes de démonstration aux adresses fixes (DEMO_ACCOUNTS, dont
- * le gestionnaire de la plateforme), 40 amapiens par AMAP,
- * des administrateurs et des référents, et une personne présente dans les deux AMAP.
- * À compléter au fil des stories : foyers et adhésions (40 par AMAP, A2/B1),
- * producteurs (6, C1), catalogues, commandes…
+ * le gestionnaire de la plateforme), 40 foyers par AMAP (quelques-uns de deux personnes ; les
+ * comptes de démonstration ont chacun le leur dans la première AMAP), des administrateurs et
+ * des référents, et une personne présente dans les deux AMAP.
+ * À compléter au fil des stories : adhésions (B1), producteurs (6, C1), catalogues, commandes…
  *
  * Toutes les données sont inventées : adresses en @example.org (domaine réservé aux exemples),
  * téléphones dans la tranche 06 39 98 xx xx réservée par l'Arcep à la fiction.
@@ -20,6 +20,8 @@ import { createRandom } from "./random";
 
 export const SEED = 20261105;
 export const MEMBERS_PER_AMAP = 40;
+/** Un foyer sur 8 compte une deuxième personne. */
+export const SECOND_MEMBER_EVERY = 8;
 
 export type SeedUser = {
   id: string;
@@ -28,6 +30,8 @@ export type SeedUser = {
   lastName: string;
   phone: string;
   isPlatformAdmin: boolean;
+  /** Vrai si la personne s'est déjà connectée (statut « actif » ; sinon « invité »). */
+  emailVerified: boolean;
 };
 
 export type SeedAmap = {
@@ -41,10 +45,22 @@ export type SeedAmap = {
 
 export type SeedRole = { id: string; amapId: string; userId: string; role: AmapRoleName };
 
+export type SeedHousehold = { id: string; amapId: string; name: string };
+
+export type SeedHouseholdMember = {
+  id: string;
+  amapId: string;
+  householdId: string;
+  userId: string;
+  isPrimary: boolean;
+};
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
   roles: SeedRole[];
+  households: SeedHousehold[];
+  householdMembers: SeedHouseholdMember[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -218,12 +234,40 @@ export function buildSeedData(): SeedData {
       lastName,
       phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
       isPlatformAdmin: false,
+      // Trois personnes sur quatre se sont déjà connectées.
+      emailVerified: random.next() < 0.75,
     };
   };
 
   const users: SeedUser[] = [];
   const amaps: SeedAmap[] = [];
   const roles: SeedRole[] = [];
+  const households: SeedHousehold[] = [];
+  const householdMembers: SeedHouseholdMember[] = [];
+
+  /** Crée un foyer « Foyer <nom> » (nom unique dans l'AMAP) avec ses membres, le premier principal. */
+  const usedNames = new Map<string, Set<string>>();
+  const addHousehold = (amapId: string, people: SeedUser[]) => {
+    const names = usedNames.get(amapId) ?? new Set<string>();
+    usedNames.set(amapId, names);
+    const [first] = people;
+    if (!first) return;
+    let name = `Foyer ${first.lastName}`;
+    if (names.has(name)) name = `Foyer ${first.lastName} (${first.firstName})`;
+    for (let n = 2; names.has(name); n++) name = `Foyer ${first.lastName} ${n}`;
+    names.add(name);
+    const householdId = nextId();
+    households.push({ id: householdId, amapId, name });
+    people.forEach((person, index) => {
+      householdMembers.push({
+        id: nextId(),
+        amapId,
+        householdId,
+        userId: person.id,
+        isPrimary: index === 0,
+      });
+    });
+  };
 
   // Comptes de démonstration aux adresses fixes, pour se connecter facilement en local et dans
   // les tests de bout en bout (lien reçu dans Mailpit, http://localhost:8025).
@@ -236,6 +280,7 @@ export function buildSeedData(): SeedData {
       lastName: "Démo",
       phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
       isPlatformAdmin: demo.isPlatformAdmin ?? false,
+      emailVerified: false,
     };
     usedEmails.add(demo.email);
     return { demoUser, role: demo.role, totp: demo.totp ?? false };
@@ -258,6 +303,17 @@ export function buildSeedData(): SeedData {
     users.push(...members);
     membersByAmap.push(members);
 
+    // Un foyer par amapien ; un foyer sur 8 compte une deuxième personne (même nom de famille).
+    members.forEach((member, index) => {
+      const people = [member];
+      if (index % SECOND_MEMBER_EVERY === 3) {
+        const partner = { ...makeUser(), lastName: member.lastName };
+        users.push(partner);
+        people.push(partner);
+      }
+      addHousehold(amapRecord.id, people);
+    });
+
     // Les premiers membres sont administrateurs, les suivants référents.
     members.slice(0, definition.admins).forEach((member) => {
       roles.push({ id: nextId(), amapId: amapRecord.id, userId: member.id, role: "admin" });
@@ -271,6 +327,8 @@ export function buildSeedData(): SeedData {
   if (firstAmap) {
     for (const { demoUser, role } of demoUsers) {
       if (role) roles.push({ id: nextId(), amapId: firstAmap.id, userId: demoUser.id, role });
+      // Chaque compte de démonstration (sauf le gestionnaire) a son foyer dans la première AMAP.
+      if (!demoUser.isPlatformAdmin) addHousehold(firstAmap.id, [demoUser]);
     }
   }
 
@@ -286,5 +344,5 @@ export function buildSeedData(): SeedData {
     if (validateAmapSlug(amapRecord.slug)) throw new Error(`Adresse invalide : ${amapRecord.slug}`);
   }
   const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
-  return { users, amaps, roles, totpUserIds };
+  return { users, amaps, roles, households, householdMembers, totpUserIds };
 }

@@ -3,6 +3,7 @@ import { expect, test } from "@playwright/test";
 import { totpFromBase32 } from "../helpers/totp";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
+import { inboxSnapshot, newMessage } from "./helpers/mailpit";
 import {
   ADMIN_DEMO,
   enterDemoTotp,
@@ -128,11 +129,16 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
   });
 
-  test("un admin corrige l'email d'un membre", async ({ page, request }) => {
+  test("un admin corrige l'email d'un membre depuis la fiche de son foyer", async ({
+    page,
+    request,
+  }) => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
-    await page.goto("/hommesdeterre/admin/membres");
-    await expect(page.getByRole("heading", { level: 1, name: "Membres" })).toBeVisible();
-    await expectNoSeriousA11yViolations(page);
+    await page.goto("/hommesdeterre/admin/foyers");
+    await page.getByRole("link", { name: "Foyer Démo (Dominique)" }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Foyer Démo (Dominique)" }),
+    ).toBeVisible();
 
     // admin2.demo : aucun autre fichier de test ne s'en sert.
     const correct = async (from: string, to: string) => {
@@ -149,5 +155,104 @@ test.describe("administration (ordinateur)", () => {
     await correct("admin2.demo@example.org", "dominique.nouvelle@example.org");
     // Ménage : on remet l'adresse de démonstration.
     await correct("dominique.nouvelle@example.org", "admin2.demo@example.org");
+  });
+
+  test("un admin invite un foyer au clavier, lui donne un rôle, puis l'archive (A2)", async ({
+    page,
+    request,
+  }) => {
+    // Adresses et nom uniques à chaque passage : la base garde les foyers des passages précédents.
+    const run = Date.now().toString(36);
+    const first = `claude.${run}@example.org`;
+    const second = `alex.${run}@example.org`;
+    const name = `Foyer Essai ${run}`;
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Foyers et adhésions" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Foyers et adhésions" }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    await page.getByRole("link", { name: "Inviter un foyer" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Inviter un foyer" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Saisie au clavier seul.
+    const type = async (field: ReturnType<typeof page.getByRole>, text: string) => {
+      await field.focus();
+      await page.keyboard.type(text);
+    };
+    await type(page.getByRole("textbox", { name: "Nom du foyer" }), name);
+    const member1 = page.getByRole("group", { name: "Membre 1" });
+    await type(member1.getByRole("textbox", { name: "Adresse email" }), first);
+    await type(member1.getByRole("textbox", { name: "Prénom" }), "Claude");
+    await type(member1.getByRole("textbox", { name: "Nom", exact: true }), "Essai");
+    await type(member1.getByRole("textbox", { name: "Téléphone" }), "06 39 98 99 01");
+
+    await page.getByRole("button", { name: "Ajouter un membre" }).focus();
+    await page.keyboard.press("Enter");
+    const member2 = page.getByRole("group", { name: "Membre 2" });
+    await type(member2.getByRole("textbox", { name: "Adresse email" }), second);
+    await type(member2.getByRole("textbox", { name: "Prénom" }), "Alex");
+    await member2.getByRole("radio", { name: "Contact principal du foyer" }).focus();
+    await page.keyboard.press("Space");
+
+    // Téléphone invalide : message près du champ, rien n'est perdu.
+    await member1.getByRole("textbox", { name: "Téléphone" }).fill("12");
+    const before = await inboxSnapshot(request, first);
+    await page.getByRole("button", { name: "Créer le foyer et envoyer les invitations" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.locator("#contenu").getByRole("alert")).toContainText(
+      "Le foyer n'a pas été créé",
+    );
+    await expect(member1.getByText("Ce numéro n'est pas valide.")).toBeVisible();
+    await expect(member2.getByRole("textbox", { name: "Prénom" })).toHaveValue("Alex");
+    await expectNoSeriousA11yViolations(page);
+
+    await member1.getByRole("textbox", { name: "Téléphone" }).fill("06 39 98 99 01");
+    await page.getByRole("button", { name: "Créer le foyer et envoyer les invitations" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    await expect(page.getByText(`Foyer « ${name} » créé, invitations envoyées.`)).toBeVisible();
+    await expect(page.getByRole("cell", { name: "06 39 98 99 01" })).toBeVisible();
+    await expect(page.getByText("Invité")).toHaveCount(2);
+    await expectNoSeriousA11yViolations(page);
+
+    // L'invitation mène à la page de connexion, adresse remplie, sans lien de connexion.
+    const invitation = await newMessage(request, first, before);
+    expect(invitation.Subject).toContain("votre compte sur Pomme");
+    expect(invitation.Text).not.toMatch(/magic-link/);
+    const loginUrl = invitation.Text.match(/https?:\/\/\S+\/connexion\?email=\S+/)?.[0] ?? "";
+    expect(loginUrl).not.toBe("");
+
+    // Rôle référent pour Claude, journalisé côté serveur.
+    await page.getByRole("button", { name: "Modifier les rôles de Claude Essai" }).click();
+    const dialog = page.getByRole("dialog", { name: "Rôles de Claude Essai" });
+    // Contrôle une fois le fondu d'ouverture terminé (sinon le texte est encore transparent).
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await dialog.getByRole("checkbox", { name: "Référent" }).check();
+    await expect(page.getByText("Rôles de Claude Essai mis à jour.")).toBeVisible();
+    await dialog.getByRole("button", { name: "Fermer" }).click();
+    await expect(page.getByRole("cell", { name: "Référent" })).toBeVisible();
+
+    // Archivage, annulation, puis archivage pour de bon (ménage).
+    await page.getByRole("button", { name: "Archiver le foyer" }).click();
+    await expect(page.getByText(`Foyer « ${name} » archivé.`)).toBeVisible();
+    await page.getByRole("button", { name: "Annuler" }).click();
+    await expect(page.getByText(`Foyer « ${name} » rétabli.`)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Archiver le foyer" })).toBeVisible();
+    await page.getByRole("button", { name: "Archiver le foyer" }).click();
+    await expect(page.getByRole("button", { name: "Rétablir le foyer" })).toBeVisible();
+
+    // L'invitation ouvre la page de connexion avec l'adresse déjà remplie.
+    await page.context().clearCookies();
+    await page.goto(loginUrl);
+    await expect(page.getByRole("textbox", { name: "Adresse email" })).toHaveValue(first);
   });
 });

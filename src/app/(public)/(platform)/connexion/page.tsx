@@ -6,12 +6,14 @@ import { getCurrentSession } from "@/server/auth/session";
 import { captchaWidgetConfig } from "@/server/captcha";
 import { LoginForm } from "@/ui/auth/LoginForm";
 
-type Props = { searchParams: Promise<{ erreur?: string; deconnexion?: string }> };
+type Props = {
+  searchParams: Promise<{ erreur?: string; deconnexion?: string; email?: string }>;
+};
 
 // [domaine]/connexion : lien magique par email, ou passkey. Aucun mot de passe.
 export default async function LoginPage({ searchParams }: Props) {
   if (await getCurrentSession()) redirect("/compte");
-  const { erreur, deconnexion } = await searchParams;
+  const { erreur, deconnexion, email } = await searchParams;
   const t = await getTranslations("Auth.login");
   const notice =
     erreur === "lien"
@@ -27,7 +29,12 @@ export default async function LoginPage({ searchParams }: Props) {
         {t("title")}
       </Typography>
       <Typography sx={{ mb: 3 }}>{t("intro")}</Typography>
-      <LoginForm notice={notice} captcha={captchaWidgetConfig()} />
+      {/* email : adresse pré-remplie depuis l'email d'invitation (story A2). */}
+      <LoginForm
+        notice={notice}
+        captcha={captchaWidgetConfig()}
+        defaultEmail={typeof email === "string" ? email.slice(0, 254) : undefined}
+      />
     </>
   );
 }

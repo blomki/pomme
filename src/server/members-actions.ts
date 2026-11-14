@@ -17,7 +17,7 @@ import { correctMemberEmail, type CorrectEmailResult } from "./members";
 export type CorrectEmailState = { status: "idle" } | CorrectEmailResult;
 
 /**
- * « Corriger l'email » (Administration › Membres). Après la correction, la personne est
+ * « Corriger l'email » (Administration › Foyers et adhésions, fiche d'un foyer). Après la correction, la personne est
  * déconnectée de tous ses appareils : elle se reconnectera avec la nouvelle adresse.
  */
 export async function correctMemberEmailAction(
@@ -34,14 +34,15 @@ export async function correctMemberEmailAction(
   } catch (error) {
     if (error instanceof UnauthenticatedError) redirect("/connexion");
     if (error instanceof SecondFactorRequiredError)
-      redirect(verificationUrl(`/${slug}/admin/membres`));
+      redirect(verificationUrl(`/${slug}/admin/foyers`));
     if (error instanceof ForbiddenError) return { status: "forbidden" };
     throw error;
   }
   if (result.status === "corrected") {
     // Sessions dans les tables de connexion : seul le rôle pomme_auth y a accès.
     await getAuthInstance().db.delete(session).where(eq(session.userId, result.userId));
-    revalidatePath(`/${slug}/admin/membres`);
+    // Liste et fiches des foyers : l'adresse y est affichée.
+    revalidatePath(`/${slug}/admin/foyers`, "layout");
   }
   return result;
 }

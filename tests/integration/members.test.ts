@@ -2,9 +2,10 @@ import { and, eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
 import { withAmapContext } from "@/db/context";
-import { auditLog, user } from "@/db/schema";
+import { auditLog, household, householdMember, user } from "@/db/schema";
+import { uuidv7 } from "@/db/uuid";
 import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors";
-import { correctMemberEmail, listAmapMembers } from "@/server/members";
+import { correctMemberEmail } from "@/server/members";
 
 import { startDatabase, type TestDatabase } from "./helpers/database";
 import { fixtures } from "./helpers/fixtures";
@@ -47,21 +48,6 @@ describe("Membres et correction d'email", () => {
 
   afterAll(async () => {
     await db?.stop();
-  });
-
-  it("liste les membres de l'AMAP courante seulement, pour un admin", async () => {
-    const members = await withAmapContext(db.app, as(admin.id, amapA.id), (tx, ctx) =>
-      listAmapMembers(tx, ctx),
-    );
-    const ids = members.map((member) => member.id);
-    expect(ids).toContain(referent.id);
-    expect(ids).not.toContain(otherAmapMember.id);
-  });
-
-  it("refuse la liste à un référent", async () => {
-    await expect(
-      withAmapContext(db.app, as(referent.id, amapA.id), (tx, ctx) => listAmapMembers(tx, ctx)),
-    ).rejects.toBeInstanceOf(ForbiddenError);
   });
 
   it("corrige l'email d'un membre, et l'inscrit au journal", async () => {
@@ -119,6 +105,20 @@ describe("Membres et correction d'email", () => {
     expect(await correct(admin.id, { userId: referent.id, email: "nouvelle@example.org" })).toEqual(
       { status: "same" },
     );
+  });
+
+  it("corrige aussi l'email d'un membre de foyer sans rôle (story A2)", async () => {
+    const f = fixtures(db.owner);
+    const amapien = await f.createUser({ email: "foyer@example.org" });
+    const householdId = uuidv7();
+    await db.owner.insert(household).values({ id: householdId, amapId: amapA.id, name: "Foyer" });
+    await db.owner
+      .insert(householdMember)
+      .values({ amapId: amapA.id, householdId, userId: amapien.id, isPrimary: true });
+    expect(await correct(admin.id, { userId: amapien.id, email: "foyer2@example.org" })).toEqual({
+      status: "corrected",
+      userId: amapien.id,
+    });
   });
 
   it("empêche aussi, au niveau de la base, de modifier un compte d'une autre AMAP", async () => {

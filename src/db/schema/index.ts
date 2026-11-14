@@ -18,6 +18,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  foreignKey,
   index,
   jsonb,
   pgEnum,
@@ -56,6 +57,15 @@ export const authRole = pgRole("pomme_auth").existing();
 /** L'utilisateur connecté est admin de l'AMAP courante (amap_role est filtrée par sa RLS). */
 const isCurrentAmapAdmin = sql`exists (
   select 1 from amap_role where amap_role.user_id = ${currentUserId} and amap_role.role = 'admin'
+)`;
+
+/**
+ * La personne (ligne de la table user) appartient à l'AMAP courante : elle y a un rôle, ou elle
+ * est membre d'un foyer. Les deux tables sont filtrées par leur propre RLS.
+ */
+const isInCurrentAmap = sql`(
+  exists (select 1 from amap_role where amap_role.user_id = "user"."id")
+  or exists (select 1 from household_member where household_member.user_id = "user"."id")
 )`;
 
 /** Accès complet pour Better Auth, qui gère lui-même les comptes et les sessions. */
@@ -124,13 +134,12 @@ export const user = pgTable(
   (t) => [
     check("user_email_lowercase", sql`${t.email} = lower(${t.email})`),
     check("user_phone_international", sql`${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`),
-    // Lecture : soi-même, et les personnes qui ont un rôle dans l'AMAP courante.
-    // (La sous-requête sur amap_role est elle-même filtrée par sa RLS : elle ne voit que
-    // l'AMAP courante.) Les membres des foyers s'ajouteront avec la story A2.
+    // Lecture : soi-même, et les personnes de l'AMAP courante (un rôle, ou membre d'un
+    // foyer). Les sous-requêtes sur amap_role et household_member sont elles-mêmes filtrées par
+    // leur RLS : elles ne voient que l'AMAP courante.
     pgPolicy("user_select", {
       for: "select",
-      using: sql`"user"."id" = ${currentUserId}
-        or exists (select 1 from amap_role where amap_role.user_id = "user"."id")`,
+      using: sql`"user"."id" = ${currentUserId} or ${isInCurrentAmap}`,
     }),
     // Création : inscription ou invitation, jamais d'un gestionnaire de la plateforme.
     pgPolicy("user_insert", {
@@ -143,16 +152,14 @@ export const user = pgTable(
       using: sql`"user"."id" = ${currentUserId}`,
       withCheck: sql`"user"."id" = ${currentUserId} and "user"."is_platform_admin" = false`,
     }),
-    // Correction de l'email d'un membre par un admin de l'AMAP courante (story A1). Les deux
-    // sous-requêtes sur amap_role sont filtrées par sa RLS : elles ne voient que l'AMAP courante.
+    // Correction de l'email d'un membre par un admin de l'AMAP courante (story A1). Les
+    // sous-requêtes sont filtrées par la RLS de leur table : elles ne voient que l'AMAP courante.
     // Le compte d'un gestionnaire de la plateforme ne peut pas être modifié ainsi.
     pgPolicy("user_update_by_amap_admin", {
       for: "update",
-      using: sql`${isCurrentAmapAdmin}
-        and exists (select 1 from amap_role where amap_role.user_id = "user"."id")
+      using: sql`${isCurrentAmapAdmin} and ${isInCurrentAmap}
         and "user"."is_platform_admin" = false`,
-      withCheck: sql`${isCurrentAmapAdmin}
-        and exists (select 1 from amap_role where amap_role.user_id = "user"."id")
+      withCheck: sql`${isCurrentAmapAdmin} and ${isInCurrentAmap}
         and "user"."is_platform_admin" = false`,
     }),
     // Better Auth retrouve un compte par son email avant toute connexion (sans contexte).
@@ -229,6 +236,89 @@ export const amapRole = pgTable(
     // Lecture seule pour la connexion : savoir si un compte est admin d'au moins une AMAP,
     // donc soumis à la deuxième vérification.
     pgPolicy("amap_role_auth_select", { for: "select", to: authRole, using: sql`true` }),
+  ],
+);
+
+// --- household : foyer ----------------------------------------------------------------------
+// L'unité qui commande et paie. Un foyer appartient à une seule AMAP : une personne membre de
+// deux AMAP a deux foyers, rattachés au même compte (modèle de données, section 4).
+
+export const household = pgTable(
+  "household",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    name: text("name").notNull(), // « Foyer Martin »
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // Nom unique dans l'AMAP, sans tenir compte des majuscules, parmi les foyers non archivés :
+    // un nom se libère quand son foyer est archivé.
+    uniqueIndex("household_name_unique")
+      .on(t.amapId, sql`lower(${t.name})`)
+      .where(sql`${t.archivedAt} is null`),
+    // Cible de la clé étrangère composée de household_member (même AMAP garantie par la base).
+    unique("household_amap_unique").on(t.id, t.amapId),
+    check("household_name_not_blank", sql`length(trim(${t.name})) > 0`),
+    // Toutes les opérations : seulement dans l'AMAP courante (le rôle est vérifié par requireRole).
+    pgPolicy("household_isolation", {
+      for: "all",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+  ],
+);
+
+// --- household_member : membre d'un foyer ----------------------------------------------------
+// Rattache un compte à un foyer. amap_id est recopié du foyer (le modèle ne le prévoyait pas) :
+// la Row Level Security peut ainsi isoler les AMAP sans jointure, comme pour toutes les tables.
+
+export const householdMember = pgTable(
+  "household_member",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    // Contact principal du foyer : un seul par foyer.
+    isPrimary: boolean("is_primary").notNull().default(false),
+    createdBy: uuid("created_by").references(() => user.id),
+    // Recopié du foyer quand il est archivé : la personne peut alors rejoindre un autre foyer.
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // Le foyer et le membre sont dans la même AMAP : garanti par la base.
+    foreignKey({
+      name: "household_member_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    unique("household_member_unique").on(t.householdId, t.userId),
+    // Une personne appartient à un seul foyer actif par AMAP.
+    uniqueIndex("household_member_one_household_idx")
+      .on(t.amapId, t.userId)
+      .where(sql`${t.archivedAt} is null`),
+    // Un seul contact principal par foyer.
+    uniqueIndex("household_member_one_primary_idx")
+      .on(t.householdId)
+      .where(sql`${t.isPrimary}`),
+    index("household_member_user_idx").on(t.userId),
+    pgPolicy("household_member_isolation", {
+      for: "all",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
   ],
 );
 

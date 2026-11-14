@@ -55,3 +55,25 @@ export async function newMagicLink(
 export async function countMessagesTo(request: APIRequestContext, email: string): Promise<number> {
   return (await messagesTo(request, email)).length;
 }
+
+/** Attend le premier email arrivé après la photo `before`, et renvoie son objet et son texte. */
+export async function newMessage(
+  request: APIRequestContext,
+  email: string,
+  before: Set<string>,
+): Promise<{ Subject: string; Text: string }> {
+  let found: { Subject: string; Text: string } | undefined;
+  await expect
+    .poll(
+      async () => {
+        const fresh = (await messagesTo(request, email)).find((message) => !before.has(message.ID));
+        if (!fresh) return false;
+        const message = await request.get(`${MAILPIT_URL}/api/v1/message/${fresh.ID}`);
+        found = (await message.json()) as { Subject: string; Text: string };
+        return true;
+      },
+      { message: `email pour ${email}`, timeout: 10_000 },
+    )
+    .toBe(true);
+  return found ?? { Subject: "", Text: "" };
+}

@@ -24,7 +24,8 @@ en langage simple.
   Toute requête sur des données d'AMAP passe par `withAmapContext(getDatabase(), ctx, fn)`.
   Nouvelle table : `id` UUID v7, `amap_id`, `created_at`/`updated_at`, `archived_at` plutôt que
   suppression, politiques `pgPolicy`, puis `pnpm db:generate` (jamais de migration écrite à la
-  main). Voir ADR 0003.
+  main ; seule exception, ce que Drizzle ne sait pas décrire, comme une fonction :
+  `pnpm exec drizzle-kit generate --custom`, voir ADR 0009). Voir ADR 0003.
 - Server Action : `withAmapContext` → `requireRole(tx, ctx, [...])` → action →
   `writeAuditLog(tx, ctx, …)` pour toute action financière ou correction.
 - `src/ui/` : thème et composants partagés (voir ADR 0004). Jamais de couleur en dur : palette
@@ -32,7 +33,8 @@ en langage simple.
   texte M3 (`headlineSmall`, `titleMedium`, `bodyLarge`…). Gabarits `MobileShell` (familles,
   producteurs) et `DesktopShell` (référents, admins). Confirmation d'action : `useSnackbar()`,
   avec `onUndo` quand c'est possible. Lien Next dans un bouton MUI :
-  `component={Link} nativeButton={false}`.
+  `component={Link} nativeButton={false}` (dans une page serveur : `LinkButton` de
+  `src/ui/navigation/`).
 - Connexion (ADR 0005) : `getCurrentSession()` / `requireSession()` de `src/server/auth/session.ts`
   ; Better Auth seul touche aux tables `session`, `account`, `verification`, `passkey` (rôle
   `pomme_auth`). Aucun mot de passe, nulle part.
