@@ -1,6 +1,6 @@
 # Intégration continue : chaque pull request et chaque fusion sur main passent par ces étapes.
 # Ordre : types et style → tests unitaires, de composants et d'intégration → build → bout en bout,
-# accessibilité et captures. L'analyse de sécurité tourne en parallèle (et CodeQL dans codeql.yml).
+# accessibilité et captures → déploiement en pré-production (sur main seulement, ADR 0008). L'analyse de sécurité tourne en parallèle (et CodeQL dans codeql.yml).
 # Une étape en échec bloque la fusion (règle de protection de la branche main).
 name: CI
 
@@ -10,10 +10,11 @@ on:
     branches: [main]
   workflow_dispatch:
 
-# Un nouveau push sur la même branche annule l'exécution précédente, devenue inutile.
+# Sur une pull request, un nouveau push annule l'exécution précédente, devenue inutile. Sur main,
+# jamais : on n'interrompt pas un déploiement en pré-production en cours.
 concurrency:
   group: ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -147,3 +148,48 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # Déploiement en pré-production : seulement après une fusion sur main, si toutes les étapes
+  # précédentes sont au vert. GitHub note le déploiement (environnement « preprod ») : le
+  # workflow de production s'en sert pour n'accepter qu'une version déjà passée par ici.
+  preprod-ready:
+    name: Pré-production configurée ?
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [quality, tests, e2e, security]
+    runs-on: ubuntu-latest
+    outputs:
+      ready: ${{ steps.check.outputs.ready }}
+    steps:
+      # Tant que les secrets de Clever Cloud n'existent pas, on ne déploie pas (sans échouer),
+      # et aucun faux déploiement n'est enregistré.
+      - id: check
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+        run: |
+          if [ -n "$CLEVER_TOKEN" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
+          else echo "Secrets Clever Cloud absents : pas de déploiement (docs/deploiement.md)."; fi
+
+  deploy-preprod:
+    name: Déploiement en pré-production
+    needs: preprod-ready
+    if: needs.preprod-ready.outputs.ready == 'true'
+    runs-on: ubuntu-latest
+    environment:
+      name: preprod
+      url: https://app-fca2a27f-93b6-46f9-ade4-f2ca84ab060c.cleverapps.io
+    concurrency:
+      group: deploy-preprod
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0 # Clever Cloud reçoit le code par git push : historique complet
+      - uses: actions/setup-node@v5
+        with:
+          node-version-file: .nvmrc
+          package-manager-cache: false
+      - name: Déployer sur pomme-preprod
+        env:
+          CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          CLEVER_SECRET: ${{ secrets.CLEVER_SECRET }}
+        run: bash clevercloud/deploy.sh app_fca2a27f-93b6-46f9-ade4-f2ca84ab060c

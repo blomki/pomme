@@ -1,77 +1,87 @@
-# Déploiement : Clever Cloud et Scaleway
+# Déploiement chez Clever Cloud
 
-Mise en route de la pré-production ou de la production. Les choix sont expliqués dans
+Mise en route de la pré-production et de la production. Les choix sont expliqués dans
 l'ADR 0008. Aucun secret dans ce fichier ni dans le dépôt : toutes les valeurs se saisissent
-chez l'hébergeur.
+chez Clever Cloud ou dans les secrets de GitHub.
 
-## 1. Base PostgreSQL chez Scaleway
+## Ressources
 
-1. Console Scaleway › Managed Databases › créer une instance : **PostgreSQL 17**, région
-   **Paris**, plus petite taille, sauvegardes automatiques activées.
-2. Créer une base logique `pomme` (une par environnement : `pomme_preprod`, `pomme`…).
-3. Utilisateur **admin** de l'instance (créé avec elle) : il sert aux migrations. Mot de passe
-   long et aléatoire. Il doit avoir les droits « All » sur la base logique.
-4. Télécharger le **certificat TLS** de l'instance (onglet « Overview » › certificat) : il ira
-   dans `DATABASE_CA_CERT`.
-5. Noter l'adresse de connexion (nom d'hôte et port). Utiliser le nom d'hôte, pas l'adresse IP :
-   le certificat est vérifié avec ce nom.
-6. Dès que possible, restreindre les adresses autorisées (« Allowed IPs ») aux adresses de
-   sortie de Clever Cloud.
+Organisation Clever Cloud « pomme » (`orga_1524590b-6edb-4a4d-9bfb-c7f021ab4738`), région Paris.
 
-Les rôles `pomme_app` et `pomme_auth` ne se créent **pas** dans la console : l'application les
-crée elle-même au premier démarrage (`pnpm db:setup`), avec les mots de passe des variables
-ci-dessous.
+| Environnement  | Application                                                  | Base PostgreSQL                           |
+| -------------- | ------------------------------------------------------------ | ----------------------------------------- |
+| Pré-production | `pomme-preprod` (`app_fca2a27f-93b6-46f9-ade4-f2ca84ab060c`) | plan DEV, gratuit, sans sauvegarde        |
+| Production     | `pomme-prod` (`app_7c2265ed-74dd-4db6-a5c2-597625514a38`)    | plan XXS Small Space, sauvegardes 7 jours |
 
-## 2. Application chez Clever Cloud
+Applications : taille nano, une seule instance (les limites de débit sont en mémoire), instance
+de build dédiée en taille M (le build Next.js ne tient pas dans une nano). Aucun déploiement
+automatique depuis Clever Cloud : c'est GitHub Actions qui déploie.
 
-1. Console Clever Cloud › créer une application **Node.js**, région **Paris**, depuis le dépôt
-   GitHub. Taille la plus petite pour commencer.
-2. Variables d'environnement (onglet « Environment variables ») :
+## Rôles PostgreSQL
 
-| Variable                    | Valeur                                                                     |
-| --------------------------- | -------------------------------------------------------------------------- |
-| `NODE_ENV`                  | `production`                                                               |
-| `CC_NODE_DEV_DEPENDENCIES`  | `install` (le build et les scripts de base en ont besoin)                  |
-| `CC_POST_BUILD_HOOK`        | `pnpm build`                                                               |
-| `CC_PRE_RUN_HOOK`           | `bash clevercloud/pre-run.sh` (rôles et migrations)                        |
-| `CC_HEALTH_CHECK_PATH`      | `/api/health`                                                              |
-| `DATABASE_MIGRATION_URL`    | `postgres://admin:…@<hôte>:<port>/pomme` (utilisateur admin de Scaleway)   |
-| `DATABASE_URL`              | `postgres://pomme_app:<mot de passe aléatoire>@<hôte>:<port>/pomme`        |
-| `DATABASE_AUTH_URL`         | `postgres://pomme_auth:<autre mot de passe aléatoire>@<hôte>:<port>/pomme` |
-| `DATABASE_CA_CERT`          | contenu du certificat téléchargé (`-----BEGIN CERTIFICATE-----…`)          |
-| `BETTER_AUTH_URL`           | adresse publique, par exemple `https://<domaine>`                          |
-| `BETTER_AUTH_SECRET`        | `openssl rand -base64 32`                                                  |
-| `SMTP_URL`, `EMAIL_FROM`    | relais Brevo (ADR 0006)                                                    |
-| `FRIENDLY_CAPTCHA_SITEKEY`  | clé de site (ADR 0007)                                                     |
-| `FRIENDLY_CAPTCHA_API_KEY`  | clé d'API (ADR 0007)                                                       |
-| `FRIENDLY_CAPTCHA_ENDPOINT` | `eu` si l'offre le permet                                                  |
+En attente du support de Clever Cloud (ADR 0008) : le propriétaire de la base doit pouvoir
+créer `pomme_app` et `pomme_auth` (droit `CREATEROLE`). **Ne pas déployer avant.**
+
+## Variables d'environnement de chaque application
+
+| Variable                    | Valeur                                                                   |
+| --------------------------- | ------------------------------------------------------------------------ |
+| `NODE_ENV`                  | `production`                                                             |
+| `CC_NODE_DEV_DEPENDENCIES`  | `install` (le build et les scripts de base en ont besoin)                |
+| `CC_POST_BUILD_HOOK`        | `pnpm build`                                                             |
+| `CC_PRE_RUN_HOOK`           | `bash clevercloud/pre-run.sh` (rôles et migrations)                      |
+| `CC_HEALTH_CHECK_PATH`      | `/api/health`                                                            |
+| `DATABASE_MIGRATION_URL`    | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)     |
+| `DATABASE_URL`              | même adresse, avec `pomme_app` et un mot de passe aléatoire              |
+| `DATABASE_AUTH_URL`         | même adresse, avec `pomme_auth` et un autre mot de passe aléatoire       |
+| `BETTER_AUTH_URL`           | adresse publique (`https://app-….cleverapps.io` en attendant le domaine) |
+| `BETTER_AUTH_SECRET`        | `openssl rand -base64 32`                                                |
+| `SMTP_URL`, `EMAIL_FROM`    | relais Brevo (ADR 0006)                                                  |
+| `FRIENDLY_CAPTCHA_SITEKEY`  | clé de site (ADR 0007)                                                   |
+| `FRIENDLY_CAPTCHA_API_KEY`  | clé d'API (ADR 0007)                                                     |
+| `FRIENDLY_CAPTCHA_ENDPOINT` | `eu` si l'offre le permet                                                |
 
 Mots de passe : `openssl rand -hex 24` (sans caractère spécial, rien à encoder dans
-l'adresse). Ne jamais mettre `sslmode=…` dans les adresses : le chiffrement est réglé par
-`DATABASE_CA_CERT`. Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` ici.
+l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces applications.
 
-Le certificat contient des retours à la ligne ; avec Clever Tools :
-`clever env set DATABASE_CA_CERT "$(cat certificat.pem)"`.
+## Déploiement depuis GitHub Actions
 
-3. Déployer. Dans les journaux, vérifier dans l'ordre : `Rôle pomme_app prêt.`,
-   `Rôle pomme_auth prêt.`, `Migrations appliquées.`, puis le démarrage de Next.js. Si un de ces
-   pas échoue, Clever Cloud garde l'ancienne version.
-4. Ouvrir `https://<application>/api/health` : `{"status":"ok"}`.
+1. Créer un compte Clever Cloud réservé à la CI (une autre adresse email, double
+   authentification), l'inviter dans l'organisation avec le rôle **Developer** : il peut
+   déployer, pas facturer ni supprimer.
+2. Avec ce compte : `npx clever-tools@5.3.0 login`, puis récupérer le _token_ et le _secret_
+   affichés.
+3. GitHub › Settings › Secrets and variables › Actions : secrets `CLEVER_TOKEN` et
+   `CLEVER_SECRET`.
+4. GitHub › Settings › Environments : créer `preprod`, et `production` avec le responsable
+   du projet comme approbateur obligatoire (« Required reviewers »).
 
-## 3. Domaine (quand il sera choisi, issue #49)
+Ensuite :
+
+- **Pré-production** (`.github/workflows/deploy-preprod.yml`) : automatique après chaque CI
+  au vert sur `main`.
+- **Production** (`.github/workflows/deploy-production.yml`) : Actions › « Déployer en
+  production » › Run workflow, avec le commit à déployer. Refusé si ce commit n'a pas été
+  déployé avec succès en pré-production ; attend ensuite l'approbation.
+
+Dans les journaux de Clever Cloud, un déploiement réussi affiche dans l'ordre :
+`Rôle pomme_app prêt.`, `Rôle pomme_auth prêt.`, `Migrations appliquées.`, puis le démarrage
+de Next.js. Si un pas échoue, l'ancienne version continue de servir. Vérifier ensuite
+`https://<adresse>/api/health` : `{"status":"ok"}`.
+
+## Domaine (quand il sera choisi, issue #49)
 
 1. Clever Cloud › Domain names : ajouter le domaine, puis l'enregistrement DNS indiqué.
 2. Activer « Force HTTPS ».
-3. Mettre à jour `BETTER_AUTH_URL` (les liens de connexion et les passkeys en dépendent : les
-   passkeys créées sur une autre adresse ne marcheront plus).
+3. Mettre à jour `BETTER_AUTH_URL` (les passkeys créées sur une autre adresse ne marcheront
+   plus).
 4. Vérifier la note sur <https://developer.mozilla.org/en-US/observatory> (objectif : A+).
 5. SPF, DKIM et DMARC pour les emails : ADR 0006.
 
 ## Reste à faire (fiche S7)
 
-- Environnements de prévisualisation par pull request et de pré-production, déploiement en
-  production par bouton : workflows GitHub à écrire une fois les comptes créés.
-- Sentry (région UE) : à ajouter à la CSP.
+- Environnements de prévisualisation par pull request (application et base jetables).
+- Sentry (région UE), à ajouter à la CSP.
 - Sonde de disponibilité toutes les 5 minutes sur `/api/health`, avec alerte par email.
-- Durée de conservation des journaux (30 jours).
+- Conservation des journaux pendant 30 jours.
 - Tâches planifiées (`clevercloud/cron.json`) : avec les fiches qui en ont besoin (D2, D5, S8).

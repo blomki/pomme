@@ -1,6 +1,6 @@
 import { PostgreSqlContainer, type StartedPostgreSqlContainer } from "@testcontainers/postgresql";
 
-/** Même version majeure qu'en production (PostgreSQL géré de Scaleway, ADR 0008). */
+/** Même version majeure qu'en production (PostgreSQL géré de Clever Cloud, ADR 0008). */
 export const POSTGRES_IMAGE = "postgres:17-alpine";
 
 /**

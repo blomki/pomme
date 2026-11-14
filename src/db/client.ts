@@ -9,10 +9,10 @@ export type Database = NodePgDatabase<typeof schema> & { $client: Pool };
 export type Transaction = Parameters<Parameters<Database["transaction"]>[0]>[0];
 
 /**
- * Réglages de connexion. En production, la base est chez Scaleway, hors du réseau de
- * l'hébergeur (ADR 0008) : la connexion est chiffrée (TLS) ET le certificat du serveur est
- * vérifié avec celui de l'instance Scaleway (DATABASE_CA_CERT, au format PEM). Sans cette
- * vérification, un intermédiaire pourrait se faire passer pour la base et lire les mots de passe.
+ * Réglages de connexion. Si l'hébergeur fournit le certificat de sa base (DATABASE_CA_CERT,
+ * au format PEM), la connexion est chiffrée (TLS) ET le certificat du serveur est vérifié
+ * (ADR 0008). Sans cette vérification, un intermédiaire pourrait se faire passer pour la base
+ * et lire les mots de passe.
  *
  * Ne pas mettre de « sslmode » dans les adresses de connexion : il remplacerait ces réglages.
  */

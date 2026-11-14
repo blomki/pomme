@@ -5,7 +5,7 @@ import { setupRole } from "@/db/setup";
 
 import { startDatabase, type TestDatabase } from "./helpers/database";
 
-// Préparation des rôles avec un propriétaire sans super-pouvoir, comme chez Scaleway (ADR 0008).
+// Préparation des rôles avec un propriétaire sans super-pouvoir, comme sur une base gérée (ADR 0008).
 describe("setupRole", () => {
   let db: TestDatabase;
   let ownerUrl: string;

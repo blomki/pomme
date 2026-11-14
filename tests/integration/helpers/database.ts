@@ -14,7 +14,7 @@ const AUTH_PASSWORD = "test_auth_password";
 
 export type TestDatabase = {
   container: StartedPostgreSqlContainer;
-  /** Adresse du propriétaire (sans super-pouvoir, comme chez Scaleway). */
+  /** Adresse du propriétaire (sans super-pouvoir, comme sur une base gérée). */
   ownerUrl: string;
   /** Connexion propriétaire : contourne la RLS. Sert à préparer les données des tests. */
   owner: Database;
@@ -30,7 +30,7 @@ const OWNER_USER = "pomme_owner";
 const OWNER_PASSWORD = "test_owner_password";
 
 /**
- * Crée le propriétaire comme chez Scaleway (ADR 0008) : il peut créer des rôles et des bases,
+ * Crée le propriétaire comme sur une base gérée (ADR 0008) : il peut créer des rôles et des bases,
  * mais il n'est PAS super-utilisateur. Les tests prouvent ainsi que rôles et migrations
  * passent avec les droits réels de la production.
  */

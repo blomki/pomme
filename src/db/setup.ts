@@ -14,7 +14,7 @@ import { poolConfig } from "./client";
  *   vérifié par assertRestricted), ni créer ou modifier des tables.
  *
  * Le propriétaire n'a pas besoin d'être super-utilisateur : le droit CREATEROLE suffit (c'est
- * le cas de l'utilisateur admin de Scaleway, ADR 0008).
+ * ce qu'on demande à l'hébergeur, ADR 0008).
  *
  * Idempotent : peut être relancé sans risque (par exemple pour changer le mot de passe).
  * À lancer AVANT les migrations : les politiques RLS citent pomme_auth.
@@ -62,7 +62,7 @@ export async function setupRole(params: {
 /**
  * Vérifie que le rôle n'a aucun pouvoir de contournement.
  *
- * On ne peut pas les retirer nous-mêmes : chez Scaleway (ADR 0008), le propriétaire n'est pas
+ * On ne peut pas les retirer nous-mêmes : sur une base gérée (ADR 0008), le propriétaire n'est pas
  * super-utilisateur, et PostgreSQL lui interdit même d'ÉCRIRE « nosuperuser » ou « nobypassrls ».
  * Un rôle qu'il crée n'a de toute façon pas ces pouvoirs. Si quelqu'un les lui avait donnés
  * (à la main), on s'arrête plutôt que de démarrer avec une isolation entre AMAP percée.

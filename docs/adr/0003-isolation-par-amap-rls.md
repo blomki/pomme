@@ -56,4 +56,4 @@ seulement dans le code (un oubli suffit à exposer des données).
   et créer une AMAP (story J1) demanderont chacun une fonction de base dédiée
   (`SECURITY DEFINER`), aux droits limités à cette seule opération.
 - En production, l'hébergeur doit permettre de créer les rôles `pomme_app` et `pomme_auth` :
-  ce n'est pas le cas de la base de Clever Cloud, d'où une base chez Scaleway (ADR 0008).
+  pas possible par défaut sur la base de Clever Cloud, voir ADR 0008.
