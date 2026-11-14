@@ -56,6 +56,10 @@ l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces 
 4. GitHub › Settings › Environments : créer `preprod`, et `production` avec le responsable
    du projet comme approbateur obligatoire (« Required reviewers »).
 
+5. Quand la pré-production est configurée (rôles, variables d'environnement) : variable de
+   dépôt `DEPLOY_ENABLED` = `true` (même page que les secrets, onglet « Variables »). C'est
+   l'interrupteur des déploiements automatiques ; `false` les suspend.
+
 Ensuite :
 
 - **Pré-production** (`.github/workflows/deploy-preprod.yml`) : automatique après chaque CI

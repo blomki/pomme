@@ -160,14 +160,19 @@ jobs:
     outputs:
       ready: ${{ steps.check.outputs.ready }}
     steps:
-      # Tant que les secrets de Clever Cloud n'existent pas, on ne déploie pas (sans échouer),
-      # et aucun faux déploiement n'est enregistré.
+      # On ne déploie que si les secrets de Clever Cloud existent ET que la variable
+      # DEPLOY_ENABLED vaut « true » (interrupteur, à activer quand la pré-production est
+      # configurée). Sinon, rien n'est déployé, sans échec, et aucun faux déploiement n'est noté.
       - id: check
         env:
           CLEVER_TOKEN: ${{ secrets.CLEVER_TOKEN }}
+          DEPLOY_ENABLED: ${{ vars.DEPLOY_ENABLED }}
         run: |
-          if [ -n "$CLEVER_TOKEN" ]; then echo "ready=true" >> "$GITHUB_OUTPUT"
-          else echo "Secrets Clever Cloud absents : pas de déploiement (docs/deploiement.md)."; fi
+          if [ -n "$CLEVER_TOKEN" ] && [ "$DEPLOY_ENABLED" = "true" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Déploiement désactivé (secrets ou DEPLOY_ENABLED manquants, docs/deploiement.md)."
+          fi
 
   deploy-preprod:
     name: Déploiement en pré-production
