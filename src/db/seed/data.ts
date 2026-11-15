@@ -530,7 +530,12 @@ export function buildSeedData(): SeedData {
     for (const demo of DEMO_ACCOUNTS) {
       const demoUser = demoUsers.find(({ demoUser: u }) => u.email === demo.email)?.demoUser;
       if (demo.alsoReferent && demoUser) {
-        roles.push({ id: nextId(), amapId: demoFirstAmap.id, userId: demoUser.id, role: "referent" });
+        roles.push({
+          id: nextId(),
+          amapId: demoFirstAmap.id,
+          userId: demoUser.id,
+          role: "referent",
+        });
       }
     }
   }
