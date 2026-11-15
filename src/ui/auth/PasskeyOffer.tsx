@@ -24,7 +24,7 @@ export function PasskeyOffer() {
       setError(true);
       return;
     }
-    router.push("/compte?passkey=ajoutee");
+    router.push("/connexion/suite");
   };
 
   return (
@@ -33,7 +33,7 @@ export function PasskeyOffer() {
         <Button variant="contained" startIcon={<KeyOutlined />} onClick={createPasskey}>
           {t("create")}
         </Button>
-        <Button component={Link} href="/compte" nativeButton={false} variant="text">
+        <Button component={Link} href="/connexion/suite" nativeButton={false} variant="text">
           {t("later")}
         </Button>
       </Stack>

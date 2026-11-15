@@ -23,6 +23,22 @@ test("un visiteur est renvoyé vers la connexion", async ({ page }) => {
   await expect(page).toHaveURL(/\/connexion$/);
 });
 
+test("un référent arrive sur son tableau de bord, avec le menu", async ({ page, request }) => {
+  await signInByEmail(page, request, "referent.demo@example.org");
+  await page.getByRole("link", { name: "Plus tard" }).click();
+  await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
+  const menu = page.getByRole("navigation", { name: "Menu du référent" });
+  await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
+    "aria-current",
+    "page",
+  );
+  // Référent seulement : pas de sélecteur vers l'administration.
+  await expect(page.getByRole("navigation", { name: "Changer d'espace" })).toHaveCount(0);
+  await page.getByRole("link", { name: "Mon compte" }).click();
+  await expect(page.getByRole("link", { name: /— Référent$/ })).toBeVisible();
+  await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();
+});
+
 test("un référent n'a pas accès à l'administration", async ({ page, request }) => {
   await signInByEmail(page, request, "referent.demo@example.org");
   await page.goto("/hommesdeterre/admin");
@@ -67,8 +83,15 @@ test.describe("administration (ordinateur)", () => {
     page,
     request,
   }) => {
+    // admin.demo est aussi référent : il arrive dans l'administration, et passe d'un espace
+    // à l'autre avec le sélecteur.
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
-    await page.goto("/hommesdeterre/referent");
+    await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
+    await page
+      .getByRole("navigation", { name: "Changer d'espace" })
+      .getByRole("link", { name: "Référent" })
+      .click();
+    await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
     const menu = page.getByRole("navigation", { name: "Menu du référent" });
     await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
       "aria-current",
@@ -115,10 +138,9 @@ test.describe("administration (ordinateur)", () => {
     const key = (await page.locator("code").textContent()) ?? "";
     await page.getByRole("textbox", { name: "Code à 6 chiffres" }).fill(totpFromBase32(key));
     await page.getByRole("button", { name: "Confirmer" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
 
-    // La session est vérifiée : l'administration s'ouvre directement.
-    await page.goto("/hommesdeterre/admin");
+    // La session est vérifiée : arrivée directement dans l'administration.
+    await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
     await expect(
       page.getByRole("heading", { level: 1, name: "Administration de l'AMAP" }),
     ).toBeVisible();

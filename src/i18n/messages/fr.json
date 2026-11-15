@@ -347,7 +347,8 @@
       "label": "Changer d'espace",
       "admin": "Administration",
       "referent": "Référent"
-    }
+    },
+    "account": "Mon compte"
   },
   "ThemeDemo": {
     "title": "Thème de {amap}",
@@ -438,7 +439,16 @@
       "totpDisabled": "Application d'authentification désactivée.",
       "totpEnabled": "Application d'authentification activée.",
       "verifyFirst": "Pour ajouter ou retirer une passkey ou l'application, faites d'abord la deuxième vérification.",
-      "verifyNow": "Faire la deuxième vérification"
+      "verifyNow": "Faire la deuxième vérification",
+      "spaces": "Mes espaces",
+      "noSpace": "Aucun espace pour l'instant : un administrateur de votre AMAP vous en donnera l'accès.",
+      "space": {
+        "admin": "{amap} — Administration",
+        "referent": "{amap} — Référent",
+        "famille": "{amap} — Mon foyer",
+        "platform": "Gestion de la plateforme",
+        "producer": "Espace producteur"
+      }
     },
     "verification": {
       "title": "Deuxième vérification",
