@@ -1,13 +1,16 @@
 "use server";
 
+import { inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { getDatabase } from "@/db/client";
 import { withAmapContext, type AmapContext } from "@/db/context";
 import type { Transaction } from "@/db/client";
+import { account, passkey, session, twoFactor } from "@/db/schema";
 
 import { getAmapBySlug } from "./amap";
+import { getAuthInstance } from "./auth/auth";
 import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from "./auth/errors";
 import { verificationUrl } from "./auth/second-factor";
 import { getAmapContext } from "./context";
@@ -15,6 +18,8 @@ import { invitationEmail, invitationLoginUrl } from "./email/invitation-email";
 import { sendNotification } from "./email/notify";
 import {
   addHouseholdMember,
+  anonymizeHousehold,
+  type AnonymizeResult,
   createHousehold,
   invitationFor,
   setHouseholdArchived,
@@ -191,4 +196,31 @@ export async function setHouseholdArchivedAction(input: {
   revalidatePath(listPath(input.amap));
   revalidatePath(`${listPath(input.amap)}/${input.householdId}`);
   return outcome.result;
+}
+
+/**
+ * Anonymise un foyer (RGPD, irréversible). Ensuite, pour chaque compte anonymisé, Better Auth
+ * (seul autorisé sur ses tables) efface sessions, connexions, passkeys et application
+ * d'authentification : plus personne ne peut entrer dans ces comptes.
+ */
+export async function anonymizeHouseholdAction(input: {
+  amap: string;
+  householdId: string;
+  confirmName: string;
+}): Promise<AnonymizeResult | { status: "forbidden" }> {
+  const outcome = await asAdmin(input.amap, (tx, ctx) => anonymizeHousehold(tx, ctx, input));
+  if ("status" in outcome) return outcome;
+  const { result } = outcome;
+  if (result.status === "anonymized" && result.anonymizedUserIds.length > 0) {
+    const ids = result.anonymizedUserIds;
+    const authDb = getAuthInstance().db;
+    await authDb.transaction(async (tx) => {
+      await tx.delete(session).where(inArray(session.userId, ids));
+      await tx.delete(account).where(inArray(account.userId, ids));
+      await tx.delete(passkey).where(inArray(passkey.userId, ids));
+      await tx.delete(twoFactor).where(inArray(twoFactor.userId, ids));
+    });
+  }
+  revalidatePath(listPath(input.amap), "layout");
+  return result;
 }

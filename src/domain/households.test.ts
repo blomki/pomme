@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   canRevokeAdmin,
+  confirmsAnonymization,
   checkNewMembers,
   memberStatus,
   normalizeHouseholdName,
@@ -61,5 +62,16 @@ describe("canRevokeAdmin", () => {
 
   it("accepte s'il en reste au moins un autre", () => {
     expect(canRevokeAdmin(2)).toBe(true);
+  });
+});
+
+describe("confirmsAnonymization", () => {
+  it("accepte le nom du foyer, sans tenir compte des espaces ni des majuscules", () => {
+    expect(confirmsAnonymization("  foyer   MARTIN ", "Foyer Martin")).toBe(true);
+  });
+
+  it("refuse un autre nom ou un champ vide", () => {
+    expect(confirmsAnonymization("Foyer Durand", "Foyer Martin")).toBe(false);
+    expect(confirmsAnonymization("  ", "")).toBe(false);
   });
 });

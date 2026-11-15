@@ -3,11 +3,12 @@ import { z } from "zod";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
-import { amapRole, household, householdMember, user } from "@/db/schema";
+import { amapRole, auditLog, household, householdMember, notificationLog, user } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import {
   canRevokeAdmin,
   checkNewMembers,
+  confirmsAnonymization,
   memberStatus,
   normalizeHouseholdName,
   type MemberStatus,
@@ -40,7 +41,17 @@ export type HouseholdView = {
   id: string;
   name: string;
   archivedAt: Date | null;
+  /** Anonymisé (RGPD) : irréversible, plus aucune action possible. */
+  anonymizedAt: Date | null;
   members: HouseholdMemberView[];
+};
+
+/** Colonnes d'un foyer lues par les écrans. */
+const householdColumns = {
+  id: household.id,
+  name: household.name,
+  archivedAt: household.archivedAt,
+  anonymizedAt: household.anonymizedAt,
 };
 
 /** Foyers de l'AMAP courante (actifs, ou archivés), par nom, avec leurs membres. */
@@ -51,7 +62,7 @@ export async function listHouseholds(
 ): Promise<HouseholdView[]> {
   await requireRole(tx, ctx, ["admin"]);
   const households = await tx
-    .select({ id: household.id, name: household.name, archivedAt: household.archivedAt })
+    .select(householdColumns)
     .from(household)
     .where(archived ? isNotNull(household.archivedAt) : isNull(household.archivedAt))
     .orderBy(asc(sql`lower(${household.name})`));
@@ -67,7 +78,7 @@ export async function getHousehold(
   await requireRole(tx, ctx, ["admin"]);
   if (!z.uuid().safeParse(householdId).success) return null;
   const rows = await tx
-    .select({ id: household.id, name: household.name, archivedAt: household.archivedAt })
+    .select(householdColumns)
     .from(household)
     .where(eq(household.id, householdId));
   const [found] = await withMembers(tx, rows);
@@ -76,7 +87,7 @@ export async function getHousehold(
 
 async function withMembers(
   tx: Transaction,
-  households: Array<{ id: string; name: string; archivedAt: Date | null }>,
+  households: Array<Omit<HouseholdView, "members">>,
 ): Promise<HouseholdView[]> {
   if (households.length === 0) return [];
   const members = await tx
@@ -374,7 +385,7 @@ export async function setPrimaryContact(
 }
 
 export type ArchiveResult =
-  | { status: "archived" | "restored" | "invalid" | "not_found" }
+  | { status: "archived" | "restored" | "invalid" | "not_found" | "anonymized" }
   | {
       status: "name_taken" | "member_taken";
     };
@@ -393,6 +404,14 @@ export async function setHouseholdArchived(
   if (!parsed.success) return { status: "invalid" };
   const { householdId, archived } = parsed.data;
   const archivedAt = archived ? new Date() : null;
+
+  // Un foyer anonymisé reste archivé pour toujours.
+  const [target] = await tx
+    .select({ anonymizedAt: household.anonymizedAt })
+    .from(household)
+    .where(eq(household.id, householdId));
+  if (!target) return { status: "not_found" };
+  if (target.anonymizedAt) return { status: "anonymized" };
 
   try {
     const updated = await tx.transaction(async (sub) => {
@@ -519,4 +538,149 @@ export async function invitationFor(
     );
   if (!row || row.emailVerified) return null;
   return { userId: row.userId, email: row.email, firstName: row.firstName };
+}
+
+// --- RGPD : export et anonymisation (story A2, ADR 0010) --------------------------------------
+
+/** Données d'un foyer remises à la famille (droit d'accès et de portabilité, RGPD). */
+export type HouseholdExport = {
+  exportedAt: string;
+  amap: { name: string };
+  household: { name: string; createdAt: string; archivedAt: string | null };
+  members: Array<{
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string | null;
+    isPrimaryContact: boolean;
+    status: MemberStatus;
+    memberSince: string;
+    roles: AmapRoleName[];
+  }>;
+  emails: Array<{ to: string; template: string; status: string; date: string }>;
+  history: Array<{ action: string; date: string }>;
+};
+
+/**
+ * Rassemble les données d'un foyer de l'AMAP courante. À compléter avec chaque nouvelle donnée
+ * d'un foyer (adhésions B1, commandes D3, chèques, avoirs…). L'export est inscrit au journal :
+ * c'est un accès à des données personnelles.
+ */
+export async function exportHousehold(
+  tx: Transaction,
+  ctx: AmapContext,
+  householdId: string,
+): Promise<HouseholdExport | null> {
+  const view = await getHousehold(tx, ctx, householdId);
+  if (!view || view.anonymizedAt) return null;
+
+  const [row] = await tx
+    .select({
+      createdAt: household.createdAt,
+      amapName: sql<string>`(select name from amap where id = ${household.amapId})`,
+    })
+    .from(household)
+    .where(eq(household.id, householdId));
+  const since = await tx
+    .select({ userId: householdMember.userId, createdAt: householdMember.createdAt })
+    .from(householdMember)
+    .where(eq(householdMember.householdId, householdId));
+  const userIds = view.members.map((m) => m.userId);
+  const emails = userIds.length
+    ? await tx
+        .select({
+          userId: notificationLog.userId,
+          template: notificationLog.template,
+          status: notificationLog.status,
+          createdAt: notificationLog.createdAt,
+        })
+        .from(notificationLog)
+        .where(inArray(notificationLog.userId, userIds))
+        .orderBy(asc(notificationLog.createdAt))
+    : [];
+  const history = await tx
+    .select({ action: auditLog.action, createdAt: auditLog.createdAt })
+    .from(auditLog)
+    .where(and(eq(auditLog.entityType, "household"), eq(auditLog.entityId, householdId)))
+    .orderBy(asc(auditLog.createdAt));
+
+  await writeAuditLog(tx, ctx, {
+    entityType: "household",
+    entityId: householdId,
+    action: "export",
+  });
+
+  const emailOf = new Map(view.members.map((m) => [m.userId, m.email]));
+  return {
+    exportedAt: new Date().toISOString(),
+    amap: { name: row?.amapName ?? "" },
+    household: {
+      name: view.name,
+      createdAt: (row?.createdAt ?? new Date()).toISOString(),
+      archivedAt: view.archivedAt?.toISOString() ?? null,
+    },
+    members: view.members.map((m) => ({
+      firstName: m.firstName,
+      lastName: m.lastName,
+      email: m.email,
+      phone: m.phone,
+      isPrimaryContact: m.isPrimary,
+      status: m.status,
+      memberSince: (
+        since.find((s) => s.userId === m.userId)?.createdAt ?? new Date()
+      ).toISOString(),
+      roles: m.roles,
+    })),
+    emails: emails.map((e) => ({
+      to: emailOf.get(e.userId ?? "") ?? "",
+      template: e.template,
+      status: e.status,
+      date: e.createdAt.toISOString(),
+    })),
+    history: history.map((h) => ({ action: h.action, date: h.createdAt.toISOString() })),
+  };
+}
+
+export const anonymizeSchema = z.object({
+  householdId: z.uuid(),
+  confirmName: z.string().max(200),
+});
+
+export type AnonymizeResult =
+  | { status: "anonymized"; anonymizedUserIds: string[] }
+  | { status: "invalid" | "not_found" | "already_anonymized" | "confirmation" };
+
+/**
+ * Anonymise un foyer à sa demande (RGPD), de façon irréversible. Le travail est fait par la
+ * fonction de base anonymize_household (migration 0009), en une transaction ; voir son
+ * commentaire. Renvoie les comptes anonymisés, dont l'action fait effacer les sessions.
+ */
+export async function anonymizeHousehold(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: unknown,
+): Promise<AnonymizeResult> {
+  await requireRole(tx, ctx, ["admin"]);
+  const parsed = anonymizeSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid" };
+  const { householdId, confirmName } = parsed.data;
+
+  const [target] = await tx
+    .select({ name: household.name, anonymizedAt: household.anonymizedAt })
+    .from(household)
+    .where(eq(household.id, householdId));
+  if (!target) return { status: "not_found" };
+  if (target.anonymizedAt) return { status: "already_anonymized" };
+  if (!confirmsAnonymization(confirmName, target.name)) return { status: "confirmation" };
+
+  const result = await tx.execute<{ id: string }>(
+    sql`select anonymize_household(${householdId}) as id`,
+  );
+  // Journal sans aucune donnée personnelle : seulement le fait.
+  await writeAuditLog(tx, ctx, {
+    entityType: "household",
+    entityId: householdId,
+    action: "anonymize",
+  });
+  return { status: "anonymized", anonymizedUserIds: result.rows.map((r) => r.id) };
 }

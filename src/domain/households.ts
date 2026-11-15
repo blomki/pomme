@@ -54,3 +54,14 @@ export function checkNewMembers(members: readonly NewMember[]): MembersProblem |
 export function canRevokeAdmin(adminCount: number): boolean {
   return adminCount > 1;
 }
+
+/**
+ * L'anonymisation est irréversible : l'administrateur confirme en retapant le nom du foyer.
+ * Les espaces en trop et les majuscules ne comptent pas.
+ *
+ * @example confirmsAnonymization(" foyer martin", "Foyer Martin") // true
+ */
+export function confirmsAnonymization(typed: string, householdName: string): boolean {
+  const simplify = (text: string) => normalizeHouseholdName(text).toLocaleLowerCase("fr");
+  return typed.trim() !== "" && simplify(typed) === simplify(householdName);
+}
