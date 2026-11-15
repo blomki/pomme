@@ -33,9 +33,15 @@ test("connexion par lien magique au clavier, puis déconnexion de tous les appar
   await expect(page.getByRole("heading", { level: 1, name: /^Bienvenue/ })).toBeVisible();
   await expectNoSeriousA11yViolations(page);
 
+  // Un amapien n'a qu'un espace : son foyer. Il y arrive directement.
   await page.getByRole("link", { name: "Plus tard" }).click();
+  await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
+  await expect(page.getByRole("heading", { level: 1, name: "Espace famille" })).toBeVisible();
+
+  await page.getByRole("link", { name: "Mon compte" }).click();
   await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
+  await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();
   await expectNoSeriousA11yViolations(page);
 
   await page.getByRole("button", { name: "Me déconnecter de tous mes appareils" }).click();
@@ -93,14 +99,16 @@ test("passkey : création après connexion, puis connexion sans email", async ({
   await page.goto(await newMagicLink(request, email, before));
 
   await page.getByRole("button", { name: "Créer une passkey" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
+  await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
+  await page.goto("/compte");
   await expect(page.getByText("Passkey 1")).toBeVisible();
 
   await page.getByRole("button", { name: "Me déconnecter", exact: true }).click();
   await expect(page.getByText("Vous êtes déconnecté.")).toBeVisible();
 
   await page.getByRole("button", { name: "Se connecter avec une passkey" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
+  await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
+  await page.goto("/compte");
 
   // Ménage : la passkey ne doit pas gêner les autres tests.
   await page.getByRole("button", { name: /^Supprimer/ }).click();

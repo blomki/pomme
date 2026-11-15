@@ -13,11 +13,11 @@ export default async function WelcomePage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
   if (state.status === "challenge" || state.status === "enroll") {
-    redirect(verificationUrl("/compte"));
+    redirect(verificationUrl("/connexion/suite"));
   }
   const { user } = state;
   const passkeys = await getAuth().api.listPasskeys({ headers: await headers() });
-  if (passkeys.length > 0) redirect("/compte");
+  if (passkeys.length > 0) redirect("/connexion/suite");
   const t = await getTranslations("Auth.welcome");
   return (
     <>

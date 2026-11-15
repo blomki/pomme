@@ -6,6 +6,7 @@ import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 
+import { AccountLink } from "../navigation/AccountLink";
 import { ColorModeToggle } from "../theme/ColorModeToggle";
 
 /**
@@ -29,6 +30,7 @@ export function MobileShell({
             {title}
           </Typography>
           <ColorModeToggle />
+          <AccountLink />
         </Toolbar>
       </AppBar>
       <Box

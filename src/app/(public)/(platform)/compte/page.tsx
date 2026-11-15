@@ -9,7 +9,9 @@ import { redirect } from "next/navigation";
 
 import { signOutAction, signOutEverywhereAction } from "@/server/auth/actions";
 import { getSecondFactorState, verificationUrl } from "@/server/auth/second-factor";
+import { listMySpaces } from "@/server/spaces";
 import { PasskeyManager } from "@/ui/auth/PasskeyManager";
+import { MySpaces } from "@/ui/auth/MySpaces";
 import { TotpSection } from "@/ui/auth/TotpSection";
 
 // [domaine]/compte : mon compte (passkeys, application d'authentification, déconnexion).
@@ -18,6 +20,7 @@ export default async function AccountPage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
   const { user, factors } = state;
+  const spaces = await listMySpaces(user.id);
   const t = await getTranslations("Auth.account");
   return (
     <Stack spacing={4}>
@@ -46,6 +49,8 @@ export default async function AccountPage() {
           {t("verifyFirst")}
         </Alert>
       )}
+
+      <MySpaces spaces={spaces} isPlatformAdmin={factors.isPlatformAdmin} />
 
       <PasskeyManager />
 

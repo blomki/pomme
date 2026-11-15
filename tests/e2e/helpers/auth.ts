@@ -34,7 +34,8 @@ export async function signInWithSecondFactor(
     page.getByRole("heading", { level: 1, name: "Deuxième vérification" }),
   ).toBeVisible();
   await enterDemoTotp(page);
-  await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
+  // Vérification faite : la page d'arrivée dépend du compte (administration, Mon compte…).
+  await expect(page).not.toHaveURL(/\/connexion\//);
 }
 
 /** Saisit le code de l'application de démonstration sur la page de deuxième vérification. */

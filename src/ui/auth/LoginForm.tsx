@@ -45,7 +45,7 @@ export function LoginForm({
       setPasskeyError(true);
       return;
     }
-    router.push("/compte");
+    router.push("/connexion/suite");
     router.refresh();
   };
 
