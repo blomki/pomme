@@ -446,7 +446,8 @@
         "admin": "{amap} — Administration",
         "referent": "{amap} — Référent",
         "famille": "{amap} — Mon foyer",
-        "platform": "Gestion de la plateforme"
+        "platform": "Gestion de la plateforme",
+        "producer": "Espace producteur"
       }
     },
     "verification": {

@@ -8,13 +8,15 @@ import { spacePath, type AmapSpace } from "@/domain/spaces";
 
 import { LinkButton } from "../navigation/LinkButton";
 
-/** « Mes espaces » : un lien par espace du compte (administration, référent, famille, plateforme). */
+/** « Mes espaces » : un lien par espace du compte (AMAP, producteur, plateforme). */
 export async function MySpaces({
   spaces,
   isPlatformAdmin,
+  isProducer,
 }: {
   spaces: AmapSpace[];
   isPlatformAdmin: boolean;
+  isProducer: boolean;
 }) {
   const t = await getTranslations("Auth.account");
   const links = [
@@ -22,6 +24,7 @@ export async function MySpaces({
       href: spacePath(space),
       label: t(`space.${space.kind}`, { amap: space.amapName }),
     })),
+    ...(isProducer ? [{ href: "/producteur", label: t("space.producer") }] : []),
     ...(isPlatformAdmin ? [{ href: "/plateforme", label: t("space.platform") }] : []),
   ];
   return (

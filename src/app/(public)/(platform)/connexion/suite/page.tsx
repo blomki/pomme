@@ -10,6 +10,6 @@ import { listMySpaces } from "@/server/spaces";
 export default async function AfterSignInPage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
-  const spaces = await listMySpaces(state.user.id);
-  redirect(landingPath(spaces, state.factors.isPlatformAdmin));
+  const { amapSpaces, isProducer } = await listMySpaces(state.user.id);
+  redirect(landingPath(amapSpaces, { isPlatformAdmin: state.factors.isPlatformAdmin, isProducer }));
 }

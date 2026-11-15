@@ -20,7 +20,7 @@ export default async function AccountPage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
   const { user, factors } = state;
-  const spaces = await listMySpaces(user.id);
+  const { amapSpaces, isProducer } = await listMySpaces(user.id);
   const t = await getTranslations("Auth.account");
   return (
     <Stack spacing={4}>
@@ -50,7 +50,11 @@ export default async function AccountPage() {
         </Alert>
       )}
 
-      <MySpaces spaces={spaces} isPlatformAdmin={factors.isPlatformAdmin} />
+      <MySpaces
+        spaces={amapSpaces}
+        isPlatformAdmin={factors.isPlatformAdmin}
+        isProducer={isProducer}
+      />
 
       <PasskeyManager />
 

@@ -1,7 +1,7 @@
 import { eq } from "drizzle-orm";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
-import { amap, household, householdMember } from "@/db/schema";
+import { amap, household, householdMember, producer, producerUser } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { listMySpaces } from "@/server/spaces";
 
@@ -43,7 +43,7 @@ describe("listMySpaces", () => {
   });
 
   it("liste les rôles et le foyer du compte, dans toutes ses AMAP", async () => {
-    const spaces = await listMySpaces(camille.id, db.app);
+    const { amapSpaces: spaces } = await listMySpaces(camille.id, db.app);
     expect(spaces.map((s) => `${s.amapSlug}/${s.kind}`)).toEqual([
       "amap-a/referent",
       "amap-a/famille",
@@ -52,13 +52,22 @@ describe("listMySpaces", () => {
   });
 
   it("ne montre jamais les espaces d'un autre compte", async () => {
-    const spaces = await listMySpaces(dominique.id, db.app);
+    const { amapSpaces: spaces } = await listMySpaces(dominique.id, db.app);
     expect(spaces.map((s) => `${s.amapSlug}/${s.kind}`)).toEqual(["amap-a/admin"]);
+  });
+
+  it("indique un compte lié à un producteur", async () => {
+    expect((await listMySpaces(dominique.id, db.app)).isProducer).toBe(false);
+    const producerId = uuidv7();
+    await db.owner.insert(producer).values({ id: producerId, name: "Ferme test" });
+    await db.owner.insert(producerUser).values({ id: uuidv7(), producerId, userId: dominique.id });
+    expect((await listMySpaces(dominique.id, db.app)).isProducer).toBe(true);
+    expect((await listMySpaces(camille.id, db.app)).isProducer).toBe(false);
   });
 
   it("ignore une AMAP archivée", async () => {
     await db.owner.update(amap).set({ archivedAt: new Date() }).where(eq(amap.id, amapB.id));
-    const spaces = await listMySpaces(camille.id, db.app);
+    const { amapSpaces: spaces } = await listMySpaces(camille.id, db.app);
     expect(spaces.some((s) => s.amapSlug === "amap-b")).toBe(false);
   });
 });
