@@ -6,7 +6,9 @@ import { buildSeedData, DEMO_ACCOUNTS, MEMBERS_PER_AMAP, SECOND_MEMBER_EVERY } f
 import { assertSeedAllowed } from "./index";
 
 describe("buildSeedData", () => {
-  const data = buildSeedData();
+  // Jour de référence fixe : le jeu de données ne dépend pas du jour où le test tourne.
+  const today = new Date("2026-11-15T10:00:00Z");
+  const data = buildSeedData(today);
 
   it("crée 2 AMAP aux adresses valables", () => {
     expect(data.amaps).toHaveLength(2);
@@ -33,7 +35,7 @@ describe("buildSeedData", () => {
   });
 
   it("est reproductible", () => {
-    expect(buildSeedData()).toEqual(data);
+    expect(buildSeedData(today)).toEqual(data);
   });
 
   it("n'utilise que des adresses et téléphones fictifs, sans doublon", () => {
@@ -56,6 +58,7 @@ describe("buildSeedData", () => {
       ...data.amapProducers,
       ...data.referentAssignments,
       ...data.producerUsers,
+      ...data.distributions,
     ].map((row) => row.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -128,6 +131,17 @@ describe("buildSeedData", () => {
     expect(data.producerUsers.map((pu) => pu.userId)).toEqual([ange?.id]);
     // Un compte producteur n'a pas de foyer.
     expect(data.householdMembers.some((m) => m.userId === ange?.id)).toBe(false);
+  });
+
+  it("crée les distributions de trois mois au jour habituel, dont une fermée à Noël", () => {
+    const [first] = data.amaps;
+    const ofFirst = data.distributions.filter((d) => d.amapId === first?.id);
+    // Mardis de novembre 2026 (4), décembre (5) et janvier 2027 (4).
+    expect(ofFirst).toHaveLength(13);
+    expect(ofFirst.filter((d) => !d.isOpen)).toEqual([
+      expect.objectContaining({ date: "2026-12-29", closedReason: "Vacances de Noël" }),
+    ]);
+    expect(first?.settings.distributionWeekday).toBe(2);
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

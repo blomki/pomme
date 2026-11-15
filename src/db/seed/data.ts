@@ -7,12 +7,15 @@
  * des référents, et une personne présente dans les deux AMAP.
  * Producteurs (noms inventés) : 6 dans la première AMAP, dont un sans référent (tâche
  * « Bloquant »), 3 dans la seconde, dont un commun aux deux et un à rattacher à la première.
+ * Distributions : le mois du chargement et les deux suivants, au jour habituel de chaque AMAP ;
+ * la dernière de décembre est fermée (« Vacances de Noël »).
  * À compléter au fil des stories : adhésions (B1), catalogues, commandes…
  *
  * Toutes les données sont inventées : adresses en @example.org (domaine réservé aux exemples),
  * téléphones dans la tranche 06 39 98 xx xx réservée par l'Arcep à la fiction.
  */
 import { validateAmapSlug } from "@/domain/amap-slug";
+import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
 import type { AmapRoleName } from "@/domain/roles";
 
 import type { AmapSettings, AmapTheme } from "../schema";
@@ -93,6 +96,7 @@ export type SeedData = {
   amapProducers: SeedAmapProducer[];
   referentAssignments: SeedReferentAssignment[];
   producerUsers: SeedProducerUser[];
+  distributions: SeedDistribution[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -301,6 +305,8 @@ const AMAPS = [
       tertiary: "#c9a227",
       headingFont: "Pattaya",
     },
+    // Distribution habituelle (fictive) : le mardi de 18 h à 19 h 30.
+    distribution: { weekday: 2, start: "18:00", end: "19:30" },
     admins: 2,
     referents: 6,
   },
@@ -309,6 +315,7 @@ const AMAPS = [
     name: "AMAP fictive du Pays d'Auge",
     distributionPlace: "Halle du marché (adresse fictive)",
     theme: { primary: "#3f6fb5", secondary: "#7a5c99", tertiary: "#2e8b7a" },
+    distribution: { weekday: 5, start: "17:30", end: "19:00" },
     admins: 1,
     referents: 3,
   },
@@ -323,7 +330,21 @@ function toEmailPart(text: string): string {
     .replace(/[^a-z]/g, "");
 }
 
-export function buildSeedData(): SeedData {
+export type SeedDistribution = {
+  id: string;
+  amapId: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  isOpen: boolean;
+  closedReason: string | null;
+};
+
+/**
+ * @param today jour de référence : les distributions sont créées pour son mois et les deux
+ *   suivants (le jeu de données reste utile quel que soit le jour où on le charge).
+ */
+export function buildSeedData(today: Date = new Date()): SeedData {
   const random = createRandom(SEED);
   let clock = Date.UTC(2026, 0, 1);
   // Identifiants reproductibles : heure fixe qui avance d'une seconde, aléa à graine fixe.
@@ -407,7 +428,12 @@ export function buildSeedData(): SeedData {
       name: definition.name,
       distributionPlace: definition.distributionPlace,
       theme: { ...definition.theme },
-      settings: DEFAULT_SETTINGS,
+      settings: {
+        ...DEFAULT_SETTINGS,
+        distributionWeekday: definition.distribution.weekday,
+        distributionStartTime: definition.distribution.start,
+        distributionEndTime: definition.distribution.end,
+      },
     };
     amaps.push(amapRecord);
 
@@ -522,6 +548,29 @@ export function buildSeedData(): SeedData {
     return producerId ? [{ id: nextId(), producerId, userId: demoUser.id }] : [];
   });
 
+  // Distributions du mois en cours et des deux suivants ; la dernière de décembre est fermée.
+  const distributions: SeedDistribution[] = [];
+  const firstMonth = today.toISOString().slice(0, 7);
+  AMAPS.forEach((definition, index) => {
+    const amapRecord = amaps[index];
+    if (!amapRecord) return;
+    for (const month of [0, 1, 2].map((delta) => addMonths(firstMonth, delta))) {
+      const dates = distributionDates(month, definition.distribution.weekday as Weekday);
+      dates.forEach((date, position) => {
+        const christmas = month.endsWith("-12") && position === dates.length - 1;
+        distributions.push({
+          id: nextId(),
+          amapId: amapRecord.id,
+          date,
+          startTime: definition.distribution.start,
+          endTime: definition.distribution.end,
+          isOpen: !christmas,
+          closedReason: christmas ? "Vacances de Noël" : null,
+        });
+      });
+    }
+  });
+
   const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
   // Rôles supplémentaires des comptes de démonstration, ajoutés en dernier pour ne rien
   // changer au reste du jeu de données (identifiants, référents des producteurs).
@@ -550,6 +599,7 @@ export function buildSeedData(): SeedData {
     amapProducers,
     referentAssignments,
     producerUsers,
+    distributions,
     totpUserIds,
   };
 }

@@ -18,6 +18,7 @@ import { sql } from "drizzle-orm";
 import {
   boolean,
   check,
+  date,
   foreignKey,
   index,
   jsonb,
@@ -27,6 +28,7 @@ import {
   pgRole,
   pgTable,
   text,
+  time,
   timestamp,
   unique,
   uniqueIndex,
@@ -116,6 +118,10 @@ export type AmapSettings = {
   volunteersPerDistribution?: number; // 3 bénévoles par distribution
   experiencedThreshold?: number; // expérimenté à partir de 6 permanences
   membershipExpiryAlertDays?: number; // alerte 30 jours avant la fin d'adhésion
+  /** Distribution habituelle (story D1) : jour (1 = lundi … 7 = dimanche) et horaires « HH:MM ». */
+  distributionWeekday?: number;
+  distributionStartTime?: string;
+  distributionEndTime?: string;
 };
 
 // --- user : utilisateur ----------------------------------------------------------------------
@@ -327,6 +333,48 @@ export const householdMember = pgTable(
       .where(sql`${t.isPrimary}`),
     index("household_member_user_idx").on(t.userId),
     pgPolicy("household_member_isolation", {
+      for: "all",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+  ],
+);
+
+// --- distribution : distribution ------------------------------------------------------------
+// Une par semaine, le jour habituel de l'AMAP (story D1). Pas de lien direct avec la période de
+// commande : une distribution appartient à la période de son mois (écart n°8, ADR 0012).
+
+export const distribution = pgTable(
+  "distribution",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    // Jour du calendrier, sans heure ni fuseau (« 2026-12-08 »).
+    date: date("date", { mode: "string" }).notNull(),
+    startTime: time("start_time").notNull(),
+    endTime: time("end_time").notNull(),
+    // Fermée (vacances, jour férié…) : n'apparaît ni dans les commandes ni sur l'émargement.
+    isOpen: boolean("is_open").notNull().default(true),
+    closedReason: text("closed_reason"),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("distribution_amap_date_unique").on(t.amapId, t.date),
+    check("distribution_times", sql`${t.startTime} < ${t.endTime}`),
+    // Fermée = motif obligatoire ; ouverte = pas de motif. coalesce : sans lui, un motif NULL
+    // rendrait la condition NULL, et PostgreSQL accepte une contrainte CHECK qui vaut NULL.
+    check(
+      "distribution_closed_reason",
+      sql`(${t.isOpen} and ${t.closedReason} is null)
+        or (not ${t.isOpen} and coalesce(length(trim(${t.closedReason})), 0) > 0)`,
+    ),
+    // Lecture et écriture dans l'AMAP courante (l'écriture est réservée aux admins par
+    // requireRole) ; toutes les personnes de l'AMAP liront le calendrier (commandes, planning).
+    pgPolicy("distribution_isolation", {
       for: "all",
       using: sql`${t.amapId} = ${currentAmapId}`,
       withCheck: sql`${t.amapId} = ${currentAmapId}`,
