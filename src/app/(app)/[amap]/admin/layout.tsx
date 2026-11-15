@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 
 import { requireAmapAdminPage } from "@/server/auth/guards";
+import { deskAreasIn } from "@/server/spaces";
 import { DesktopShell } from "@/ui/layout/DesktopShell";
 
 type Props = { children: ReactNode; params: Promise<{ amap: string }> };
@@ -9,9 +10,10 @@ type Props = { children: ReactNode; params: Promise<{ amap: string }> };
 // après la deuxième vérification (story A1).
 export default async function AdminLayout({ children, params }: Props) {
   const { amap: slug } = await params;
-  const { amap } = await requireAmapAdminPage(slug);
+  const { amap, state } = await requireAmapAdminPage(slug);
+  const switchAreas = await deskAreasIn(state.user.id, slug);
   return (
-    <DesktopShell title={amap.name} area="admin" amapSlug={slug}>
+    <DesktopShell title={amap.name} area="admin" amapSlug={slug} switchAreas={switchAreas}>
       {children}
     </DesktopShell>
   );

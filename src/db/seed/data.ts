@@ -191,6 +191,8 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
   email: string;
   firstName: string;
   role: AmapRoleName | null;
+  /** Deuxième rôle dans la même AMAP (admin et référent, cas courant). */
+  alsoReferent?: boolean;
   isPlatformAdmin?: boolean;
   totp?: boolean;
   /** Compte producteur : nom du producteur (PRODUCERS) ; pas de foyer. */
@@ -203,7 +205,13 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
     isPlatformAdmin: true,
     totp: true,
   },
-  { email: "admin.demo@example.org", firstName: "Alix", role: "admin", totp: true },
+  {
+    email: "admin.demo@example.org",
+    firstName: "Alix",
+    role: "admin",
+    alsoReferent: true,
+    totp: true,
+  },
   { email: "admin2.demo@example.org", firstName: "Dominique", role: "admin" },
   { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
   { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
@@ -564,6 +572,23 @@ export function buildSeedData(today: Date = new Date()): SeedData {
   });
 
   const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
+  // Rôles supplémentaires des comptes de démonstration, ajoutés en dernier pour ne rien
+  // changer au reste du jeu de données (identifiants, référents des producteurs).
+  const demoFirstAmap = amaps[0];
+  if (demoFirstAmap) {
+    for (const demo of DEMO_ACCOUNTS) {
+      const demoUser = demoUsers.find(({ demoUser: u }) => u.email === demo.email)?.demoUser;
+      if (demo.alsoReferent && demoUser) {
+        roles.push({
+          id: nextId(),
+          amapId: demoFirstAmap.id,
+          userId: demoUser.id,
+          role: "referent",
+        });
+      }
+    }
+  }
+
   return {
     users,
     amaps,

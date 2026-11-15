@@ -12,7 +12,7 @@ type Props = {
 
 // [domaine]/connexion : lien magique par email, ou passkey. Aucun mot de passe.
 export default async function LoginPage({ searchParams }: Props) {
-  if (await getCurrentSession()) redirect("/compte");
+  if (await getCurrentSession()) redirect("/connexion/suite");
   const { erreur, deconnexion, email } = await searchParams;
   const t = await getTranslations("Auth.login");
   const notice =

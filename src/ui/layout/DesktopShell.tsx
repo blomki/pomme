@@ -28,6 +28,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 
+import { AccountLink } from "../navigation/AccountLink";
 import { ColorModeToggle } from "../theme/ColorModeToggle";
 
 import { activeHref } from "./active-href";
@@ -81,11 +82,14 @@ export function DesktopShell({
   title,
   area,
   amapSlug,
+  switchAreas = [],
   children,
 }: {
   title: string;
   area: DesktopArea;
   amapSlug?: string;
+  /** Espaces de cette AMAP auxquels le compte a accès ; le sélecteur n'apparaît qu'à partir de deux. */
+  switchAreas?: readonly ("admin" | "referent")[];
   children: ReactNode;
 }) {
   const t = useTranslations("Nav");
@@ -138,8 +142,11 @@ export function DesktopShell({
         <AppBar position="sticky" component="header">
           <Toolbar sx={{ gap: 2, minHeight: 64 }}>
             <Box sx={{ flex: 1 }} />
-            {amapSlug && area !== "platform" && <AreaSwitch amapSlug={amapSlug} area={area} />}
+            {amapSlug && area !== "platform" && switchAreas.length > 1 && (
+              <AreaSwitch amapSlug={amapSlug} area={area} areas={switchAreas} />
+            )}
             <ColorModeToggle />
+            <AccountLink />
           </Toolbar>
         </AppBar>
         <Box
@@ -157,14 +164,19 @@ export function DesktopShell({
 
 /**
  * Sélecteur d'espace : une personne à la fois administratrice et référente passe de l'un à
- * l'autre. (Il ne s'affichera qu'à ceux qui ont les deux rôles, une fois les comptes en place.)
+ * l'autre. Affiché seulement à ceux qui ont les deux rôles dans cette AMAP.
  */
-function AreaSwitch({ amapSlug, area }: { amapSlug: string; area: "admin" | "referent" }) {
+function AreaSwitch({
+  amapSlug,
+  area,
+  areas: allowed,
+}: {
+  amapSlug: string;
+  area: "admin" | "referent";
+  areas: readonly ("admin" | "referent")[];
+}) {
   const t = useTranslations("Nav.areaSwitch");
-  const areas = [
-    { value: "admin", href: `/${amapSlug}/admin` },
-    { value: "referent", href: `/${amapSlug}/referent` },
-  ] as const;
+  const areas = allowed.map((value) => ({ value, href: `/${amapSlug}/${value}` }));
   return (
     <Stack component="nav" direction="row" spacing={1} aria-label={t("label")}>
       {areas.map((item) => (
