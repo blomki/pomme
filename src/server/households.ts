@@ -17,10 +17,13 @@ import {
 import { normalizePhone } from "@/domain/phone";
 import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
 
+import { canRevokeReferent } from "@/domain/producers";
+
 import { emailSchema } from "./auth/request-magic-link";
 import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
 import { uniqueViolation } from "./db-errors";
+import { producersFollowedBy } from "./producers";
 
 // Foyers et membres (story A2). Chaque fonction reçoit la transaction ouverte par
 // withAmapContext et commence par requireRole : réservé aux admins de l'AMAP. La Row Level
@@ -450,9 +453,10 @@ export const setRoleSchema = z.object({
   granted: z.boolean(),
 });
 
-export type SetRoleResult = {
-  status: "updated" | "unchanged" | "invalid" | "not_found" | "last_admin";
-};
+export type SetRoleResult =
+  | { status: "updated" | "unchanged" | "invalid" | "not_found" | "last_admin" }
+  /** Retrait du rôle référent refusé : la personne suit encore ces producteurs (C1). */
+  | { status: "has_producers"; producers: string[] };
 
 /**
  * Attribue ou retire le rôle référent ou administrateur à une personne de l'AMAP courante.
@@ -482,6 +486,10 @@ export async function setMemberRole(
       .returning({ id: amapRole.id });
     if (inserted.length === 0) return { status: "unchanged" };
   } else {
+    if (role === "referent") {
+      const followed = await producersFollowedBy(tx, userId);
+      if (!canRevokeReferent(followed)) return { status: "has_producers", producers: followed };
+    }
     if (role === "admin") {
       // Verrou sur les lignes d'admin : deux retraits simultanés ne peuvent pas laisser l'AMAP
       // sans administrateur.

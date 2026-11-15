@@ -2,18 +2,14 @@
 
 import { inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 import { getDatabase } from "@/db/client";
 import { withAmapContext, type AmapContext } from "@/db/context";
-import type { Transaction } from "@/db/client";
 import { account, passkey, session, twoFactor } from "@/db/schema";
 
+import { asAdmin } from "./admin-action";
 import { getAmapBySlug } from "./amap";
 import { getAuthInstance } from "./auth/auth";
-import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from "./auth/errors";
-import { verificationUrl } from "./auth/second-factor";
-import { getAmapContext } from "./context";
 import { invitationEmail, invitationLoginUrl } from "./email/invitation-email";
 import { sendNotification } from "./email/notify";
 import {
@@ -36,25 +32,6 @@ import {
 // l'adresse, puis fonction de households.ts (qui vérifie le rôle admin dans la transaction).
 
 const listPath = (slug: string) => `/${slug}/admin/foyers`;
-
-/**
- * Exécute une fonction réservée aux admins et traduit les refus : pas connecté → page de
- * connexion ; deuxième vérification manquante → page de vérification ; pas admin → « forbidden ».
- */
-async function asAdmin<T>(
-  slug: string,
-  fn: (tx: Transaction, ctx: AmapContext) => Promise<T>,
-): Promise<{ ctx: AmapContext; result: T } | { status: "forbidden" }> {
-  const ctx = await getAmapContext(slug);
-  try {
-    return { ctx, result: await withAmapContext(getDatabase(), ctx, fn) };
-  } catch (error) {
-    if (error instanceof UnauthenticatedError) redirect("/connexion");
-    if (error instanceof SecondFactorRequiredError) redirect(verificationUrl(listPath(slug)));
-    if (error instanceof ForbiddenError) return { status: "forbidden" };
-    throw error;
-  }
-}
 
 /**
  * Envoie les invitations, chacune tracée dans le journal des emails (une transaction par
@@ -113,7 +90,7 @@ export async function createHouseholdAction(
   formData: FormData,
 ): Promise<CreateHouseholdState> {
   const slug = String(formData.get("amap") ?? "");
-  const outcome = await asAdmin(slug, (tx, ctx) =>
+  const outcome = await asAdmin(slug, listPath(slug), (tx, ctx) =>
     createHousehold(tx, ctx, { name: formData.get("name"), members: membersFromForm(formData) }),
   );
   if ("status" in outcome) return outcome;
@@ -135,7 +112,7 @@ export async function addMemberAction(
   const slug = String(formData.get("amap") ?? "");
   const householdId = formData.get("householdId");
   const [member] = membersFromForm(formData);
-  const outcome = await asAdmin(slug, (tx, ctx) =>
+  const outcome = await asAdmin(slug, listPath(slug), (tx, ctx) =>
     addHouseholdMember(tx, ctx, { householdId, member }),
   );
   if ("status" in outcome) return outcome;
@@ -152,7 +129,9 @@ export async function resendInvitationAction(input: {
   householdId: string;
   userId: string;
 }): Promise<{ status: "sent" | "failed" | "not_found" | "forbidden" }> {
-  const outcome = await asAdmin(input.amap, (tx, ctx) => invitationFor(tx, ctx, input));
+  const outcome = await asAdmin(input.amap, listPath(input.amap), (tx, ctx) =>
+    invitationFor(tx, ctx, input),
+  );
   if ("status" in outcome) return outcome;
   if (!outcome.result) return { status: "not_found" };
   const failed = await sendInvitations(input.amap, outcome.ctx, [outcome.result]);
@@ -165,7 +144,9 @@ export async function setPrimaryContactAction(input: {
   householdId: string;
   userId: string;
 }): Promise<{ status: "updated" | "invalid" | "not_found" | "forbidden" }> {
-  const outcome = await asAdmin(input.amap, (tx, ctx) => setPrimaryContact(tx, ctx, input));
+  const outcome = await asAdmin(input.amap, listPath(input.amap), (tx, ctx) =>
+    setPrimaryContact(tx, ctx, input),
+  );
   if ("status" in outcome) return outcome;
   revalidatePath(`${listPath(input.amap)}/${input.householdId}`);
   return outcome.result;
@@ -179,7 +160,9 @@ export async function setMemberRoleAction(input: {
   role: string;
   granted: boolean;
 }): Promise<SetRoleResult | { status: "forbidden" }> {
-  const outcome = await asAdmin(input.amap, (tx, ctx) => setMemberRole(tx, ctx, input));
+  const outcome = await asAdmin(input.amap, listPath(input.amap), (tx, ctx) =>
+    setMemberRole(tx, ctx, input),
+  );
   if ("status" in outcome) return outcome;
   revalidatePath(`${listPath(input.amap)}/${input.householdId}`);
   return outcome.result;
@@ -191,7 +174,9 @@ export async function setHouseholdArchivedAction(input: {
   householdId: string;
   archived: boolean;
 }): Promise<ArchiveResult | { status: "forbidden" }> {
-  const outcome = await asAdmin(input.amap, (tx, ctx) => setHouseholdArchived(tx, ctx, input));
+  const outcome = await asAdmin(input.amap, listPath(input.amap), (tx, ctx) =>
+    setHouseholdArchived(tx, ctx, input),
+  );
   if ("status" in outcome) return outcome;
   revalidatePath(listPath(input.amap));
   revalidatePath(`${listPath(input.amap)}/${input.householdId}`);
@@ -208,7 +193,9 @@ export async function anonymizeHouseholdAction(input: {
   householdId: string;
   confirmName: string;
 }): Promise<AnonymizeResult | { status: "forbidden" }> {
-  const outcome = await asAdmin(input.amap, (tx, ctx) => anonymizeHousehold(tx, ctx, input));
+  const outcome = await asAdmin(input.amap, listPath(input.amap), (tx, ctx) =>
+    anonymizeHousehold(tx, ctx, input),
+  );
   if ("status" in outcome) return outcome;
   const { result } = outcome;
   if (result.status === "anonymized" && result.anonymizedUserIds.length > 0) {

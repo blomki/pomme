@@ -324,6 +324,127 @@ export const householdMember = pgTable(
   ],
 );
 
+// --- producer : producteur ------------------------------------------------------------------
+// Commun à la plateforme : un même producteur livre plusieurs AMAP, avec une seule fiche
+// (modèle de données, section 5). Ses réglages propres à une AMAP sont dans amap_producer.
+
+export const producer = pgTable(
+  "producer",
+  {
+    id: id(),
+    name: text("name").notNull(),
+    category: text("category").notNull().default(""), // « Produits laitiers »
+    shortDescription: text("short_description").notNull().default(""),
+    description: text("description").notNull().default(""),
+    // Format international (+33…), comme pour les comptes : liens « Appeler » et Signal.
+    phone: text("phone"),
+    email: text("email"),
+    // Envoi de photo : fiche dédiée aux fichiers (stockage objet, images ré-encodées).
+    photoUrl: text("photo_url"),
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check("producer_name_not_blank", sql`length(trim(${t.name})) > 0`),
+    check("producer_phone_international", sql`${t.phone} ~ '^\\+[1-9][0-9]{6,14}$'`),
+    check("producer_email_lowercase", sql`${t.email} = lower(${t.email})`),
+    // Lecture : les producteurs de l'AMAP courante (amap_producer est filtrée par sa RLS). Pour
+    // retrouver un producteur d'une autre AMAP, voir la fonction search_producers (migration).
+    pgPolicy("producer_select", {
+      for: "select",
+      using: sql`exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
+    }),
+    // Création et modification : un admin de l'AMAP courante ; modification seulement d'un
+    // producteur de cette AMAP. La fiche étant commune, une modification vaut pour toutes les
+    // AMAP du producteur (ADR 0011).
+    pgPolicy("producer_insert", { for: "insert", withCheck: isCurrentAmapAdmin }),
+    pgPolicy("producer_update", {
+      for: "update",
+      using: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
+      withCheck: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
+    }),
+  ],
+);
+
+// --- amap_producer : producteur dans l'AMAP --------------------------------------------------
+
+export const amapProducer = pgTable(
+  "amap_producer",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    // Ordre des chèques : le nom exact à écrire sur le chèque (« Payable à … »).
+    checkPayee: text("check_payee").notNull().default(""),
+    distanceKm: integer("distance_km"),
+    // Inactif : ne livre plus pour l'instant (pas de catalogue), mais reste dans la liste.
+    active: boolean("active").notNull().default(true),
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("amap_producer_unique").on(t.amapId, t.producerId),
+    // Cible de la clé étrangère composée de referent_assignment.
+    unique("amap_producer_amap_unique").on(t.id, t.amapId),
+    check(
+      "amap_producer_distance",
+      sql`${t.distanceKm} is null or ${t.distanceKm} between 0 and 1000`,
+    ),
+    index("amap_producer_producer_idx").on(t.producerId),
+    pgPolicy("amap_producer_isolation", {
+      for: "all",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+  ],
+);
+
+// --- referent_assignment : référent d'un producteur ------------------------------------------
+// amap_id recopié (le modèle ne le prévoyait pas) : isolation par la RLS sans jointure, et clé
+// étrangère composée pour garantir que l'affectation et le producteur sont dans la même AMAP.
+// Le rôle « referent » de la personne est vérifié par l'application (src/server/producers.ts).
+
+export const referentAssignment = pgTable(
+  "referent_assignment",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    amapProducerId: uuid("amap_producer_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "referent_assignment_amap_producer_fk",
+      columns: [t.amapProducerId, t.amapId],
+      foreignColumns: [amapProducer.id, amapProducer.amapId],
+    }),
+    unique("referent_assignment_unique").on(t.amapProducerId, t.userId),
+    index("referent_assignment_user_idx").on(t.userId),
+    pgPolicy("referent_assignment_isolation", {
+      for: "all",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+  ],
+);
+
 // --- audit_log : journal ---------------------------------------------------------------------
 // Une ligne par action financière ou correction, écrite dans la même transaction que l'action
 // (voir src/server/audit.ts). Jamais modifiée ni supprimée : pas de politique UPDATE ou DELETE.
