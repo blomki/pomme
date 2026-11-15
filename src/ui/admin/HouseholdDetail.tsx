@@ -324,6 +324,12 @@ function RolesDialog({
     setRoles(previous);
     if (result.status === "last_admin") {
       setProblem(t("lastAdmin"));
+    } else if (result.status === "has_producers") {
+      setProblem(
+        t("hasProducers", {
+          producers: new Intl.ListFormat("fr", { type: "conjunction" }).format(result.producers),
+        }),
+      );
     } else {
       setProblem(result.status === "forbidden" ? th("forbidden") : th("error"));
     }

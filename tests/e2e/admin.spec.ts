@@ -305,4 +305,89 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
     await expect(page.getByRole("link", { name })).toHaveCount(0);
   });
+
+  test("un admin crée un producteur au clavier et lui affecte un référent (C1)", async ({
+    page,
+    request,
+  }) => {
+    const name = `Ferme d'essai ${Date.now().toString(36)}`;
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+
+    // Tableau de bord : le producteur du jeu de données sans référent est signalé.
+    await page.goto("/hommesdeterre/admin");
+    const tasks = page.getByRole("region", { name: "Votre liste de tâches" });
+    await expect(
+      tasks.getByText(
+        "Cidrerie du Clos Fictif n'a pas de référent : personne ne pointe ses chèques.",
+      ),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Producteurs et référents" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Producteurs et référents" }),
+    ).toBeVisible();
+    await expect(
+      page
+        .getByRole("row", { name: /Cidrerie du Clos Fictif/ })
+        .getByText("Aucun référent : personne ne pointe ses chèques."),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    await page.getByRole("link", { name: "Ajouter un producteur" }).click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Ajouter un producteur" }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // D'abord chercher : ce producteur n'existe nulle part.
+    const type = async (field: ReturnType<typeof page.getByRole>, text: string) => {
+      await field.focus();
+      await page.keyboard.type(text);
+    };
+    await type(page.getByRole("textbox", { name: "Nom du producteur" }), name);
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Aucun producteur de ce nom. Créez-le ci-dessous.")).toBeVisible();
+
+    // Puis le créer, au clavier, avec d'abord une distance refusée.
+    await type(page.getByRole("textbox", { name: "Nom", exact: true }), name);
+    await type(page.getByRole("textbox", { name: "Catégorie" }), "Légumes");
+    await type(page.getByRole("textbox", { name: "Téléphone" }), "06 39 98 99 02");
+    await type(page.getByRole("textbox", { name: "Ordre des chèques" }), "EARL d'essai");
+    await type(page.getByRole("textbox", { name: "Distance de la ferme (km)" }), "-4");
+    await page.getByRole("button", { name: "Créer le producteur" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText("Rien n'a été enregistré. Corrigez les champs signalés."),
+    ).toBeVisible();
+    await expect(page.getByText("Saisissez un nombre entier de kilomètres")).toBeVisible();
+    await page.getByRole("textbox", { name: "Distance de la ferme (km)" }).fill("14");
+    await page.getByRole("button", { name: "Créer le producteur" }).focus();
+    await page.keyboard.press("Enter");
+
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+    await expect(page.getByText(`Producteur « ${name} » créé.`)).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Téléphone" })).toHaveValue("+33639989902");
+    await expectNoSeriousA11yViolations(page);
+
+    // Sans référent : tâche « Bloquant » ; avec un référent, elle disparaît.
+    await page.goto("/hommesdeterre/admin");
+    await expect(tasks.getByText(`${name} n'a pas de référent`, { exact: false })).toBeVisible();
+    await page.getByRole("link", { name: `Affecter un référent à ${name}` }).click();
+    const referent = page.getByRole("checkbox", { name: "Robin Démo" });
+    await referent.focus();
+    await page.keyboard.press("Space");
+    await page.getByRole("button", { name: "Enregistrer les référents" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(`Référents de ${name} enregistrés.`)).toBeVisible();
+
+    await page.goto("/hommesdeterre/admin");
+    await expect(
+      tasks.getByText("Cidrerie du Clos Fictif n'a pas de référent", { exact: false }),
+    ).toBeVisible();
+    await expect(tasks.getByText(`${name} n'a pas de référent`, { exact: false })).toHaveCount(0);
+  });
 });

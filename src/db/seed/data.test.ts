@@ -52,6 +52,9 @@ describe("buildSeedData", () => {
       ...data.roles,
       ...data.households,
       ...data.householdMembers,
+      ...data.producers,
+      ...data.amapProducers,
+      ...data.referentAssignments,
     ].map((row) => row.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -85,6 +88,36 @@ describe("buildSeedData", () => {
   it("place chaque personne dans un seul foyer par AMAP", () => {
     const keys = data.householdMembers.map((m) => `${m.amapId}:${m.userId}`);
     expect(new Set(keys).size).toBe(keys.length);
+  });
+
+  it("crée des producteurs fictifs, dont un commun aux deux AMAP et un sans référent", () => {
+    const [first, second] = data.amaps;
+    const inAmap = (id?: string) => data.amapProducers.filter((ap) => ap.amapId === id);
+    expect(inAmap(first?.id)).toHaveLength(6);
+    expect(inAmap(second?.id)).toHaveLength(3);
+    const shared = data.producers.filter(
+      (p) => data.amapProducers.filter((ap) => ap.producerId === p.id).length === 2,
+    );
+    expect(shared.length).toBeGreaterThan(0);
+    const withoutReferent = inAmap(first?.id).filter(
+      (ap) => !data.referentAssignments.some((r) => r.amapProducerId === ap.id),
+    );
+    expect(withoutReferent).toHaveLength(1);
+    // Chaque référent affecté a bien le rôle référent dans cette AMAP.
+    for (const assignment of data.referentAssignments) {
+      expect(
+        data.roles.some(
+          (r) =>
+            r.amapId === assignment.amapId &&
+            r.userId === assignment.userId &&
+            r.role === "referent",
+        ),
+      ).toBe(true);
+    }
+    for (const p of data.producers) {
+      expect(p.email).toMatch(/@example\.org$/);
+      expect(p.phone).toMatch(/^\+3363998\d{4}$/);
+    }
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

@@ -4,11 +4,14 @@ import { inArray } from "drizzle-orm";
 import type { Database } from "../client";
 import {
   amap,
+  amapProducer,
   amapRole,
   auditLog,
   household,
   householdMember,
   notificationLog,
+  producer,
+  referentAssignment,
   twoFactor,
   user,
 } from "../schema";
@@ -54,6 +57,9 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(referentAssignment);
+    await tx.delete(amapProducer);
+    await tx.delete(producer);
     await tx.delete(householdMember);
     await tx.delete(household);
     await tx.delete(amapRole);
@@ -65,6 +71,9 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(amapRole).values(data.roles);
     await tx.insert(household).values(data.households);
     await tx.insert(householdMember).values(data.householdMembers);
+    await tx.insert(producer).values(data.producers);
+    await tx.insert(amapProducer).values(data.amapProducers);
+    await tx.insert(referentAssignment).values(data.referentAssignments);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)
@@ -80,5 +89,6 @@ export async function seedDatabase(db: Database, authSecret: string) {
     users: data.users.length,
     roles: data.roles.length,
     households: data.households.length,
+    producers: data.producers.length,
   };
 }

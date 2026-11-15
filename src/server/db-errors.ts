@@ -1,5 +1,6 @@
-/** Code d'erreur PostgreSQL d'une contrainte d'unicité violée. */
+/** Codes d'erreur PostgreSQL : contrainte d'unicité, clé étrangère. */
 const UNIQUE_VIOLATION = "23505";
+const FOREIGN_KEY_VIOLATION = "23503";
 
 type PgError = { code?: string; constraint?: string };
 
@@ -16,4 +17,9 @@ function pgError(error: unknown): PgError {
 export function uniqueViolation(error: unknown): string | null {
   const pg = pgError(error);
   return pg.code === UNIQUE_VIOLATION ? (pg.constraint ?? "") : null;
+}
+
+/** Vrai si l'erreur vient d'une clé étrangère (la ligne référencée n'existe pas). */
+export function foreignKeyViolation(error: unknown): boolean {
+  return pgError(error).code === FOREIGN_KEY_VIOLATION;
 }

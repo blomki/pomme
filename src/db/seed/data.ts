@@ -5,7 +5,9 @@
  * le gestionnaire de la plateforme), 40 foyers par AMAP (quelques-uns de deux personnes ; les
  * comptes de démonstration ont chacun le leur dans la première AMAP), des administrateurs et
  * des référents, et une personne présente dans les deux AMAP.
- * À compléter au fil des stories : adhésions (B1), producteurs (6, C1), catalogues, commandes…
+ * Producteurs (noms inventés) : 6 dans la première AMAP, dont un sans référent (tâche
+ * « Bloquant »), 3 dans la seconde, dont un commun aux deux et un à rattacher à la première.
+ * À compléter au fil des stories : adhésions (B1), catalogues, commandes…
  *
  * Toutes les données sont inventées : adresses en @example.org (domaine réservé aux exemples),
  * téléphones dans la tranche 06 39 98 xx xx réservée par l'Arcep à la fiction.
@@ -55,12 +57,39 @@ export type SeedHouseholdMember = {
   isPrimary: boolean;
 };
 
+export type SeedProducer = {
+  id: string;
+  name: string;
+  category: string;
+  shortDescription: string;
+  phone: string;
+  email: string;
+};
+
+export type SeedAmapProducer = {
+  id: string;
+  amapId: string;
+  producerId: string;
+  checkPayee: string;
+  distanceKm: number;
+};
+
+export type SeedReferentAssignment = {
+  id: string;
+  amapId: string;
+  amapProducerId: string;
+  userId: string;
+};
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
   roles: SeedRole[];
   households: SeedHousehold[];
   householdMembers: SeedHouseholdMember[];
+  producers: SeedProducer[];
+  amapProducers: SeedAmapProducer[];
+  referentAssignments: SeedReferentAssignment[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -170,6 +199,70 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
   { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
   { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
   { email: "amapien2.demo@example.org", firstName: "Charlie", role: null },
+];
+
+/**
+ * Producteurs fictifs (noms inventés : jamais les vrais producteurs des maquettes). `amaps` :
+ * indices des AMAP livrées ; `withoutReferent` : laissé sans référent dans la première AMAP.
+ */
+const PRODUCERS: ReadonlyArray<{
+  name: string;
+  category: string;
+  shortDescription: string;
+  payee: string;
+  amaps: readonly number[];
+  withoutReferent?: boolean;
+}> = [
+  {
+    name: "Les Ruches du Vallon",
+    category: "Miel",
+    shortDescription: "Miels de printemps et de bruyère",
+    payee: "EARL Les Ruches du Vallon",
+    amaps: [0, 1],
+  },
+  {
+    name: "Boulangerie des Trois Moulins",
+    category: "Pains",
+    shortDescription: "Pains au levain, cuits au feu de bois",
+    payee: "Boulangerie des Trois Moulins",
+    amaps: [0],
+  },
+  {
+    name: "Chèvrerie des Hauts Prés",
+    category: "Fromages de chèvre",
+    shortDescription: "Fromages frais et affinés",
+    payee: "GAEC des Hauts Prés",
+    amaps: [0],
+  },
+  {
+    name: "Laiterie du Pré Vert",
+    category: "Produits laitiers",
+    shortDescription: "Yaourts, crème et beurre",
+    payee: "SCEA du Pré Vert",
+    amaps: [0, 1],
+  },
+  {
+    name: "Ferme du Coteau",
+    category: "Œufs",
+    shortDescription: "Œufs de poules élevées en plein air",
+    payee: "Ferme du Coteau",
+    amaps: [0],
+  },
+  {
+    name: "Cidrerie du Clos Fictif",
+    category: "Jus de pomme, cidre",
+    shortDescription: "Jus de pomme et cidre fermier",
+    payee: "Cidrerie du Clos Fictif",
+    amaps: [0],
+    withoutReferent: true,
+  },
+  {
+    name: "Maraîchage de la Source",
+    category: "Légumes",
+    shortDescription: "Légumes de saison",
+    payee: "Maraîchage de la Source",
+    amaps: [1],
+  },
 ];
 
 const DEFAULT_SETTINGS: AmapSettings = {
@@ -343,6 +436,56 @@ export function buildSeedData(): SeedData {
   for (const amapRecord of amaps) {
     if (validateAmapSlug(amapRecord.slug)) throw new Error(`Adresse invalide : ${amapRecord.slug}`);
   }
+  // Producteurs : référents pris parmi les personnes qui ont ce rôle, à tour de rôle.
+  const producers: SeedProducer[] = [];
+  const amapProducers: SeedAmapProducer[] = [];
+  const referentAssignments: SeedReferentAssignment[] = [];
+  const referentsOf = (amapId: string) =>
+    roles.filter((r) => r.amapId === amapId && r.role === "referent").map((r) => r.userId);
+  const turn = new Map<string, number>();
+  for (const definition of PRODUCERS) {
+    phoneCounter += 1;
+    const producerRecord: SeedProducer = {
+      id: nextId(),
+      name: definition.name,
+      category: definition.category,
+      shortDescription: definition.shortDescription,
+      phone: `+3363998${String(phoneCounter).padStart(4, "0")}`,
+      email: `${toEmailPart(definition.name)}@example.org`,
+    };
+    producers.push(producerRecord);
+    for (const index of definition.amaps) {
+      const amapRecord = amaps[index];
+      if (!amapRecord) continue;
+      const amapProducerId = nextId();
+      amapProducers.push({
+        id: amapProducerId,
+        amapId: amapRecord.id,
+        producerId: producerRecord.id,
+        checkPayee: definition.payee,
+        distanceKm: 5 + Math.floor(random.next() * 40),
+      });
+      if (definition.withoutReferent && index === 0) continue;
+      const candidates = referentsOf(amapRecord.id);
+      const position = turn.get(amapRecord.id) ?? 0;
+      turn.set(amapRecord.id, position + 1);
+      const userId = candidates[position % candidates.length];
+      if (userId) {
+        referentAssignments.push({ id: nextId(), amapId: amapRecord.id, amapProducerId, userId });
+      }
+    }
+  }
+
   const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
-  return { users, amaps, roles, households, householdMembers, totpUserIds };
+  return {
+    users,
+    amaps,
+    roles,
+    households,
+    householdMembers,
+    producers,
+    amapProducers,
+    referentAssignments,
+    totpUserIds,
+  };
 }
