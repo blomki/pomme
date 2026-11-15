@@ -138,10 +138,9 @@ test.describe("administration (ordinateur)", () => {
     const key = (await page.locator("code").textContent()) ?? "";
     await page.getByRole("textbox", { name: "Code à 6 chiffres" }).fill(totpFromBase32(key));
     await page.getByRole("button", { name: "Confirmer" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
 
-    // La session est vérifiée : l'administration s'ouvre directement.
-    await page.goto("/hommesdeterre/admin");
+    // La session est vérifiée : arrivée directement dans l'administration.
+    await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
     await expect(
       page.getByRole("heading", { level: 1, name: "Administration de l'AMAP" }),
     ).toBeVisible();
