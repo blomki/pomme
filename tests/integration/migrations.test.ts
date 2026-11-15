@@ -24,6 +24,8 @@ describe("Migrations", () => {
       "amap",
       "amap_role",
       "audit_log",
+      "household",
+      "household_member",
       "notification_log",
       "passkey",
       "session",

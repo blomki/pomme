@@ -2,7 +2,16 @@ import { symmetricEncrypt } from "better-auth/crypto";
 import { inArray } from "drizzle-orm";
 
 import type { Database } from "../client";
-import { amap, amapRole, auditLog, notificationLog, twoFactor, user } from "../schema";
+import {
+  amap,
+  amapRole,
+  auditLog,
+  household,
+  householdMember,
+  notificationLog,
+  twoFactor,
+  user,
+} from "../schema";
 import { uuidv7 } from "../uuid";
 
 import { buildSeedData, DEMO_BACKUP_CODES, DEMO_TOTP_SECRET } from "./data";
@@ -45,6 +54,8 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(householdMember);
+    await tx.delete(household);
     await tx.delete(amapRole);
     await tx.delete(amap);
     await tx.delete(user);
@@ -52,6 +63,8 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(user).values(data.users);
     await tx.insert(amap).values(data.amaps);
     await tx.insert(amapRole).values(data.roles);
+    await tx.insert(household).values(data.households);
+    await tx.insert(householdMember).values(data.householdMembers);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)
@@ -62,5 +75,10 @@ export async function seedDatabase(db: Database, authSecret: string) {
         .where(inArray(user.id, data.totpUserIds));
     }
   });
-  return { amaps: data.amaps.length, users: data.users.length, roles: data.roles.length };
+  return {
+    amaps: data.amaps.length,
+    users: data.users.length,
+    roles: data.roles.length,
+    households: data.households.length,
+  };
 }
