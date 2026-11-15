@@ -36,11 +36,14 @@ export function ProducerFields({
   values,
   onChange,
   invalid,
+  withDistance = true,
 }: {
   values: ProducerFormValues;
   onChange: (values: ProducerFormValues) => void;
   /** Champs refusés par le serveur. */
   invalid: readonly string[];
+  /** La distance n'est réglée que par l'admin (le référent ne la voit pas ici). */
+  withDistance?: boolean;
 }) {
   const t = useTranslations("Admin.producerForm");
   const field = (name: keyof ProducerFormValues, extra: { help?: boolean } = {}) => {
@@ -79,11 +82,13 @@ export function ProducerFields({
           {t("settingsTitle")}
         </Typography>
         <TextField {...field("checkPayee", { help: true })} />
-        <TextField
-          {...field("distanceKm", { help: true })}
-          inputMode="numeric"
-          sx={{ maxWidth: 280 }}
-        />
+        {withDistance && (
+          <TextField
+            {...field("distanceKm", { help: true })}
+            inputMode="numeric"
+            sx={{ maxWidth: 280 }}
+          />
+        )}
       </Stack>
     </Stack>
   );

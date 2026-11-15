@@ -17,6 +17,12 @@ import type { AmapProducerSummary, ReferentView } from "@/server/producers";
 
 const fullName = (r: ReferentView) => `${r.firstName} ${r.lastName}`.trim();
 
+const ACCESS_LABEL = {
+  active: "accessActive",
+  invited: "accessInvited",
+  none: "accessNone",
+} as const;
+
 /** Liste des producteurs de l'AMAP (écran A4) : référents, alerte « sans référent », statut. */
 export function ProducersTable({
   amapSlug,
@@ -35,6 +41,7 @@ export function ProducersTable({
             <TableCell scope="col">{t("producer")}</TableCell>
             <TableCell scope="col">{t("referents")}</TableCell>
             <TableCell scope="col">{t("status")}</TableCell>
+            <TableCell scope="col">{t("access")}</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -75,6 +82,7 @@ export function ProducersTable({
                     label={p.active ? t("active") : t("inactive")}
                   />
                 </TableCell>
+                <TableCell>{t(ACCESS_LABEL[p.access])}</TableCell>
               </TableRow>
             );
           })}

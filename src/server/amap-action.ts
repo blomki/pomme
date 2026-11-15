@@ -9,15 +9,15 @@ import { verificationUrl } from "./auth/second-factor";
 import { getAmapContext } from "./context";
 
 /**
- * Exécute, pour une Server Action de l'administration, une fonction réservée aux admins (qui
- * appelle elle-même requireRole), et traduit les refus :
+ * Exécute, pour une Server Action d'une AMAP, une fonction qui vérifie elle-même le rôle
+ * (requireRole), et traduit les refus :
  * - pas connecté → page de connexion ;
  * - deuxième vérification manquante → page de vérification, puis retour à `returnPath` ;
- * - pas admin de cette AMAP → résultat { status: "forbidden" }.
+ * - pas le bon rôle dans cette AMAP → résultat { status: "forbidden" }.
  *
  * Dans un module à part : un fichier « use server » ne peut exporter que des actions.
  */
-export async function asAdmin<T>(
+export async function runAmapAction<T>(
   slug: string,
   returnPath: string,
   fn: (tx: Transaction, ctx: AmapContext) => Promise<T>,

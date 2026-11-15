@@ -49,3 +49,18 @@ export function parseDistanceKm(input: string): number | null | undefined {
   const km = Number(text);
   return km <= 1000 ? km : undefined;
 }
+
+/**
+ * Accès du producteur à Pomme, affiché à l'admin :
+ * - « active » (compte actif) : au moins un de ses comptes s'est déjà connecté ;
+ * - « invited » (invitation envoyée) : il a un compte, jamais utilisé ;
+ * - « none » (pas de compte).
+ */
+export type ProducerAccess = "active" | "invited" | "none";
+
+export function producerAccess(
+  accounts: ReadonlyArray<{ emailVerified: boolean }>,
+): ProducerAccess {
+  if (accounts.some((account) => account.emailVerified)) return "active";
+  return accounts.length > 0 ? "invited" : "none";
+}

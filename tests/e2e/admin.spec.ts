@@ -390,4 +390,90 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
     await expect(tasks.getByText(`${name} n'a pas de référent`, { exact: false })).toHaveCount(0);
   });
+
+  test("un admin invite le compte d'un producteur (C1)", async ({ page, request }) => {
+    const email = `producteur.${Date.now().toString(36)}@example.org`;
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/producteurs");
+    await expect(
+      page.getByRole("row", { name: /Les Ruches du Vallon/ }).getByRole("cell", {
+        name: "Invitation envoyée",
+      }),
+    ).toBeVisible();
+
+    await page.getByRole("link", { name: "Boulangerie des Trois Moulins" }).click();
+    const access = page.getByRole("region", { name: "Accès du producteur" });
+    await expect(access).toBeVisible();
+    await access.getByRole("textbox", { name: "Adresse email" }).fill(email);
+    await access.getByRole("textbox", { name: "Prénom" }).fill("Mathis");
+    const before = await inboxSnapshot(request, email);
+    await access.getByRole("button", { name: "Inviter" }).click();
+    await expect(page.getByText(`Invitation envoyée à ${email}.`)).toBeVisible();
+    await expect(access.getByText(email)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    const invitation = await newMessage(request, email, before);
+    expect(invitation.Subject).toContain("Boulangerie des Trois Moulins");
+    expect(invitation.Text).not.toMatch(/magic-link/);
+  });
+
+  test("un référent consulte ses producteurs et modifie l'ordre des chèques au clavier (C1)", async ({
+    page,
+    request,
+  }) => {
+    const payee = `EARL des Ruches ${Date.now().toString(36)}`;
+    // Sans connexion : renvoi vers la connexion.
+    await page.goto("/hommesdeterre/referent/producteurs");
+    await expect(page).toHaveURL(/\/connexion$/);
+
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent");
+    await page
+      .getByRole("navigation", { name: "Menu du référent" })
+      .getByRole("link", { name: "Mes producteurs" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Mes producteurs" })).toBeVisible();
+    const tabs = page.getByRole("tablist", { name: "Producteurs suivis" });
+    // Les deux producteurs du jeu de données (un passage précédent peut en avoir ajouté).
+    await expect(tabs.getByRole("tab", { name: "Boulangerie des Trois Moulins" })).toBeVisible();
+    await expect(tabs.getByRole("tab", { name: "Les Ruches du Vallon" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Au clavier : la touche Fin mène au dernier onglet (ordre alphabétique).
+    await tabs.getByRole("tab", { name: "Boulangerie des Trois Moulins" }).focus();
+    await page.keyboard.press("End");
+    await expect(tabs.getByRole("tab", { name: "Les Ruches du Vallon" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    await expect(page.getByRole("region", { name: "Coordonnées" })).toContainText(
+      "Les Ruches du Vallon",
+    );
+
+    await page
+      .getByRole("button", { name: "Modifier les coordonnées de Les Ruches du Vallon" })
+      .focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", { name: "Modifier Les Ruches du Vallon" });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    const field = dialog.getByRole("textbox", { name: "Ordre des chèques" });
+    await field.fill("");
+    await field.focus();
+    await page.keyboard.type(payee);
+    await dialog.getByRole("button", { name: "Enregistrer" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Les Ruches du Vallon enregistré.")).toBeVisible();
+    await expect(page.getByRole("region", { name: "Contrat et chèques" })).toContainText(payee);
+  });
+
+  test("une personne sans rôle référent n'a pas accès à « Mes producteurs »", async ({
+    page,
+    request,
+  }) => {
+    // admin2.demo : admin, pas référent ; aucun autre fichier de test ne s'en sert.
+    await signInByEmail(page, request, "admin2.demo@example.org");
+    await page.goto("/hommesdeterre/referent/producteurs");
+    await expect(page.getByRole("heading", { level: 1, name: "Page introuvable" })).toBeVisible();
+  });
 });

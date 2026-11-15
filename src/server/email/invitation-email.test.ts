@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { invitationEmail, invitationLoginUrl } from "./invitation-email";
+import { invitationEmail, invitationLoginUrl, producerInvitationEmail } from "./invitation-email";
 
 describe("invitationEmail", () => {
   const email = invitationEmail({
@@ -25,5 +25,20 @@ describe("invitationLoginUrl", () => {
     expect(invitationLoginUrl("https://pomme.example.org", "a+b@example.org")).toBe(
       "https://pomme.example.org/connexion?email=a%2Bb%40example.org",
     );
+  });
+});
+
+describe("producerInvitationEmail", () => {
+  it("nomme le producteur et l'AMAP, sans jeton de connexion", () => {
+    const email = producerInvitationEmail({
+      amap: { name: "AMAP des Tests", theme: null },
+      firstName: "Camille",
+      producerName: "Ruches d'essai",
+      loginUrl: "https://pomme.example.org/connexion?email=c%40example.org",
+    });
+    expect(email.subject).toContain("Ruches d'essai");
+    expect(email.text).toContain("Bonjour Camille");
+    expect(email.text).toContain("AMAP des Tests");
+    expect(email.text).not.toMatch(/token=/);
   });
 });

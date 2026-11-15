@@ -19,6 +19,7 @@ import { setProducerReferentsAction, updateProducerAction } from "@/server/produ
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
+import { ProducerAccessSection } from "./ProducerAccessSection";
 import { ProducerFields, type ProducerFormValues } from "./ProducerFields";
 
 const fullName = (r: ReferentView) => `${r.firstName} ${r.lastName}`.trim();
@@ -122,6 +123,8 @@ export function ProducerDetail({
         </Box>
 
         <ReferentsForm amapSlug={amapSlug} producer={producer} candidates={candidates} />
+
+        <ProducerAccessSection amapSlug={amapSlug} producer={producer} />
       </Stack>
     </>
   );

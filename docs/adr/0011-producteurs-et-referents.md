@@ -35,6 +35,16 @@ des autres AMAP : impossible de les retrouver pour les « rattacher ».
 7. **Photo** : la colonne existe, l'envoi de fichiers viendra avec une fiche dédiée (stockage
    objet, images ré-encodées), commune aux photos de producteurs, de produits et aux logos.
 
+8. **Comptes producteurs** (partie 2) : table `producer_user`, commune à la plateforme (un
+   compte sert pour toutes les AMAP du producteur). L'admin invite un compte comme pour un
+   foyer (compte existant rattaché, invitation sans lien de connexion, ADR 0009). Statut
+   affiché : compte actif, invitation envoyée, pas de compte. Le producteur lit sa propre
+   fiche, hors de toute AMAP. Un compte lié à un producteur n'est jamais anonymisé avec un
+   foyer (migration 0014).
+9. **« Mes producteurs »** (écran R5) : le référent voit les producteurs dont il a la charge, et
+   modifie leurs coordonnées et l'ordre des chèques (pas la distance ni le statut, réglés par
+   l'admin). La base le garantit aussi (politique `producer_update_by_referent`).
+
 ## Pourquoi
 
 - Une seule fiche par producteur : il met à jour ses coordonnées une fois pour toutes ses AMAP
@@ -49,6 +59,6 @@ des autres AMAP : impossible de les retrouver pour les « rattacher ».
 - **Un admin d'une AMAP modifie la fiche commune pour toutes les AMAP du producteur.** C'est
   annoncé dans l'écran (« Commune à toutes les AMAP que ce producteur livre »). Si cela pose
   problème, il faudra réserver ces champs au producteur lui-même (comptes producteurs).
-- Partie 2 de C1 : `producer_user` (comptes producteurs), et la lecture d'un producteur par son
-  propre compte. `anonymize_household` devra garder actif un compte lié à un producteur.
+- Le producteur ne peut pas encore modifier sa propre fiche : son espace viendra avec C2 et
+  C4 (fiches produit, choix de l'AMAP courante).
 - Rattacher un producteur révèle à l'admin qu'il livre une autre AMAP (pas laquelle).

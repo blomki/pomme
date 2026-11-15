@@ -8,6 +8,7 @@ import { amapRole } from "@/db/schema";
 import { getAmapBySlug } from "../amap";
 
 import { requireVerifiedSession } from "./second-factor";
+import { requireSession } from "./session";
 
 /**
  * Espace administrateur d'une AMAP : connexion, deuxième vérification, puis rôle admin dans
@@ -42,4 +43,35 @@ export async function requirePlatformAdminPage() {
   const state = await requireVerifiedSession("/plateforme");
   if (!state.factors.isPlatformAdmin) notFound();
   return state;
+}
+
+/**
+ * Pages du référent qui montrent des données (« Mes producteurs »…) : connexion, puis rôle
+ * référent dans cette AMAP. Sinon : page 404. Pas de deuxième vérification : elle n'est exigée
+ * que des administrateurs. Les Server Actions refont la vérification avec requireRole.
+ */
+export async function requireAmapReferentPage(slug: string) {
+  const amap = await getAmapBySlug(slug);
+  if (!amap) notFound();
+  const current = await requireSession();
+  const ctx = {
+    amapId: amap.id,
+    userId: current.user.id,
+    secondFactorVerified: Boolean(current.session.secondFactorVerifiedAt),
+  };
+  const isReferent = await withAmapContext(getDatabase(), ctx, async (tx) => {
+    const rows = await tx
+      .select({ id: amapRole.id })
+      .from(amapRole)
+      .where(
+        and(
+          eq(amapRole.amapId, amap.id),
+          eq(amapRole.userId, current.user.id),
+          eq(amapRole.role, "referent"),
+        ),
+      );
+    return rows.length > 0;
+  });
+  if (!isReferent) notFound();
+  return { amap, ctx };
 }
