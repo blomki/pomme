@@ -25,6 +25,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { formatPhone } from "@/domain/phone";
@@ -32,6 +33,7 @@ import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
 import type { FieldError, HouseholdMemberView, HouseholdView } from "@/server/households";
 import {
   addMemberAction,
+  anonymizeHouseholdAction,
   resendInvitationAction,
   setHouseholdArchivedAction,
   setMemberRoleAction,
@@ -61,6 +63,8 @@ export function HouseholdDetail({
   const [rolesOf, setRolesOf] = useState<HouseholdMemberView | null>(null);
   const [emailOf, setEmailOf] = useState<HouseholdMemberView | null>(null);
   const archived = household.archivedAt !== null;
+  const anonymized = household.anonymizedAt !== null;
+  const [anonymizing, setAnonymizing] = useState(false);
   const ref = { amap: amapSlug, householdId: household.id };
 
   const setArchived = async (value: boolean) => {
@@ -114,7 +118,7 @@ export function HouseholdDetail({
         sx={{ mb: 2, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}
       >
         <Typography variant="h1">{household.name}</Typography>
-        {archived ? (
+        {anonymized ? null : archived ? (
           <Button variant="contained" onClick={() => void setArchived(false)}>
             {t("restore")}
           </Button>
@@ -126,7 +130,7 @@ export function HouseholdDetail({
       </Stack>
       {archived && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          {t("archivedNotice")}
+          {anonymized ? t("anonymizedNotice") : t("archivedNotice")}
         </Alert>
       )}
 
@@ -216,6 +220,37 @@ export function HouseholdDetail({
       </TableContainer>
 
       {!archived && <AddMemberForm amapSlug={amapSlug} householdId={household.id} />}
+
+      {!anonymized && (
+        <Box component="section" aria-labelledby="privacy-title" sx={{ mt: 5, maxWidth: 720 }}>
+          <Typography id="privacy-title" variant="h2" sx={{ mb: 1 }}>
+            {t("privacyTitle")}
+          </Typography>
+          <Typography sx={{ mb: 2 }}>{t("privacyIntro")}</Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+            {/* Lien de téléchargement (fichier JSON), pas une navigation Next. */}
+            <Button
+              variant="outlined"
+              component="a"
+              href={`/${amapSlug}/admin/foyers/${household.id}/export`}
+              download
+              nativeButton={false}
+            >
+              {t("export")}
+            </Button>
+            <Button variant="outlined" color="error" onClick={() => setAnonymizing(true)}>
+              {t("anonymize")}
+            </Button>
+          </Stack>
+        </Box>
+      )}
+      {anonymizing && (
+        <AnonymizeDialog
+          amapSlug={amapSlug}
+          household={household}
+          onClose={() => setAnonymizing(false)}
+        />
+      )}
 
       {rolesOf && (
         <RolesDialog
@@ -439,5 +474,77 @@ function AddMemberForm({ amapSlug, householdId }: { amapSlug: string; householdI
         </Box>
       </Stack>
     </Box>
+  );
+}
+
+/**
+ * Confirmation de l'anonymisation (irréversible) : on explique ce qui va disparaître, et
+ * l'administrateur retape le nom du foyer. Pas d'« Annuler » après coup : c'est définitif.
+ */
+function AnonymizeDialog({
+  amapSlug,
+  household,
+  onClose,
+}: {
+  amapSlug: string;
+  household: HouseholdView;
+  onClose: () => void;
+}) {
+  const t = useTranslations("Admin.anonymize");
+  const router = useRouter();
+  const showSnackbar = useSnackbar();
+  const [typed, setTyped] = useState("");
+  const [problem, setProblem] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setPending(true);
+    const result = await anonymizeHouseholdAction({
+      amap: amapSlug,
+      householdId: household.id,
+      confirmName: typed,
+    });
+    setPending(false);
+    if (result.status === "anonymized") {
+      showSnackbar({ message: t("done") });
+      router.push(`/${amapSlug}/admin/foyers`);
+      return;
+    }
+    setProblem(result.status === "confirmation" ? t("wrongName") : t("error"));
+  };
+
+  return (
+    <Dialog open onClose={onClose} aria-labelledby="anonymize-title" fullWidth maxWidth="sm">
+      <form onSubmit={(e) => void submit(e)} noValidate>
+        <DialogTitle id="anonymize-title">{t("title", { name: household.name })}</DialogTitle>
+        <DialogContent>
+          <DialogContentText sx={{ mb: 1 }}>{t("intro")}</DialogContentText>
+          <Box component="ul" sx={{ mt: 0, mb: 2, pl: 3 }}>
+            <li>{t("effectHousehold")}</li>
+            <li>{t("effectAccounts")}</li>
+            <li>{t("effectOtherAmap")}</li>
+            <li>{t("effectHistory")}</li>
+          </Box>
+          <DialogContentText sx={{ mb: 2 }}>{t("exportFirst")}</DialogContentText>
+          <TextField
+            label={t("confirmLabel", { name: household.name })}
+            value={typed}
+            onChange={(e) => setTyped(e.target.value)}
+            autoComplete="off"
+            required
+            fullWidth
+            error={problem !== null}
+            helperText={problem ?? " "}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={onClose}>{t("cancel")}</Button>
+          <Button type="submit" variant="contained" color="error" disabled={pending}>
+            {t("confirm")}
+          </Button>
+        </DialogActions>
+      </form>
+    </Dialog>
   );
 }

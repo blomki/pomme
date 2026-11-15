@@ -7,7 +7,9 @@ import { uuidv7 } from "@/db/uuid";
 import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors";
 import {
   addHouseholdMember,
+  anonymizeHousehold,
   createHousehold,
+  exportHousehold,
   getHousehold,
   invitationFor,
   listHouseholds,
@@ -393,6 +395,137 @@ describe("Foyers (A2)", () => {
         .from(auditLog)
         .where(eq(auditLog.entityId, householdId));
       expect(entries.map((e) => e.action)).toEqual(["create", "archive"]);
+    });
+  });
+
+  describe("RGPD : export et anonymisation", () => {
+    let householdId: string;
+    let alone: string; // seulement dans l'AMAP A : son compte sera anonymisé
+    let shared: string; // aussi dans un foyer actif de l'AMAP B : son compte est gardé
+
+    beforeAll(async () => {
+      const created = await newHousehold("Foyer Rgpd", [
+        { email: "seul@example.org", firstName: "Sol", phone: "0639980099", isPrimary: true },
+        { email: "partage@example.org", firstName: "Pat" },
+      ]);
+      if (created.status !== "created") throw new Error(created.status);
+      householdId = created.householdId;
+      [alone, shared] = created.invitations.map((i) => i.userId) as [string, string];
+
+      const otherHousehold = uuidv7();
+      await db.owner
+        .insert(household)
+        .values({ id: otherHousehold, amapId: amapB.id, name: "Foyer Pat B" });
+      await db.owner.insert(householdMember).values({
+        amapId: amapB.id,
+        householdId: otherHousehold,
+        userId: shared,
+        isPrimary: true,
+      });
+      await fixtures(db.owner).grantRole(amapA.id, alone, "referent");
+      // Trace d'une correction d'email : contient des données personnelles.
+      await db.owner.insert(auditLog).values({
+        amapId: amapA.id,
+        actorUserId: admin.id,
+        entityType: "user",
+        entityId: alone,
+        action: "correct_email",
+        before: { email: "ancien@example.org" },
+        after: { email: "seul@example.org" },
+      });
+    });
+
+    it("exporte les données du foyer et inscrit l'export au journal", async () => {
+      const data = await inA((tx, ctx) => exportHousehold(tx, ctx, householdId));
+      expect(data?.household.name).toBe("Foyer Rgpd");
+      expect(data?.amap.name).toBe("AMAP amap-a");
+      expect(data?.members.map((m) => [m.email, m.phone, m.isPrimaryContact])).toEqual([
+        ["seul@example.org", "+33639980099", true],
+        ["partage@example.org", null, false],
+      ]);
+      expect(data?.history.map((h) => h.action)).toContain("create");
+      const entries = await db.owner
+        .select({ action: auditLog.action })
+        .from(auditLog)
+        .where(and(eq(auditLog.entityId, householdId), eq(auditLog.action, "export")));
+      expect(entries).toHaveLength(1);
+    });
+
+    it("refuse l'export à un référent", async () => {
+      await expect(
+        inA((tx, ctx) => exportHousehold(tx, ctx, householdId), referent.id),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+    });
+
+    it("exige de retaper le nom du foyer, sinon ne touche à rien", async () => {
+      expect(
+        await inA((tx, ctx) => anonymizeHousehold(tx, ctx, { householdId, confirmName: "Autre" })),
+      ).toEqual({ status: "confirmation" });
+      const [row] = await db.owner.select().from(household).where(eq(household.id, householdId));
+      expect(row?.name).toBe("Foyer Rgpd");
+    });
+
+    it("refuse l'anonymisation à un référent, et la fonction de base hors de son AMAP", async () => {
+      await expect(
+        inA(
+          (tx, ctx) => anonymizeHousehold(tx, ctx, { householdId, confirmName: "Foyer Rgpd" }),
+          referent.id,
+        ),
+      ).rejects.toBeInstanceOf(ForbiddenError);
+      const callIn = (actor: string, amapId: string) =>
+        withAmapContext(db.app, as(actor, amapId), (tx) =>
+          tx.execute(sql`select anonymize_household(${householdId})`),
+        );
+      await expect(callIn(referent.id, amapA.id)).rejects.toThrow();
+      // Admin de l'AMAP B, foyer de l'AMAP A : refusé par la base.
+      await fixtures(db.owner).grantRole(amapB.id, admin.id, "admin");
+      await expect(callIn(admin.id, amapB.id)).rejects.toThrow();
+    });
+
+    it("anonymise le foyer, le compte qui n'est plus actif nulle part, et le journal", async () => {
+      const result = await inA((tx, ctx) =>
+        anonymizeHousehold(tx, ctx, { householdId, confirmName: "  foyer RGPD " }),
+      );
+      expect(result).toEqual({ status: "anonymized", anonymizedUserIds: [alone] });
+
+      const [row] = await db.owner.select().from(household).where(eq(household.id, householdId));
+      expect(row?.name).toMatch(/^Foyer anonymisé [0-9a-f]{8}$/);
+      expect(row?.archivedAt).not.toBeNull();
+      expect(row?.anonymizedAt).not.toBeNull();
+
+      const [gone] = await db.owner.select().from(user).where(eq(user.id, alone));
+      expect(gone).toMatchObject({
+        email: `anonyme-${alone}@anonyme.invalid`,
+        firstName: "Anonyme",
+        lastName: "",
+        phone: null,
+      });
+      const [kept] = await db.owner.select().from(user).where(eq(user.id, shared));
+      expect(kept?.email).toBe("partage@example.org");
+      // L'AMAP A ne voit plus du tout la personne gardée pour l'AMAP B.
+      const visible = await inA((tx) => tx.select().from(user).where(eq(user.id, shared)));
+      expect(visible).toEqual([]);
+
+      const roles = await db.owner.select().from(amapRole).where(eq(amapRole.userId, alone));
+      expect(roles).toEqual([]);
+
+      const traces = await db.owner
+        .select({ action: auditLog.action, before: auditLog.before, after: auditLog.after })
+        .from(auditLog)
+        .where(eq(auditLog.entityId, alone));
+      const correction = traces.find((t) => t.action === "correct_email");
+      expect(correction).toMatchObject({ before: { anonymise: true }, after: { anonymise: true } });
+      expect(JSON.stringify(traces)).not.toContain("example.org");
+    });
+
+    it("est irréversible : ni rétablissement, ni nouvel export, ni seconde anonymisation", async () => {
+      expect(
+        await inA((tx, ctx) => setHouseholdArchived(tx, ctx, { householdId, archived: false })),
+      ).toEqual({ status: "anonymized" });
+      expect(await inA((tx, ctx) => exportHousehold(tx, ctx, householdId))).toBeNull();
+      expect(
+        await inA((tx, ctx) => anonymizeHousehold(tx, ctx, { householdId, confirmName: "x" })),
+      ).toEqual({ status: "already_anonymized" });
     });
   });
 });

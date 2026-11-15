@@ -123,7 +123,12 @@
       "restoreNameTaken": "Impossible de rétablir ce foyer : un autre foyer porte maintenant ce nom.",
       "restoreMemberTaken": "Impossible de rétablir ce foyer : un de ses membres fait maintenant partie d'un autre foyer.",
       "forbidden": "Vous n'avez pas le droit de faire cette modification.",
-      "error": "La modification n'a pas pu être enregistrée."
+      "error": "La modification n'a pas pu être enregistrée.",
+      "anonymizedNotice": "Ce foyer a été anonymisé à sa demande (RGPD). Ses données personnelles ont été effacées ; il ne peut plus être rétabli.",
+      "privacyTitle": "Données personnelles (RGPD)",
+      "privacyIntro": "À la demande du foyer : lui remettre ses données, ou les effacer en anonymisant le foyer.",
+      "export": "Exporter les données (JSON)",
+      "anonymize": "Anonymiser le foyer"
     },
     "roles": {
       "dialogTitle": "Rôles de {name}",
@@ -135,6 +140,21 @@
       "close": "Fermer",
       "updated": "Rôles de {name} mis à jour.",
       "lastAdmin": "C'est le dernier administrateur de l'AMAP : donnez d'abord ce rôle à quelqu'un d'autre."
+    },
+    "anonymize": {
+      "title": "Anonymiser « {name} » ?",
+      "intro": "À faire seulement à la demande du foyer. C'est définitif :",
+      "effectHousehold": "le foyer est renommé « Foyer anonymisé », archivé, et ses membres perdent leurs rôles dans l'AMAP ;",
+      "effectAccounts": "le compte de chaque membre qui n'est plus inscrit dans aucune AMAP est effacé (nom, email, téléphone, connexions) ;",
+      "effectOtherAmap": "le compte d'un membre encore inscrit dans une autre AMAP est gardé pour cette AMAP ;",
+      "effectHistory": "le journal garde la trace des actions, mais plus les données personnelles.",
+      "exportFirst": "Si le foyer souhaite récupérer ses données, exportez-les avant.",
+      "confirmLabel": "Pour confirmer, tapez le nom du foyer : {name}",
+      "cancel": "Annuler",
+      "confirm": "Anonymiser définitivement",
+      "done": "Foyer anonymisé.",
+      "wrongName": "Le nom tapé ne correspond pas au nom du foyer.",
+      "error": "L'anonymisation n'a pas pu être faite."
     }
   },
   "Producer": {

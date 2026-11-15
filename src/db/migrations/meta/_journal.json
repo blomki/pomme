@@ -57,6 +57,20 @@
       "when": 1794686173719,
       "tag": "0007_compte-par-email",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1794747748232,
+      "tag": "0008_foyer-anonymise",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1794747749526,
+      "tag": "0009_anonymiser-foyer",
+      "breakpoints": true
     }
   ]
 }

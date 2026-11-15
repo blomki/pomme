@@ -253,6 +253,8 @@ export const household = pgTable(
     name: text("name").notNull(), // « Foyer Martin »
     createdBy: uuid("created_by").references(() => user.id),
     archivedAt: archivedAt(),
+    // Anonymisation RGPD (irréversible) : voir la fonction anonymize_household (migration 0009).
+    anonymizedAt: timestamp("anonymized_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },

@@ -1,3 +1,5 @@
+import { text } from "node:stream/consumers";
+
 import { expect, test } from "@playwright/test";
 
 import { totpFromBase32 } from "../helpers/totp";
@@ -254,5 +256,53 @@ test.describe("administration (ordinateur)", () => {
     await page.context().clearCookies();
     await page.goto(loginUrl);
     await expect(page.getByRole("textbox", { name: "Adresse email" })).toHaveValue(first);
+  });
+
+  test("un admin exporte les données d'un foyer puis l'anonymise (RGPD)", async ({
+    page,
+    request,
+  }) => {
+    const run = Date.now().toString(36);
+    const email = `rgpd.${run}@example.org`;
+    const name = `Foyer Rgpd ${run}`;
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers/nouveau");
+    await page.getByRole("textbox", { name: "Nom du foyer" }).fill(name);
+    const member = page.getByRole("group", { name: "Membre 1" });
+    await member.getByRole("textbox", { name: "Adresse email" }).fill(email);
+    await member.getByRole("textbox", { name: "Prénom" }).fill("Rémi");
+    await page.getByRole("button", { name: "Créer le foyer et envoyer les invitations" }).click();
+    await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+
+    // Export : un fichier JSON avec les données du foyer.
+    const downloading = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Exporter les données (JSON)" }).click();
+    const download = await downloading;
+    const exported = JSON.parse(await text(await download.createReadStream())) as {
+      household: { name: string };
+      members: Array<{ email: string }>;
+    };
+    expect(exported.household.name).toBe(name);
+    expect(exported.members.map((m) => m.email)).toEqual([email]);
+
+    // Anonymisation : confirmation par le nom du foyer, au clavier.
+    await page.getByRole("button", { name: "Anonymiser le foyer" }).click();
+    const dialog = page.getByRole("dialog", { name: `Anonymiser « ${name} » ?` });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    const confirm = dialog.getByRole("textbox", { name: /Pour confirmer, tapez le nom du foyer/ });
+    await confirm.focus();
+    await page.keyboard.type("Autre nom");
+    await page.keyboard.press("Enter");
+    await expect(dialog.getByText("Le nom tapé ne correspond pas au nom du foyer.")).toBeVisible();
+    await confirm.fill("");
+    await page.keyboard.type(name.toLowerCase());
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Foyer anonymisé.")).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Foyers et adhésions" }),
+    ).toBeVisible();
+    await expect(page.getByRole("link", { name })).toHaveCount(0);
   });
 });
