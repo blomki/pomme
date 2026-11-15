@@ -41,3 +41,30 @@ export function invitationLoginUrl(baseUrl: string, email: string): string {
   url.searchParams.set("email", email);
   return url.toString();
 }
+
+/**
+ * Email d'invitation d'un compte producteur (story C1). Même principe que pour un foyer : pas
+ * de lien de connexion, le bouton mène à la page de connexion, adresse remplie. Aux couleurs de
+ * l'AMAP qui invite.
+ */
+export function producerInvitationEmail(params: {
+  amap: { name: string; theme: AmapTheme | null };
+  firstName: string;
+  producerName: string;
+  loginUrl: string;
+}): EmailContent {
+  const t = createTranslator({ locale: "fr", messages, namespace: "Email.producerInvitation" });
+  const values = { amap: params.amap.name, producer: params.producerName };
+  return renderEmail(
+    { name: params.amap.name, theme: params.amap.theme },
+    {
+      subject: t("subject", values),
+      preview: t("preview", values),
+      greeting: t("greeting", { firstName: params.firstName }),
+      paragraphs: [t("intro", values), t("how")],
+      action: { label: t("button"), url: params.loginUrl },
+      notes: [t("noPassword")],
+      footer: t("footer", values),
+    },
+  );
+}

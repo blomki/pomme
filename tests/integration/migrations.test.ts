@@ -30,6 +30,7 @@ describe("Migrations", () => {
       "notification_log",
       "passkey",
       "producer",
+      "producer_user",
       "referent_assignment",
       "session",
       "two_factor",

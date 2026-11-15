@@ -81,6 +81,8 @@ export type SeedReferentAssignment = {
   userId: string;
 };
 
+export type SeedProducerUser = { id: string; producerId: string; userId: string };
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
@@ -90,6 +92,7 @@ export type SeedData = {
   producers: SeedProducer[];
   amapProducers: SeedAmapProducer[];
   referentAssignments: SeedReferentAssignment[];
+  producerUsers: SeedProducerUser[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -186,6 +189,8 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
   role: AmapRoleName | null;
   isPlatformAdmin?: boolean;
   totp?: boolean;
+  /** Compte producteur : nom du producteur (PRODUCERS) ; pas de foyer. */
+  producer?: string;
 }> = [
   {
     email: "gestionnaire.demo@example.org",
@@ -199,6 +204,12 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
   { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
   { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
   { email: "amapien2.demo@example.org", firstName: "Charlie", role: null },
+  {
+    email: "producteur.demo@example.org",
+    firstName: "Ange",
+    role: null,
+    producer: "Les Ruches du Vallon",
+  },
 ];
 
 /**
@@ -376,7 +387,7 @@ export function buildSeedData(): SeedData {
       emailVerified: false,
     };
     usedEmails.add(demo.email);
-    return { demoUser, role: demo.role, totp: demo.totp ?? false };
+    return { demoUser, role: demo.role, totp: demo.totp ?? false, producer: demo.producer };
   });
   users.push(...demoUsers.map(({ demoUser }) => demoUser));
 
@@ -418,10 +429,10 @@ export function buildSeedData(): SeedData {
 
   const firstAmap = amaps[0];
   if (firstAmap) {
-    for (const { demoUser, role } of demoUsers) {
+    for (const { demoUser, role, producer: producerName } of demoUsers) {
       if (role) roles.push({ id: nextId(), amapId: firstAmap.id, userId: demoUser.id, role });
       // Chaque compte de démonstration (sauf le gestionnaire) a son foyer dans la première AMAP.
-      if (!demoUser.isPlatformAdmin) addHousehold(firstAmap.id, [demoUser]);
+      if (!demoUser.isPlatformAdmin && !producerName) addHousehold(firstAmap.id, [demoUser]);
     }
   }
 
@@ -476,6 +487,33 @@ export function buildSeedData(): SeedData {
     }
   }
 
+  // Le référent de démonstration suit deux producteurs de la première AMAP (« Mes producteurs »).
+  const demoReferent = demoUsers.find(({ role }) => role === "referent")?.demoUser;
+  for (const name of ["Les Ruches du Vallon", "Boulangerie des Trois Moulins"]) {
+    const producerId = producers.find((p) => p.name === name)?.id;
+    const target = amapProducers.find(
+      (ap) => ap.producerId === producerId && ap.amapId === amaps[0]?.id,
+    );
+    if (!demoReferent || !target) continue;
+    const already = referentAssignments.some(
+      (r) => r.amapProducerId === target.id && r.userId === demoReferent.id,
+    );
+    if (!already) {
+      referentAssignments.push({
+        id: nextId(),
+        amapId: target.amapId,
+        amapProducerId: target.id,
+        userId: demoReferent.id,
+      });
+    }
+  }
+
+  // Comptes producteurs de démonstration.
+  const producerUsers: SeedProducerUser[] = demoUsers.flatMap(({ demoUser, producer: name }) => {
+    const producerId = producers.find((p) => p.name === name)?.id;
+    return producerId ? [{ id: nextId(), producerId, userId: demoUser.id }] : [];
+  });
+
   const totpUserIds = demoUsers.filter(({ totp }) => totp).map(({ demoUser }) => demoUser.id);
   return {
     users,
@@ -486,6 +524,7 @@ export function buildSeedData(): SeedData {
     producers,
     amapProducers,
     referentAssignments,
+    producerUsers,
     totpUserIds,
   };
 }

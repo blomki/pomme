@@ -60,12 +60,22 @@ const isCurrentAmapAdmin = sql`exists (
 )`;
 
 /**
- * La personne (ligne de la table user) appartient à l'AMAP courante : elle y a un rôle, ou elle
- * est membre d'un foyer. Les deux tables sont filtrées par leur propre RLS.
+ * La personne (ligne de la table user) appartient à l'AMAP courante : elle y a un rôle, elle est
+ * membre d'un foyer, ou elle a le compte d'un producteur qui livre l'AMAP. Les trois tables sont
+ * filtrées par leur propre RLS.
  */
 const isInCurrentAmap = sql`(
   exists (select 1 from amap_role where amap_role.user_id = "user"."id")
   or exists (select 1 from household_member where household_member.user_id = "user"."id")
+  or exists (select 1 from producer_user where producer_user.user_id = "user"."id")
+)`;
+
+/** L'utilisateur connecté est référent du producteur dans l'AMAP courante (tables filtrées). */
+const isReferentOf = (producerId: unknown) => sql`exists (
+  select 1 from referent_assignment
+  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id
+  where amap_producer.producer_id = ${producerId}
+    and referent_assignment.user_id = ${currentUserId}
 )`;
 
 /** Accès complet pour Better Auth, qui gère lui-même les comptes et les sessions. */
@@ -352,9 +362,12 @@ export const producer = pgTable(
     check("producer_email_lowercase", sql`${t.email} = lower(${t.email})`),
     // Lecture : les producteurs de l'AMAP courante (amap_producer est filtrée par sa RLS). Pour
     // retrouver un producteur d'une autre AMAP, voir la fonction search_producers (migration).
+    // Lecture aussi par le producteur lui-même (son compte, table producer_user).
     pgPolicy("producer_select", {
       for: "select",
-      using: sql`exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
+      using: sql`exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})
+        or exists (select 1 from producer_user where producer_user.producer_id = ${t.id}
+          and producer_user.user_id = ${currentUserId})`,
     }),
     // Création et modification : un admin de l'AMAP courante ; modification seulement d'un
     // producteur de cette AMAP. La fiche étant commune, une modification vaut pour toutes les
@@ -366,6 +379,49 @@ export const producer = pgTable(
         and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
       withCheck: sql`${isCurrentAmapAdmin}
         and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.id})`,
+    }),
+    // Modification aussi par un référent de ce producteur dans l'AMAP courante (écran R5) :
+    // referent_assignment et amap_producer sont filtrées par leur RLS.
+    pgPolicy("producer_update_by_referent", {
+      for: "update",
+      using: sql`${isReferentOf(t.id)}`,
+      withCheck: sql`${isReferentOf(t.id)}`,
+    }),
+  ],
+);
+
+// --- producer_user : compte producteur ------------------------------------------------------
+// Rattache un compte Pomme à un producteur (un producteur peut avoir plusieurs comptes). Commun
+// à la plateforme, comme le producteur : un seul compte pour toutes les AMAP qu'il livre.
+
+export const producerUser = pgTable(
+  "producer_user",
+  {
+    id: id(),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("producer_user_unique").on(t.producerId, t.userId),
+    index("producer_user_user_idx").on(t.userId),
+    // Lecture : comptes des producteurs qui livrent l'AMAP courante, et son propre compte.
+    pgPolicy("producer_user_select", {
+      for: "select",
+      using: sql`${t.userId} = ${currentUserId}
+        or exists (select 1 from amap_producer where amap_producer.producer_id = ${t.producerId})`,
+    }),
+    // Invitation : un admin de l'AMAP courante, pour un producteur qui la livre.
+    pgPolicy("producer_user_insert", {
+      for: "insert",
+      withCheck: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.producerId})`,
     }),
   ],
 );

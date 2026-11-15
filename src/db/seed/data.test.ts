@@ -55,6 +55,7 @@ describe("buildSeedData", () => {
       ...data.producers,
       ...data.amapProducers,
       ...data.referentAssignments,
+      ...data.producerUsers,
     ].map((row) => row.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -68,7 +69,7 @@ describe("buildSeedData", () => {
   });
 
   it("crée 40 foyers par AMAP aux noms uniques, chacun avec un seul contact principal", () => {
-    const demoHouseholds = DEMO_ACCOUNTS.filter((d) => !d.isPlatformAdmin).length;
+    const demoHouseholds = DEMO_ACCOUNTS.filter((d) => !d.isPlatformAdmin && !d.producer).length;
     const [first, second] = data.amaps;
     const ofAmap = (id?: string) => data.households.filter((h) => h.amapId === id);
     expect(ofAmap(first?.id)).toHaveLength(MEMBERS_PER_AMAP + demoHouseholds);
@@ -118,6 +119,15 @@ describe("buildSeedData", () => {
       expect(p.email).toMatch(/@example\.org$/);
       expect(p.phone).toMatch(/^\+3363998\d{4}$/);
     }
+  });
+
+  it("confie deux producteurs au référent de démonstration et crée un compte producteur", () => {
+    const robin = data.users.find((u) => u.email === "referent.demo@example.org");
+    expect(data.referentAssignments.filter((r) => r.userId === robin?.id)).toHaveLength(2);
+    const ange = data.users.find((u) => u.email === "producteur.demo@example.org");
+    expect(data.producerUsers.map((pu) => pu.userId)).toEqual([ange?.id]);
+    // Un compte producteur n'a pas de foyer.
+    expect(data.householdMembers.some((m) => m.userId === ange?.id)).toBe(false);
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

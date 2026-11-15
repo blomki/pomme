@@ -92,6 +92,20 @@
       "when": 1794750192929,
       "tag": "0012_anonymiser-foyer-referents",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1794755030631,
+      "tag": "0013_comptes-producteurs",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1794755040354,
+      "tag": "0014_anonymiser-garder-producteurs",
+      "breakpoints": true
     }
   ]
 }

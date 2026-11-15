@@ -3,10 +3,22 @@ import { z } from "zod";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
-import { amapProducer, amapRole, producer, referentAssignment, user } from "@/db/schema";
+import {
+  amapProducer,
+  amapRole,
+  producer,
+  producerUser,
+  referentAssignment,
+  user,
+} from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { normalizePhone } from "@/domain/phone";
-import { parseDistanceKm, producersWithoutReferent } from "@/domain/producers";
+import {
+  parseDistanceKm,
+  producerAccess,
+  producersWithoutReferent,
+  type ProducerAccess,
+} from "@/domain/producers";
 
 import { emailSchema } from "./auth/request-magic-link";
 import { requireRole } from "./auth/require-role";
@@ -26,9 +38,21 @@ export type AmapProducerSummary = {
   category: string;
   active: boolean;
   referents: ReferentView[];
+  /** Accès du producteur à Pomme : compte actif, invitation envoyée, pas de compte. */
+  access: ProducerAccess;
+};
+
+/** Compte producteur (personne qui se connecte au nom du producteur). */
+export type ProducerAccount = {
+  userId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  status: "active" | "invited";
 };
 
 export type AmapProducerDetail = AmapProducerSummary & {
+  accounts: ProducerAccount[];
   shortDescription: string;
   description: string;
   phone: string | null;
@@ -77,12 +101,45 @@ async function loadProducers(tx: Transaction, where?: ReturnType<typeof eq>) {
     tx,
     rows.map((r) => r.id),
   );
-  return rows.map((row) => ({
-    ...row,
-    referents: referents
-      .filter((r) => r.amapProducerId === row.id)
-      .map(({ userId, firstName, lastName }) => ({ userId, firstName, lastName })),
-  }));
+  const accounts = await accountsOf(
+    tx,
+    rows.map((r) => r.producerId),
+  );
+  return rows.map((row) => {
+    const own = accounts.filter((a) => a.producerId === row.producerId);
+    return {
+      ...row,
+      referents: referents
+        .filter((r) => r.amapProducerId === row.id)
+        .map(({ userId, firstName, lastName }) => ({ userId, firstName, lastName })),
+      access: producerAccess(own),
+      accounts: own.map(({ userId, firstName, lastName, email, emailVerified }) => ({
+        userId,
+        firstName,
+        lastName,
+        email,
+        status: emailVerified ? ("active" as const) : ("invited" as const),
+      })),
+    };
+  });
+}
+
+/** Comptes des producteurs (visibles : producteurs de l'AMAP courante, RLS). */
+async function accountsOf(tx: Transaction, producerIds: string[]) {
+  if (producerIds.length === 0) return [];
+  return tx
+    .select({
+      producerId: producerUser.producerId,
+      userId: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      emailVerified: user.emailVerified,
+    })
+    .from(producerUser)
+    .innerJoin(user, eq(user.id, producerUser.userId))
+    .where(inArray(producerUser.producerId, producerIds))
+    .orderBy(asc(user.firstName));
 }
 
 /** Producteurs de l'AMAP courante, par nom, avec leurs référents. */
@@ -92,13 +149,14 @@ export async function listAmapProducers(
 ): Promise<AmapProducerSummary[]> {
   await requireRole(tx, ctx, ["admin"]);
   const all = await loadProducers(tx);
-  return all.map(({ id, producerId, name, category, active, referents }) => ({
+  return all.map(({ id, producerId, name, category, active, referents, access }) => ({
     id,
     producerId,
     name,
     category,
     active,
     referents,
+    access,
   }));
 }
 
@@ -404,4 +462,159 @@ export async function producersFollowedBy(tx: Transaction, userId: string): Prom
     .where(eq(referentAssignment.userId, userId))
     .orderBy(asc(producer.name));
   return rows.map((r) => r.name);
+}
+
+// --- Comptes producteurs (C1, partie 2) ------------------------------------------------------
+
+export const inviteProducerSchema = z.object({
+  amapProducerId: z.uuid(),
+  email: emailSchema,
+  firstName: z.string().trim().min(1).max(60),
+  lastName: optionalText(60),
+});
+
+export type ProducerInvitation = {
+  userId: string;
+  email: string;
+  firstName: string;
+  producerName: string;
+};
+
+export type InviteProducerResult =
+  | { status: "invited"; invitation: ProducerInvitation }
+  | { status: "invalid"; fields: FieldErrors }
+  | { status: "not_found" | "already" };
+
+/**
+ * Donne un compte Pomme au producteur (story C1). Comme pour un foyer (ADR 0009) : si un compte
+ * existe déjà avec cet email, il est rattaché tel quel ; sinon il est créé. L'invitation part
+ * ensuite (action). Journalisé.
+ */
+export async function inviteProducerAccount(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: unknown,
+): Promise<InviteProducerResult> {
+  await requireRole(tx, ctx, ["admin"]);
+  const parsed = inviteProducerSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid", fields: fieldErrors(parsed.error) };
+  const { amapProducerId, email, firstName, lastName } = parsed.data;
+
+  const [target] = await tx
+    .select({ producerId: amapProducer.producerId, name: producer.name })
+    .from(amapProducer)
+    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
+    .where(eq(amapProducer.id, amapProducerId));
+  if (!target) return { status: "not_found" };
+
+  // Fonction de base dédiée (migration 0007) : le compte peut appartenir à une autre AMAP.
+  const found = await tx.execute<{ id: string | null }>(
+    sql`select find_user_id_by_email(${email}) as id`,
+  );
+  const userId = found.rows[0]?.id ?? uuidv7();
+  if (!found.rows[0]?.id) {
+    await tx.insert(user).values({ id: userId, email, firstName, lastName });
+  }
+  const inserted = await tx
+    .insert(producerUser)
+    .values({ producerId: target.producerId, userId, createdBy: ctx.userId })
+    .onConflictDoNothing()
+    .returning({ id: producerUser.id });
+  if (inserted.length === 0) return { status: "already" };
+
+  const [account] = await tx
+    .select({ firstName: user.firstName })
+    .from(user)
+    .where(eq(user.id, userId));
+  await writeAuditLog(tx, ctx, {
+    entityType: "amap_producer",
+    entityId: amapProducerId,
+    action: "invite_account",
+    after: { userId },
+  });
+  return {
+    status: "invited",
+    invitation: {
+      userId,
+      email,
+      firstName: account?.firstName ?? firstName,
+      producerName: target.name,
+    },
+  };
+}
+
+/** Compte producteur à qui renvoyer l'invitation (jamais connecté), ou null. */
+export async function producerInvitationFor(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: unknown,
+): Promise<ProducerInvitation | null> {
+  await requireRole(tx, ctx, ["admin"]);
+  const parsed = z.object({ amapProducerId: z.uuid(), userId: z.uuid() }).safeParse(input);
+  if (!parsed.success) return null;
+  const detail = await getAmapProducer(tx, ctx, parsed.data.amapProducerId);
+  const account = detail?.accounts.find((a) => a.userId === parsed.data.userId);
+  if (!detail || !account || account.status !== "invited") return null;
+  return {
+    userId: account.userId,
+    email: account.email,
+    firstName: account.firstName,
+    producerName: detail.name,
+  };
+}
+
+// --- Fiche producteur du référent (écran R5) -------------------------------------------------
+
+export type MyProducer = Omit<AmapProducerDetail, "referents" | "access" | "accounts">;
+
+/**
+ * Producteurs dont l'utilisateur connecté est le référent dans l'AMAP courante (« Mes
+ * producteurs »). Un référent n'agit que sur les producteurs dont il a la charge.
+ */
+export async function listMyProducers(tx: Transaction, ctx: AmapContext): Promise<MyProducer[]> {
+  await requireRole(tx, ctx, ["referent"]);
+  return tx
+    .select(columns)
+    .from(referentAssignment)
+    .innerJoin(amapProducer, eq(amapProducer.id, referentAssignment.amapProducerId))
+    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
+    .where(and(eq(referentAssignment.userId, ctx.userId!), isNull(amapProducer.archivedAt)))
+    .orderBy(asc(sql`lower(${producer.name})`));
+}
+
+export const updateMyProducerSchema = z.object({
+  amapProducerId: z.uuid(),
+  ...producerFields,
+  checkPayee: settingsFields.checkPayee,
+});
+
+/**
+ * Le référent met à jour les coordonnées et l'ordre des chèques d'un producteur dont il a la
+ * charge (pas la distance ni le statut actif, réglés par l'admin). Ordre des chèques journalisé.
+ */
+export async function updateMyProducer(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: unknown,
+): Promise<SaveProducerResult> {
+  await requireRole(tx, ctx, ["referent"]);
+  const parsed = updateMyProducerSchema.safeParse(input);
+  if (!parsed.success) return { status: "invalid", fields: fieldErrors(parsed.error) };
+  const { amapProducerId, checkPayee, ...fields } = parsed.data;
+
+  const mine = await listMyProducers(tx, ctx);
+  const current = mine.find((p) => p.id === amapProducerId);
+  // Pas son producteur : même réponse que s'il n'existait pas.
+  if (!current) return { status: "not_found" };
+
+  await tx.update(producer).set(fields).where(eq(producer.id, current.producerId));
+  await tx.update(amapProducer).set({ checkPayee }).where(eq(amapProducer.id, amapProducerId));
+  await writeAuditLog(tx, ctx, {
+    entityType: "amap_producer",
+    entityId: amapProducerId,
+    action: "update",
+    before: { checkPayee: current.checkPayee },
+    after: { checkPayee },
+  });
+  return { status: "saved", amapProducerId };
 }

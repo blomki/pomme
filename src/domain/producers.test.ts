@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { canRevokeReferent, parseDistanceKm, producersWithoutReferent } from "./producers";
+import {
+  canRevokeReferent,
+  parseDistanceKm,
+  producerAccess,
+  producersWithoutReferent,
+} from "./producers";
 
 describe("producersWithoutReferent", () => {
   it("signale les producteurs actifs sans référent, par nom", () => {
@@ -40,5 +45,19 @@ describe("parseDistanceKm", () => {
 
   it.each(["-3", "12,5", "abc", "1001", "99999"])("refuse « %s »", (input) => {
     expect(parseDistanceKm(input)).toBeUndefined();
+  });
+});
+
+describe("producerAccess", () => {
+  it("dit « pas de compte » sans compte", () => {
+    expect(producerAccess([])).toBe("none");
+  });
+
+  it("dit « invitation envoyée » tant qu'aucun compte ne s'est connecté", () => {
+    expect(producerAccess([{ emailVerified: false }])).toBe("invited");
+  });
+
+  it("dit « compte actif » dès qu'un compte s'est connecté", () => {
+    expect(producerAccess([{ emailVerified: false }, { emailVerified: true }])).toBe("active");
   });
 });

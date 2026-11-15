@@ -11,6 +11,7 @@ import {
   householdMember,
   notificationLog,
   producer,
+  producerUser,
   referentAssignment,
   twoFactor,
   user,
@@ -57,6 +58,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(producerUser);
     await tx.delete(referentAssignment);
     await tx.delete(amapProducer);
     await tx.delete(producer);
@@ -74,6 +76,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(producer).values(data.producers);
     await tx.insert(amapProducer).values(data.amapProducers);
     await tx.insert(referentAssignment).values(data.referentAssignments);
+    await tx.insert(producerUser).values(data.producerUsers);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

@@ -20,7 +20,27 @@
     "title": "Espace famille"
   },
   "Referent": {
-    "title": "Espace référent"
+    "title": "Espace référent",
+    "producers": {
+      "title": "Mes producteurs",
+      "empty": "Aucun producteur ne vous est confié pour l'instant. L'administrateur de l'AMAP vous affecte vos producteurs.",
+      "tabs": "Producteurs suivis",
+      "contact": "Coordonnées",
+      "noPhone": "Pas de téléphone",
+      "noEmail": "Pas d'email",
+      "cheques": "Contrat et chèques",
+      "payee": "Chèques à l'ordre de",
+      "noPayee": "Ordre des chèques non renseigné",
+      "distance": "À {km} km de l'AMAP",
+      "edit": "Modifier",
+      "editOf": "Modifier les coordonnées de {name}",
+      "dialogTitle": "Modifier {name}",
+      "dialogIntro": "Les coordonnées sont communes à toutes les AMAP que ce producteur livre. L'ordre des chèques vaut pour cette AMAP ; son changement est inscrit au journal.",
+      "cancel": "Annuler",
+      "save": "Enregistrer",
+      "saved": "{name} enregistré.",
+      "catalogueSoon": "Le catalogue du mois s'affichera ici (story C3)."
+    }
   },
   "Admin": {
     "title": "Administration de l'AMAP",
@@ -176,7 +196,11 @@
       "active": "Actif",
       "inactive": "Inactif",
       "note": "Un producteur peut avoir plusieurs référents. Ses coordonnées, l'ordre de ses chèques et ses référents se modifient depuis sa fiche.",
-      "back": "Retour aux producteurs"
+      "back": "Retour aux producteurs",
+      "access": "Accès producteur",
+      "accessActive": "Compte actif",
+      "accessInvited": "Invitation envoyée",
+      "accessNone": "Pas de compte"
     },
     "addProducer": {
       "title": "Ajouter un producteur",
@@ -238,6 +262,32 @@
         "not_found": "Ce producteur n'existe plus.",
         "error": "L'enregistrement n'a pas pu être fait."
       }
+    },
+    "producerAccess": {
+      "title": "Accès du producteur",
+      "intro": "Le producteur se connecte à Pomme pour voir ses commandes et ses paiements, et mettre à jour son catalogue. Un même compte sert pour toutes les AMAP qu'il livre.",
+      "none": "Ce producteur n'a pas encore de compte.",
+      "active": "Compte actif",
+      "invited": "Invitation envoyée",
+      "resend": "Renvoyer l'invitation",
+      "resendOf": "Renvoyer l'invitation à {name}",
+      "resent": "Invitation renvoyée à {name}.",
+      "resendFailed": "L'invitation n'est pas partie. Réessayez dans quelques minutes.",
+      "inviteTitle": "Inviter un compte",
+      "email": "Adresse email",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "lastNameHelp": "Facultatif.",
+      "invite": "Inviter",
+      "invitedDone": "Invitation envoyée à {email}.",
+      "invitedNotSent": "Compte créé, mais l'invitation n'est pas partie : renvoyez-la plus tard.",
+      "already": "Cette personne a déjà un compte pour ce producteur.",
+      "errors": {
+        "email": "Saisissez une adresse email valide.",
+        "firstName": "Saisissez le prénom.",
+        "lastName": "60 caractères au plus.",
+        "error": "L'invitation n'a pas pu être faite."
+      }
     }
   },
   "Producer": {
@@ -285,7 +335,8 @@
       "cheques": "Pointage des chèques",
       "credits": "Avoirs",
       "orders": "Bons de commande",
-      "catalogues": "Catalogues"
+      "catalogues": "Catalogues",
+      "producers": "Mes producteurs"
     },
     "platform": {
       "label": "Menu de la plateforme",
@@ -446,6 +497,16 @@
       "button": "Me connecter à Pomme",
       "noPassword": "Aucun mot de passe à retenir : à chaque connexion, Pomme vous envoie un lien, ou vous utilisez une passkey.",
       "footer": "Vous recevez cet email parce qu'un administrateur de « {amap} » a inscrit votre foyer."
+    },
+    "producerInvitation": {
+      "subject": "{producer} : votre compte producteur sur Pomme",
+      "preview": "« {amap} » vous ouvre un compte producteur sur Pomme.",
+      "greeting": "Bonjour {firstName},",
+      "intro": "« {amap} » vous ouvre un compte sur Pomme pour « {producer} ». Avec ce compte, vous verrez vos commandes et vos paiements, et vous mettrez à jour votre catalogue. Un seul compte sert pour toutes les AMAP que vous livrez.",
+      "how": "Pour vous connecter, ouvrez la page ci-dessous et demandez votre lien de connexion : vous le recevrez aussitôt par email.",
+      "button": "Me connecter à Pomme",
+      "noPassword": "Aucun mot de passe à retenir : à chaque connexion, Pomme vous envoie un lien, ou vous utilisez une passkey.",
+      "footer": "Vous recevez cet email parce qu'un administrateur de « {amap} » vous a ouvert un compte producteur."
     }
   },
   "Roles": {
