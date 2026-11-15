@@ -50,7 +50,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
       return [
         { key: "dashboard", icon: <DashboardOutlined />, href: `${base}/admin` },
         { key: "reports", icon: <ReportProblemOutlined /> },
-        { key: "planning", icon: <CalendarMonthOutlined /> },
+        { key: "planning", icon: <CalendarMonthOutlined />, href: `${base}/admin/planning` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/admin/producteurs` },
         { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
         { key: "pages", icon: <ArticleOutlined /> },

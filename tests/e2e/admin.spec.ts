@@ -476,4 +476,56 @@ test.describe("administration (ordinateur)", () => {
     await page.goto("/hommesdeterre/referent/producteurs");
     await expect(page.getByRole("heading", { level: 1, name: "Page introuvable" })).toBeVisible();
   });
+
+  test("un admin génère les distributions d'un mois, en ferme une puis la rouvre (D1)", async ({
+    page,
+    request,
+  }) => {
+    // Un mois lointain, différent à chaque passage : aucune distribution n'y existe encore.
+    const year = 2040 + (Math.floor(Date.now() / 1000) % 50);
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Planning des permanences" })
+      .click();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Planning des permanences" }),
+    ).toBeVisible();
+    // Jeu de données : le mardi de 18 h à 19 h 30.
+    await expect(page.getByText("Chaque mardi, de 18:00 à 19:30")).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    await page.goto(`/hommesdeterre/admin/planning?mois=${year}-03`);
+    const region = page.getByRole("region", { name: "Distributions" });
+    await expect(region.getByText(`Aucune distribution en mars ${year}.`)).toBeVisible();
+    await page.getByRole("button", { name: `Créer les distributions de mars ${year}` }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(/distributions créées\./)).toBeVisible();
+    // 4 ou 5 mardis selon le mois.
+    await expect(region.getByRole("listitem").nth(3)).toBeVisible();
+    // Contrôle une fois le message de confirmation entièrement apparu (animation).
+    await expect(page.locator(".MuiSnackbarContent-root")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+
+    // Fermer la première : le motif est obligatoire.
+    const closeButton = page.getByRole("button", { name: /^Fermer la distribution du/ }).first();
+    const label = (await closeButton.getAttribute("aria-label")) ?? "";
+    const date = label.replace("Fermer la distribution du ", "");
+    await closeButton.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", { name: `Fermer la distribution du ${date}` });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await dialog.getByRole("button", { name: "Fermer la distribution" }).click();
+    await expect(dialog.getByText("Saisissez un motif")).toBeVisible();
+    await dialog.getByRole("textbox", { name: "Motif" }).fill("Jour férié");
+    await dialog.getByRole("button", { name: "Fermer la distribution" }).click();
+    await expect(page.getByText(`Distribution du ${date} fermée.`)).toBeVisible();
+    await expect(region.getByText("Motif : Jour férié")).toBeVisible();
+
+    await page.getByRole("button", { name: `Rouvrir la distribution du ${date}` }).click();
+    await expect(page.getByText(`Distribution du ${date} rouverte.`)).toBeVisible();
+    await expect(region.getByText("Motif : Jour férié")).toHaveCount(0);
+  });
 });

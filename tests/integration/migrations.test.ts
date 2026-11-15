@@ -25,6 +25,7 @@ describe("Migrations", () => {
       "amap_producer",
       "amap_role",
       "audit_log",
+      "distribution",
       "household",
       "household_member",
       "notification_log",

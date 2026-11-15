@@ -7,6 +7,7 @@ import {
   amapProducer,
   amapRole,
   auditLog,
+  distribution,
   household,
   householdMember,
   notificationLog,
@@ -58,6 +59,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(distribution);
     await tx.delete(producerUser);
     await tx.delete(referentAssignment);
     await tx.delete(amapProducer);
@@ -77,6 +79,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(amapProducer).values(data.amapProducers);
     await tx.insert(referentAssignment).values(data.referentAssignments);
     await tx.insert(producerUser).values(data.producerUsers);
+    await tx.insert(distribution).values(data.distributions);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

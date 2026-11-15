@@ -288,6 +288,52 @@
         "lastName": "60 caractères au plus.",
         "error": "L'invitation n'a pas pu être faite."
       }
+    },
+    "planning": {
+      "title": "Planning des permanences",
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "usualTitle": "Distribution habituelle",
+      "usual": "Chaque {weekday}, de {start} à {end}",
+      "usualMissing": "Jour et horaires pas encore réglés : réglez-les pour créer les distributions.",
+      "place": "Lieu : {place}",
+      "noPlace": "Lieu pas encore renseigné",
+      "editSettings": "Modifier les réglages",
+      "distributionsTitle": "Distributions",
+      "openCount": "{count, plural, =0 {Aucune distribution ouverte} one {# distribution ouverte} other {# distributions ouvertes}} en {month}",
+      "none": "Aucune distribution en {month}.",
+      "generate": "Créer les distributions de {month}",
+      "generateMissing": "Ajouter les distributions manquantes",
+      "generated": "{count, plural, =0 {Aucune nouvelle distribution : le mois est complet.} one {# distribution créée.} other {# distributions créées.}}",
+      "noSettings": "Réglez d'abord le jour et les horaires de la distribution habituelle.",
+      "week": "Semaine {number}",
+      "open": "Ouverte",
+      "closed": "Fermée",
+      "reason": "Motif : {reason}",
+      "close": "Fermer",
+      "closeOf": "Fermer la distribution du {date}",
+      "reopen": "Rouvrir",
+      "reopenOf": "Rouvrir la distribution du {date}",
+      "reopened": "Distribution du {date} rouverte.",
+      "closedDone": "Distribution du {date} fermée.",
+      "note": "Une distribution fermée n'apparaît ni dans la commande des familles ni sur la feuille d'émargement. Les bénévoles s'afficheront ici avec le planning trimestriel (G2).",
+      "closeTitle": "Fermer la distribution du {date}",
+      "closeIntro": "Le motif sera affiché aux familles et aux producteurs (vacances, jour férié…).",
+      "reasonLabel": "Motif",
+      "reasonRequired": "Saisissez un motif (120 caractères au plus).",
+      "cancel": "Annuler",
+      "confirmClose": "Fermer la distribution",
+      "settingsTitle": "Distribution habituelle",
+      "settingsIntro": "Sert à créer les distributions des prochains mois. Les distributions déjà créées gardent leurs horaires.",
+      "weekday": "Jour",
+      "startTime": "Début",
+      "endTime": "Fin",
+      "placeLabel": "Lieu de distribution",
+      "save": "Enregistrer",
+      "saved": "Distribution habituelle enregistrée.",
+      "invalidSettings": "Choisissez un jour et des horaires valables : la fin doit être après le début.",
+      "forbidden": "Vous n'avez pas le droit de faire cette modification.",
+      "error": "La modification n'a pas pu être enregistrée."
     }
   },
   "Producer": {
@@ -512,5 +558,14 @@
   "Roles": {
     "admin": "Admin",
     "referent": "Référent"
+  },
+  "Weekdays": {
+    "1": "lundi",
+    "2": "mardi",
+    "3": "mercredi",
+    "4": "jeudi",
+    "5": "vendredi",
+    "6": "samedi",
+    "7": "dimanche"
   }
 }
