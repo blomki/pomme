@@ -60,7 +60,7 @@ utilisateur, propriétaire de tout ; la doc invite à contacter le support pour 
 
 ## Conséquences
 
-- Chaque nouvelle base (prévisualisation par PR, nouvel environnement) doit être en plan payant,
+- Chaque nouvelle base (nouvel environnement) doit être en plan payant,
   avec une demande au support pour `CREATEROLE` et « dump all ».
 - Adresse IP des visiteurs (limites de débit) : la dernière de `X-Forwarded-For`, ajoutée par
   le répartiteur de Clever Cloud ; la première peut être inventée
@@ -68,5 +68,9 @@ utilisateur, propriétaire de tout ; la doc invite à contacter le support pour 
 - Les migrations doivent rester compatibles avec la version précédente : pendant un
   déploiement, l'ancienne version tourne sur la base déjà migrée.
 - Une nouvelle origine externe (par exemple Sentry) devra être ajoutée à la CSP.
-- Restent à faire : environnements de prévisualisation par pull request, Sentry, sonde de
-  disponibilité, conservation des journaux, domaine (voir `docs/deploiement.md`).
+- Pas d'environnement de prévisualisation par pull request (décision du 2026-11-16) : chaque
+  PR demanderait sa propre base payante, car ses migrations ne doivent pas toucher la
+  pré-production. La CI teste déjà chaque PR sur un build de production avec une vraie base ;
+  au besoin, le responsable du projet essaie la branche en local avant la fusion.
+- Surveillance (Sentry, sonde, journaux) : ADR 0014. Reste à faire : le domaine de production
+  (voir `docs/deploiement.md`).

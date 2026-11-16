@@ -122,12 +122,10 @@ enregistrement SPF). Voir ADR 0006.
 du dépôt, « Watch » doit être sur « All activity » (ou au moins « Issues »). Essai à la main :
 Actions › « Sonde de disponibilité » › Run workflow.
 
-**Journaux.** Clever Cloud les garde 7 jours (`clever logs --since 2h`). Au-delà, il faut un
-« drain » vers un service externe : à décider.
+**Journaux.** Clever Cloud les garde 7 jours (`clever logs --since 2h`) ; on s'en tient là
+(ADR 0014) : examiner un problème dans la semaine.
 
 ## Reste à faire (fiche S7)
 
-- Environnements de prévisualisation par pull request (application et base jetables).
-- Conservation des journaux pendant 30 jours (drain Clever Cloud, service à choisir).
 - Production sur `pomme.cloud` : domaine, `UPTIME_URLS`, note A+ sur Mozilla Observatory.
 - Tâches planifiées (`clevercloud/cron.json`) : avec les fiches qui en ont besoin (D2, D5, S8).

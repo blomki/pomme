@@ -25,8 +25,8 @@ gratuite.
 2. **Sonde** : un workflow GitHub Actions planifié (`.github/workflows/uptime.yml`) interroge
    `/api/health` toutes les 5 minutes. En cas d'échec après trois essais, il ouvre une issue
    « Panne » (GitHub l'envoie par email), qu'il ferme quand l'adresse répond de nouveau.
-3. **Journaux** : pas encore de conservation au-delà des 7 jours de Clever Cloud (voir
-   Conséquences).
+3. **Journaux** : on s'en tient aux 7 jours de conservation de Clever Cloud (décision du
+   2026-11-16), au lieu des 30 jours prévus par la fiche.
 
 ## Pourquoi
 
@@ -66,6 +66,7 @@ heures chargées, l'écart réel entre deux contrôles peut dépasser 5 minutes.
   `https://pomme.cloud` à la mise en production.
 - GitHub suspend les tâches planifiées d'un dépôt public sans activité pendant 60 jours : un
   email prévient avant.
-- Journaux sur 30 jours : il faut un « drain » Clever Cloud vers un service externe (Datadog,
-  Elasticsearch, syslog…). Choix à faire, avec son coût et le lieu d'hébergement : les journaux
-  peuvent contenir des adresses email.
+- Journaux : 7 jours seulement. Les garder 30 jours aurait demandé un « drain » Clever Cloud
+  vers un service externe (Datadog, Elasticsearch, syslog…), payant, et un hébergeur de plus
+  pour des journaux qui peuvent contenir des adresses email. Conséquence : un problème doit être
+  examiné dans la semaine ; une erreur signalée par Sentry garde, elle, sa trace chez Sentry.
