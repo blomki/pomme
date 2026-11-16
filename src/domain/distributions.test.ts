@@ -7,6 +7,7 @@ import {
   isValidTimeRange,
   monthOf,
   parseMonth,
+  sameWeekDate,
 } from "./distributions";
 
 describe("distributionDates", () => {
@@ -80,5 +81,21 @@ describe("horaires et motif", () => {
     expect(closedReason("  Vacances   de Noël ")).toBe("Vacances de Noël");
     expect(closedReason("   ")).toBeNull();
     expect(closedReason("x".repeat(121))).toBeNull();
+  });
+});
+
+describe("sameWeekDate", () => {
+  it("déplace au jour demandé de la même semaine, dans les deux sens", () => {
+    expect(sameWeekDate("2026-12-08", 4)).toBe("2026-12-10");
+    expect(sameWeekDate("2026-12-10", 2)).toBe("2026-12-08");
+  });
+
+  it("reste dans la semaine du lundi au dimanche, même en changeant de mois", () => {
+    expect(sameWeekDate("2027-03-30", 4)).toBe("2027-04-01");
+    expect(sameWeekDate("2026-12-06", 1)).toBe("2026-11-30");
+  });
+
+  it("ne change rien si c'est déjà le bon jour", () => {
+    expect(sameWeekDate("2026-12-10", 4)).toBe("2026-12-10");
   });
 });

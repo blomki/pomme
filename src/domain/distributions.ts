@@ -72,3 +72,18 @@ export function closedReason(input: string): string | null {
   const reason = input.trim().replace(/\s+/g, " ");
   return reason.length >= 1 && reason.length <= 120 ? reason : null;
 }
+
+/**
+ * Date de la même semaine (du lundi au dimanche) qui tombe le jour demandé : sert à déplacer une
+ * distribution quand l'AMAP change de jour habituel.
+ *
+ * @example sameWeekDate("2026-12-08", 4) // mardi 8 → jeudi « 2026-12-10 »
+ * @example sameWeekDate("2026-12-10", 2) // jeudi 10 → mardi « 2026-12-08 »
+ */
+export function sameWeekDate(date: string, weekday: Weekday): string {
+  const [year, month, day] = date.split("-").map(Number) as [number, number, number];
+  const current = new Date(Date.UTC(year, month - 1, day));
+  const isoDay = ((current.getUTCDay() + 6) % 7) + 1; // 1 = lundi … 7 = dimanche
+  current.setUTCDate(current.getUTCDate() + (weekday - isoDay));
+  return current.toISOString().slice(0, 10);
+}

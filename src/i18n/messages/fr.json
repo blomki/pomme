@@ -324,7 +324,7 @@
       "cancel": "Annuler",
       "confirmClose": "Fermer la distribution",
       "settingsTitle": "Distribution habituelle",
-      "settingsIntro": "Sert à créer les distributions des prochains mois. Les distributions déjà créées gardent leurs horaires.",
+      "settingsIntro": "Sert à créer les distributions des prochains mois. Vous pouvez aussi déplacer celles qui sont déjà prévues.",
       "weekday": "Jour",
       "startTime": "Début",
       "endTime": "Fin",
@@ -333,7 +333,11 @@
       "saved": "Distribution habituelle enregistrée.",
       "invalidSettings": "Choisissez un jour et des horaires valables : la fin doit être après le début.",
       "forbidden": "Vous n'avez pas le droit de faire cette modification.",
-      "error": "La modification n'a pas pu être enregistrée."
+      "error": "La modification n'a pas pu être enregistrée.",
+      "moveUpcoming": "Déplacer aussi les distributions à venir",
+      "moveUpcomingHelp": "Chaque distribution à venir passe au nouveau jour de la même semaine, avec les nouveaux horaires. Une distribution fermée le reste. Les distributions passées ne changent pas.",
+      "moved": "{count, plural, =0 {Aucune distribution à venir déplacée.} one {# distribution à venir déplacée.} other {# distributions à venir déplacées.}}",
+      "skipped": "{count, plural, one {Laissée telle quelle : {dates} (le jour visé est déjà pris ou passé).} other {Laissées telles quelles : {dates} (le jour visé est déjà pris ou passé).}}"
     }
   },
   "Producer": {
