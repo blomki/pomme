@@ -43,7 +43,8 @@ occasion)`). Un index unique partiel sur `(amap_id, dedupe_key)`, limité aux st
 
 ## Conséquences
 
-- **Avant la production** (le nom de domaine n'est pas encore choisi, issue #49) :
+- **Domaine d'envoi** : `pomme.cloud` (OVH, 2026-11-16), authentifié dans Brevo ; procédure
+  dans `docs/deploiement.md`. Étapes, pour tout nouveau domaine :
   1. créer le compte Brevo, et y ajouter le domaine d'envoi `[domaine]` (Brevo › Expéditeurs,
      domaines et IP dédiées › Domaines) ;
   2. ajouter dans la zone DNS les enregistrements donnés par Brevo : code de vérification,
@@ -55,6 +56,11 @@ occasion)`). Un index unique partiel sur `(amap_id, dedupe_key)`, limité aux st
      clé SMTP Brevo) et `EMAIL_FROM` (`Pomme <ne-pas-repondre@[domaine]>`) ;
   4. envoyer un lien de connexion de test et contrôler les en-têtes (`spf=pass`,
      `dkim=pass`, `dmarc=pass`), par exemple avec mail-tester.com.
+- **Jamais d'expéditeur sur un domaine qu'on ne contrôle pas** (adresse personnelle, Gmail…).
+  Constaté le 2026-11-16 avec une adresse personnelle : son domaine publie DMARC `p=reject`,
+  donc tout email « de » cette adresse envoyé par Brevo est refusé partout (« 550 5.7.1
+  rejected by DMARC policy »). Même avec `p=none` (Gmail, Outlook), les emails finissent
+  souvent en spam. Seul un domaine à nous, authentifié dans Brevo, convient.
 - La limitation en mémoire, comme celle de la connexion, devra passer en base si Pomme tourne
   sur plusieurs instances.
 - Les emails des AMAP (relances, rappels) s'enverront dans une transaction à part, après

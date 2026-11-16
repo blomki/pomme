@@ -184,7 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     environment:
       name: preprod
-      url: https://app-fca2a27f-93b6-46f9-ade4-f2ca84ab060c.cleverapps.io
+      url: https://preprod.pomme.cloud
     concurrency:
       group: deploy-preprod
       cancel-in-progress: false

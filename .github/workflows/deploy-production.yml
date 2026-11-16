@@ -57,7 +57,7 @@ jobs:
     # L'approbation est demandée ici (réglage de l'environnement dans GitHub).
     environment:
       name: production
-      url: https://app-7c2265ed-74dd-4db6-a5c2-597625514a38.cleverapps.io
+      url: https://pomme.cloud
     steps:
       - uses: actions/checkout@v5
         with:
