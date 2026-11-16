@@ -31,7 +31,7 @@ export function ColorModeToggle() {
       aria-label={t("label")}
     >
       {MODES.map(({ value, icon }) => (
-        <Tooltip key={value} title={t(value)}>
+        <Tooltip key={value} title={t(value)} disableTouchListener>
           <ToggleButton value={value} aria-label={t(value)}>
             {icon}
           </ToggleButton>

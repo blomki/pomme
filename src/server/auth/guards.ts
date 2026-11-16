@@ -6,6 +6,7 @@ import { withAmapContext } from "@/db/context";
 import { amapRole } from "@/db/schema";
 
 import { getAmapBySlug } from "../amap";
+import { listMyProducerAmaps } from "../producer-amaps";
 
 import { requireVerifiedSession } from "./second-factor";
 import { requireSession } from "./session";
@@ -36,6 +37,23 @@ export async function requireAmapAdminPage(slug: string) {
   });
   if (!isAdmin) notFound();
   return { amap, ctx, state };
+}
+
+/**
+ * Pages de l'espace producteur qui montrent des données (catalogue…) : connexion, puis compte
+ * lié à un producteur qui livre au moins une AMAP. Sinon : page 404. Renvoie ces AMAP ; la page
+ * lit ensuite les données dans l'AMAP choisie, où la Row Level Security refait le contrôle.
+ */
+export async function requireProducerPage() {
+  const current = await requireSession();
+  const amaps = await listMyProducerAmaps(current.user.id);
+  if (amaps.length === 0) notFound();
+  const contextIn = (amapId: string) => ({
+    amapId,
+    userId: current.user.id,
+    secondFactorVerified: Boolean(current.session.secondFactorVerifiedAt),
+  });
+  return { amaps, contextIn };
 }
 
 /** Gestion de la plateforme : connexion, deuxième vérification, puis compte gestionnaire. */

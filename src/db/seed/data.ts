@@ -9,7 +9,10 @@
  * « Bloquant »), 3 dans la seconde, dont un commun aux deux et un à rattacher à la première.
  * Distributions : le mois du chargement et les deux suivants, au jour habituel de chaque AMAP ;
  * la dernière de décembre est fermée (« Vacances de Noël »).
- * À compléter au fil des stories : adhésions (B1), catalogues, commandes…
+ * Catalogues : deux produits par producteur (noms et prix inventés), et un brouillon de
+ * catalogue par producteur pour le mois du chargement et le suivant, chaque produit disponible
+ * à toutes les distributions ouvertes.
+ * À compléter au fil des stories : adhésions (B1), commandes…
  *
  * Toutes les données sont inventées : adresses en @example.org (domaine réservé aux exemples),
  * téléphones dans la tranche 06 39 98 xx xx réservée par l'Arcep à la fiction.
@@ -86,6 +89,23 @@ export type SeedReferentAssignment = {
 
 export type SeedProducerUser = { id: string; producerId: string; userId: string };
 
+export type SeedProduct = { id: string; producerId: string; name: string };
+export type SeedCatalog = { id: string; amapId: string; producerId: string; month: string };
+export type SeedCatalogItem = {
+  id: string;
+  amapId: string;
+  catalogId: string;
+  productId: string;
+  priceCents: number;
+  position: number;
+};
+export type SeedAvailability = {
+  id: string;
+  amapId: string;
+  catalogItemId: string;
+  distributionId: string;
+};
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
@@ -97,6 +117,10 @@ export type SeedData = {
   referentAssignments: SeedReferentAssignment[];
   producerUsers: SeedProducerUser[];
   distributions: SeedDistribution[];
+  products: SeedProduct[];
+  catalogs: SeedCatalog[];
+  catalogItems: SeedCatalogItem[];
+  availabilities: SeedAvailability[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -235,9 +259,15 @@ const PRODUCERS: ReadonlyArray<{
   payee: string;
   amaps: readonly number[];
   withoutReferent?: boolean;
+  /** Produits (conditionnement compris) et prix en centimes. */
+  products: ReadonlyArray<readonly [string, number]>;
 }> = [
   {
     name: "Les Ruches du Vallon",
+    products: [
+      ["Miel de printemps, pot de 500 g", 900],
+      ["Miel de bruyère, pot de 250 g", 650],
+    ],
     category: "Miel",
     shortDescription: "Miels de printemps et de bruyère",
     payee: "EARL Les Ruches du Vallon",
@@ -245,6 +275,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Boulangerie des Trois Moulins",
+    products: [
+      ["Pain au levain, 1 kg", 520],
+      ["Pain aux graines, 500 g", 380],
+    ],
     category: "Pains",
     shortDescription: "Pains au levain, cuits au feu de bois",
     payee: "Boulangerie des Trois Moulins",
@@ -252,6 +286,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Chèvrerie des Hauts Prés",
+    products: [
+      ["Crottin frais", 280],
+      ["Bûche cendrée, 200 g", 550],
+    ],
     category: "Fromages de chèvre",
     shortDescription: "Fromages frais et affinés",
     payee: "GAEC des Hauts Prés",
@@ -259,6 +297,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Laiterie du Pré Vert",
+    products: [
+      ["Yaourts nature, lot de 4", 320],
+      ["Beurre doux, 250 g", 390],
+    ],
     category: "Produits laitiers",
     shortDescription: "Yaourts, crème et beurre",
     payee: "SCEA du Pré Vert",
@@ -266,6 +308,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Ferme du Coteau",
+    products: [
+      ["Œufs, boîte de 6", 240],
+      ["Œufs, boîte de 12", 460],
+    ],
     category: "Œufs",
     shortDescription: "Œufs de poules élevées en plein air",
     payee: "Ferme du Coteau",
@@ -273,6 +319,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Cidrerie du Clos Fictif",
+    products: [
+      ["Jus de pomme, 1 L", 350],
+      ["Cidre brut, 75 cl", 480],
+    ],
     category: "Jus de pomme, cidre",
     shortDescription: "Jus de pomme et cidre fermier",
     payee: "Cidrerie du Clos Fictif",
@@ -281,6 +331,10 @@ const PRODUCERS: ReadonlyArray<{
   },
   {
     name: "Maraîchage de la Source",
+    products: [
+      ["Panier de légumes de saison", 1500],
+      ["Salade", 150],
+    ],
     category: "Légumes",
     shortDescription: "Légumes de saison",
     payee: "Maraîchage de la Source",
@@ -589,6 +643,56 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     }
   }
 
+  // Produits, puis un brouillon de catalogue par producteur et par mois (ce mois-ci et le
+  // suivant), chaque produit disponible à toutes les distributions ouvertes du mois. Ajoutés
+  // en dernier : les identifiants du reste du jeu de données ne changent pas.
+  const products: SeedProduct[] = [];
+  const catalogs: SeedCatalog[] = [];
+  const catalogItems: SeedCatalogItem[] = [];
+  const availabilities: SeedAvailability[] = [];
+  for (const definition of PRODUCERS) {
+    const producerRecord = producers.find((p) => p.name === definition.name);
+    if (!producerRecord) continue;
+    const own = definition.products.map(([name, priceCents]) => {
+      const record = { id: nextId(), producerId: producerRecord.id, name };
+      products.push(record);
+      return { record, priceCents };
+    });
+    for (const ap of amapProducers.filter((a) => a.producerId === producerRecord.id)) {
+      for (const month of [0, 1].map((delta) => addMonths(firstMonth, delta))) {
+        const catalogId = nextId();
+        catalogs.push({
+          id: catalogId,
+          amapId: ap.amapId,
+          producerId: ap.producerId,
+          month: `${month}-01`,
+        });
+        const open = distributions.filter(
+          (d) => d.amapId === ap.amapId && d.isOpen && d.date.startsWith(month),
+        );
+        own.forEach(({ record, priceCents }, position) => {
+          const itemId = nextId();
+          catalogItems.push({
+            id: itemId,
+            amapId: ap.amapId,
+            catalogId,
+            productId: record.id,
+            priceCents,
+            position,
+          });
+          for (const d of open) {
+            availabilities.push({
+              id: nextId(),
+              amapId: ap.amapId,
+              catalogItemId: itemId,
+              distributionId: d.id,
+            });
+          }
+        });
+      }
+    }
+  }
+
   return {
     users,
     amaps,
@@ -600,6 +704,10 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     referentAssignments,
     producerUsers,
     distributions,
+    products,
+    catalogs,
+    catalogItems,
+    availabilities,
     totpUserIds,
   };
 }

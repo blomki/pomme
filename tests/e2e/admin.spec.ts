@@ -417,9 +417,11 @@ test.describe("administration (ordinateur)", () => {
     const email = `producteur.${Date.now().toString(36)}@example.org`;
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin/producteurs");
+    // Compte de démonstration producteur.demo : « Invitation envoyée » tant qu'il ne s'est pas
+    // connecté, « Compte actif » ensuite (producer.spec.ts s'y connecte).
     await expect(
       page.getByRole("row", { name: /Les Ruches du Vallon/ }).getByRole("cell", {
-        name: "Invitation envoyée",
+        name: /^(Invitation envoyée|Compte actif)$/,
       }),
     ).toBeVisible();
 
@@ -566,5 +568,92 @@ test.describe("administration (ordinateur)", () => {
     await changeDay("vendredi", /^Semaine 1vendredi/);
     // Ménage : retour au jeudi pour les autres tests.
     await changeDay("jeudi", /^Semaine 1jeudi/);
+  });
+
+  test("un référent prépare le brouillon du catalogue du mois au clavier (C2)", async ({
+    page,
+    request,
+  }) => {
+    const extra = `Brioche ${Date.now().toString(36)}`;
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent");
+    await page
+      .getByRole("navigation", { name: "Menu du référent" })
+      .getByRole("link", { name: "Catalogues" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: /^Catalogue de / })).toBeVisible();
+    await page.getByRole("tab", { name: "Boulangerie des Trois Moulins" }).click();
+    await expect(page).toHaveURL(/producteur=/);
+    await expect(page.getByText("Brouillon · non visible des familles")).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    const type = async (field: ReturnType<typeof page.getByRole>, text: string) => {
+      await field.focus();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type(text);
+    };
+    const price = page.getByRole("textbox", { name: "Prix en euros de Pain au levain, 1 kg" });
+    const save = async () => {
+      await page.getByRole("button", { name: "Enregistrer le brouillon" }).focus();
+      await page.keyboard.press("Enter");
+    };
+
+    // Prix invalide : refusé, message près du champ.
+    await type(price, "abc");
+    await save();
+    await expect(page.getByText("Le brouillon n'a pas été enregistré.")).toBeVisible();
+    await expect(page.getByText("Prix invalide. Exemple : 4,50.")).toBeVisible();
+
+    // Nouveau prix, une semaine décochée, un produit ajouté, un autre retiré.
+    await type(price, "5,40");
+    await page
+      .getByRole("checkbox", { name: /^Pain au levain, 1 kg disponible le/ })
+      .first()
+      .focus();
+    await page.keyboard.press("Space");
+    await type(
+      page.getByRole("textbox", { name: "Produit et conditionnement", exact: true }),
+      extra,
+    );
+    await type(page.getByRole("textbox", { name: "Prix (€)", exact: true }), "4,20");
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("textbox", { name: `Prix en euros de ${extra}` })).toHaveValue(
+      "4,20",
+    );
+    await page
+      .getByRole("button", { name: "Retirer Pain aux graines, 500 g de ce catalogue" })
+      .focus();
+    await page.keyboard.press("Enter");
+    const removed = page.getByRole("region", { name: /^Produits? retirés?/ });
+    await expect(removed).toContainText("Pain aux graines, 500 g");
+    await save();
+    await expect(page.getByText(/^Brouillon du catalogue de .* enregistré\.$/)).toBeVisible();
+
+    // Après rechargement, tout est conservé.
+    await page.reload();
+    await expect(price).toHaveValue("5,40");
+    await expect(
+      page.getByRole("checkbox", { name: /^Pain au levain, 1 kg disponible le/ }).first(),
+    ).not.toBeChecked();
+    await expect(page.getByRole("textbox", { name: `Prix en euros de ${extra}` })).toHaveValue(
+      "4,20",
+    );
+    await expect(page.getByRole("region", { name: /^Produits? retirés?/ })).toContainText(
+      "Pain aux graines, 500 g",
+    );
+    await expectNoSeriousA11yViolations(page);
+
+    // Ménage : on remet le catalogue du jeu de données (le produit ajouté reste retiré).
+    await type(price, "5,20");
+    await page
+      .getByRole("checkbox", { name: /^Pain au levain, 1 kg disponible le/ })
+      .first()
+      .check();
+    await page
+      .getByRole("button", { name: "Remettre au catalogue : Pain aux graines, 500 g" })
+      .click();
+    await page.getByRole("button", { name: `Retirer ${extra} de ce catalogue` }).click();
+    await save();
+    await expect(page.getByText(/^Brouillon du catalogue de .* enregistré\.$/)).toBeVisible();
   });
 });

@@ -6,6 +6,9 @@ import {
   amap,
   amapProducer,
   amapRole,
+  catalog,
+  catalogItem,
+  catalogItemAvailability,
   auditLog,
   distribution,
   household,
@@ -13,6 +16,7 @@ import {
   notificationLog,
   producer,
   producerUser,
+  product,
   referentAssignment,
   twoFactor,
   user,
@@ -59,6 +63,10 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(catalogItemAvailability);
+    await tx.delete(catalogItem);
+    await tx.delete(catalog);
+    await tx.delete(product);
     await tx.delete(distribution);
     await tx.delete(producerUser);
     await tx.delete(referentAssignment);
@@ -80,6 +88,10 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(referentAssignment).values(data.referentAssignments);
     await tx.insert(producerUser).values(data.producerUsers);
     await tx.insert(distribution).values(data.distributions);
+    await tx.insert(product).values(data.products);
+    await tx.insert(catalog).values(data.catalogs);
+    await tx.insert(catalogItem).values(data.catalogItems);
+    await tx.insert(catalogItemAvailability).values(data.availabilities);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

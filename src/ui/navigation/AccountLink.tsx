@@ -10,7 +10,10 @@ import Link from "next/link";
 export function AccountLink() {
   const t = useTranslations("Nav");
   return (
-    <Tooltip title={t("account")}>
+    // disableTouchListener : sur téléphone, toucher l'icône ouvrait aussi l'infobulle, qui
+    // restait affichée sur la page suivante. Elle reste au survol et au focus clavier ; le nom
+    // pour les lecteurs d'écran est porté par aria-label.
+    <Tooltip title={t("account")} disableTouchListener>
       <IconButton component={Link} href="/compte" nativeButton={false} aria-label={t("account")}>
         <AccountCircleOutlined />
       </IconButton>
