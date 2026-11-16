@@ -66,8 +66,8 @@ l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces 
 
 Ensuite :
 
-- **Pré-production** (`.github/workflows/deploy-preprod.yml`) : automatique après chaque CI
-  au vert sur `main`.
+- **Pré-production** (fin de `.github/workflows/ci.yml`) : automatique après chaque CI au
+  vert sur `main`, ou à la main : Actions › CI › Run workflow, branche `main`.
 - **Production** (`.github/workflows/deploy-production.yml`) : Actions › « Déployer en
   production » › Run workflow, avec le commit à déployer. Refusé si ce commit n'a pas été
   déployé avec succès en pré-production ; attend ensuite l'approbation.
