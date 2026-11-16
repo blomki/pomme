@@ -28,22 +28,22 @@ DEV), et active l'option « dump all » pour que les rôles survivent à une mig
 
 ## Variables d'environnement de chaque application
 
-| Variable                    | Valeur                                                                   |
-| --------------------------- | ------------------------------------------------------------------------ |
-| `NODE_ENV`                  | `production`                                                             |
-| `CC_NODE_DEV_DEPENDENCIES`  | `install` (le build et les scripts de base en ont besoin)                |
-| `CC_POST_BUILD_HOOK`        | `pnpm build`                                                             |
-| `CC_PRE_RUN_HOOK`           | `bash clevercloud/pre-run.sh` (rôles et migrations)                      |
-| `CC_HEALTH_CHECK_PATH`      | `/api/health`                                                            |
-| `DATABASE_MIGRATION_URL`    | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)     |
-| `DATABASE_URL`              | même adresse, avec `pomme_app` et un mot de passe aléatoire              |
-| `DATABASE_AUTH_URL`         | même adresse, avec `pomme_auth` et un autre mot de passe aléatoire       |
-| `BETTER_AUTH_URL`           | adresse publique (`https://app-….cleverapps.io` en attendant le domaine) |
-| `BETTER_AUTH_SECRET`        | `openssl rand -base64 32`                                                |
-| `SMTP_URL`, `EMAIL_FROM`    | relais Brevo (ADR 0006)                                                  |
-| `FRIENDLY_CAPTCHA_SITEKEY`  | clé de site (ADR 0007)                                                   |
-| `FRIENDLY_CAPTCHA_API_KEY`  | clé d'API (ADR 0007)                                                     |
-| `FRIENDLY_CAPTCHA_ENDPOINT` | `eu` si l'offre le permet                                                |
+| Variable                    | Valeur                                                                             |
+| --------------------------- | ---------------------------------------------------------------------------------- |
+| `NODE_ENV`                  | `production`                                                                       |
+| `CC_NODE_DEV_DEPENDENCIES`  | `install` (le build et les scripts de base en ont besoin)                          |
+| `CC_POST_BUILD_HOOK`        | `pnpm build`                                                                       |
+| `CC_PRE_RUN_HOOK`           | `bash clevercloud/pre-run.sh` (rôles et migrations)                                |
+| `CC_HEALTH_CHECK_PATH`      | `/api/health`                                                                      |
+| `DATABASE_MIGRATION_URL`    | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)               |
+| `DATABASE_URL`              | même adresse, avec `pomme_app` et un mot de passe aléatoire                        |
+| `DATABASE_AUTH_URL`         | même adresse, avec `pomme_auth` et un autre mot de passe aléatoire                 |
+| `BETTER_AUTH_URL`           | `https://preprod.pomme.cloud` (pré-production), `https://pomme.cloud` (production) |
+| `BETTER_AUTH_SECRET`        | `openssl rand -base64 32`                                                          |
+| `SMTP_URL`, `EMAIL_FROM`    | relais Brevo (ADR 0006)                                                            |
+| `FRIENDLY_CAPTCHA_SITEKEY`  | clé de site (ADR 0007)                                                             |
+| `FRIENDLY_CAPTCHA_API_KEY`  | clé d'API (ADR 0007)                                                               |
+| `FRIENDLY_CAPTCHA_ENDPOINT` | `eu` si l'offre le permet                                                          |
 
 Mots de passe : `openssl rand -hex 24` (sans caractère spécial, rien à encoder dans
 l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces applications.
@@ -77,14 +77,28 @@ Dans les journaux de Clever Cloud, un déploiement réussi affiche dans l'ordre 
 de Next.js. Si un pas échoue, l'ancienne version continue de servir. Vérifier ensuite
 `https://<adresse>/api/health` : `{"status":"ok"}`.
 
-## Domaine (quand il sera choisi, issue #49)
+## Domaine : pomme.cloud (OVH)
 
-1. Clever Cloud › Domain names : ajouter le domaine, puis l'enregistrement DNS indiqué.
-2. Activer « Force HTTPS ».
-3. Mettre à jour `BETTER_AUTH_URL` (les passkeys créées sur une autre adresse ne marcheront
-   plus).
-4. Vérifier la note sur <https://developer.mozilla.org/en-US/observatory> (objectif : A+).
-5. SPF, DKIM et DMARC pour les emails : ADR 0006.
+| Adresse               | Application     | Zone DNS chez OVH                                                |
+| --------------------- | --------------- | ---------------------------------------------------------------- |
+| `preprod.pomme.cloud` | `pomme-preprod` | `CNAME` `preprod` → `domain.par.clever-cloud.com.` (en place)    |
+| `pomme.cloud`         | `pomme-prod`    | enregistrements `A` de la région Paris (racine : pas de `CNAME`) |
+
+Pour chaque adresse :
+
+1. Clever Cloud › application › Domain names : ajouter l'adresse ; le menu affiche les
+   enregistrements à créer. Le certificat HTTPS (Let's Encrypt) suit tout seul.
+2. Pour la racine `pomme.cloud` : supprimer d'abord les enregistrements `A` et `AAAA` créés par
+   OVH (page « parking »), puis ajouter les `A` indiqués par Clever Cloud.
+3. Activer « Force HTTPS ».
+4. Mettre à jour `BETTER_AUTH_URL` (les passkeys créées sur une autre adresse ne marchent
+   plus) et ajouter l'adresse aux domaines de l'application Friendly Captcha.
+5. Vérifier la note sur <https://developer.mozilla.org/en-US/observatory> (objectif : A+).
+
+Emails : `pomme.cloud` est authentifié dans Brevo (code de vérification, DKIM `brevo1` et
+`brevo2`, DMARC `p=none`) ; `EMAIL_FROM="Pomme <ne-pas-repondre@pomme.cloud>"`, sans boîte de
+réception derrière. SPF : `v=spf1 include:mx.ovh.com include:spf.brevo.com -all` (un seul
+enregistrement SPF). Voir ADR 0006.
 
 ## Reste à faire (fiche S7)
 
