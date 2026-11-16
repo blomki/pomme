@@ -30,17 +30,15 @@ const OWNER_USER = "pomme_owner";
 const OWNER_PASSWORD = "test_owner_password";
 
 /**
- * Crée le propriétaire comme sur une base gérée (ADR 0008) : il peut créer des rôles et des bases,
- * mais il n'est PAS super-utilisateur. Les tests prouvent ainsi que rôles et migrations
+ * Crée le propriétaire comme chez Clever Cloud (ADR 0008) : il peut créer des rôles (CREATEROLE,
+ * accordé par le support), mais pas de bases, et il n'est PAS super-utilisateur. Les tests prouvent ainsi que rôles et migrations
  * passent avec les droits réels de la production.
  */
 async function createManagedOwner(superuserUrl: string): Promise<string> {
   const client = new Client({ connectionString: superuserUrl });
   await client.connect();
   try {
-    await client.query(
-      `create role ${OWNER_USER} login createrole createdb password '${OWNER_PASSWORD}'`,
-    );
+    await client.query(`create role ${OWNER_USER} login createrole password '${OWNER_PASSWORD}'`);
     await client.query(`create database pomme owner ${OWNER_USER}`);
   } finally {
     await client.end();

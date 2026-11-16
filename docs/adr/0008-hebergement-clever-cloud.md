@@ -1,6 +1,6 @@
 # 0008. Hébergement chez Clever Cloud, sécurité HTTP et déploiement
 
-- Statut : accepté (rôles PostgreSQL : en attente de la réponse du support de Clever Cloud)
+- Statut : accepté (rôles PostgreSQL : accordés par le support le 2026-11-16, plans payants)
 - Date : 2026-11-14
 
 ## Contexte
@@ -19,13 +19,16 @@ utilisateur, propriétaire de tout ; la doc invite à contacter le support pour 
 1. **Tout chez Clever Cloud**, région Paris :
    - `pomme-prod` : application Node.js nano, base PostgreSQL **XXS Small Space** (sauvegardes
      quotidiennes gardées 7 jours) ;
-   - `pomme-preprod` : application nano, base PostgreSQL **DEV** (gratuite, sans sauvegarde,
-     données fictives seulement) ;
+   - `pomme-preprod` : application nano, base PostgreSQL **XXS Small Space** elle aussi
+     (données fictives seulement) : le plan DEV, gratuit, ne permet pas les rôles (point 2) ;
    - une seule instance par application : les limites de débit sont gardées en mémoire.
-2. **Rôles PostgreSQL** : demande au support d'accorder `CREATEROLE` au propriétaire (alors
-   `pnpm db:setup` crée les rôles comme en local), ou de créer lui-même `pomme_app` et
-   `pomme_auth`. `db:setup` fonctionne déjà avec un propriétaire qui n'est pas
-   super-utilisateur, et vérifie qu'aucun rôle applicatif ne peut contourner la RLS.
+2. **Rôles PostgreSQL** : le support de Clever Cloud accorde `CREATEROLE` au propriétaire de
+   chaque base, et active l'option « dump all » pour que les rôles soient conservés si la base
+   est migrée (réponse du 2026-11-16). **Seulement sur les plans payants**, pas sur le plan
+   DEV. `pnpm db:setup` crée alors `pomme_app` et `pomme_auth` comme en local. Le
+   propriétaire n'a ni `SUPERUSER` ni `CREATEDB` : le script n'écrit aucun de ces attributs
+   (PostgreSQL 16+ le refuserait), il vérifie seulement que les rôles applicatifs ne les ont
+   pas. Les tests d'intégration simulent ce propriétaire exactement.
 3. **Au démarrage** (`clevercloud/pre-run.sh`, première instance seulement) : `pnpm db:setup`
    puis `pnpm db:migrate`. Clever Cloud ne bascule sur la nouvelle version que si
    `/api/health` répond 200 (application et base joignables).
@@ -39,8 +42,12 @@ utilisateur, propriétaire de tout ; la doc invite à contacter le support pour 
 
 ## Pourquoi
 
-- Un seul fournisseur français, dans le budget : environ 6 € par application et 5 € pour la
-  base de production, par mois (à confirmer sur la facture).
+- Un seul fournisseur français : environ 6 € par application et 5 € par base, soit environ
+  22 € par mois, un peu au-dessus de l'objectif de 20 € (à confirmer sur la facture).
+- Pré-production en plan payant plutôt que DEV : sept migrations citent les rôles
+  `pomme_app` et `pomme_auth`, que PostgreSQL refuse s'ils n'existent pas ; sur le plan DEV,
+  personne ne peut les créer. Une pré-production sans ces rôles serait impossible, et de toute
+  façon inutile pour tester l'isolation entre AMAP.
 - Scaleway a été étudié pour sa base gérée, qui permet de créer des rôles : la région Paris
   n'était pas ouverte sur un compte neuf et le coût dépassait 30 € par mois.
 - Se connecter en propriétaire avec `FORCE ROW LEVEL SECURITY` est écarté : le propriétaire
@@ -53,10 +60,8 @@ utilisateur, propriétaire de tout ; la doc invite à contacter le support pour 
 
 ## Conséquences
 
-- **Si le support refuse**, cette décision est à revoir avant toute mise en production (autre
-  base gérée, ou autre hébergeur) : on ne déploie pas avec un seul rôle propriétaire.
-- Si le support crée lui-même les rôles, `db:setup` ne pourra pas changer leur mot de passe :
-  il faudra l'adapter.
+- Chaque nouvelle base (prévisualisation par PR, nouvel environnement) doit être en plan payant,
+  avec une demande au support pour `CREATEROLE` et « dump all ».
 - Adresse IP des visiteurs (limites de débit) : la dernière de `X-Forwarded-For`, ajoutée par
   le répartiteur de Clever Cloud ; la première peut être inventée
   (`src/server/auth/client-ip.ts`).

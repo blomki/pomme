@@ -39,8 +39,7 @@ export async function setupRole(params: {
     // le nom et le mot de passe sont protégés par escapeIdentifier et escapeLiteral.
     if (exists.rowCount === 0) await client.query(`create role ${role}`);
     await client.query(
-      `alter role ${role} with login nocreatedb nocreaterole
-         password ${client.escapeLiteral(appPassword)}`,
+      `alter role ${role} with login password ${client.escapeLiteral(appPassword)}`,
     );
     await assertRestricted(client, appUser);
     await client.query(`grant connect on database ${database} to ${role}`);
@@ -62,8 +61,9 @@ export async function setupRole(params: {
 /**
  * Vérifie que le rôle n'a aucun pouvoir de contournement.
  *
- * On ne peut pas les retirer nous-mêmes : sur une base gérée (ADR 0008), le propriétaire n'est pas
- * super-utilisateur, et PostgreSQL lui interdit même d'ÉCRIRE « nosuperuser » ou « nobypassrls ».
+ * On ne peut pas les retirer nous-mêmes : chez Clever Cloud (ADR 0008), le propriétaire n'est pas
+ * super-utilisateur et n'a pas CREATEDB ; PostgreSQL (16 et plus) lui interdit alors même
+ * d'ÉCRIRE « nosuperuser », « nobypassrls » ou « nocreatedb » dans un ALTER ROLE.
  * Un rôle qu'il crée n'a de toute façon pas ces pouvoirs. Si quelqu'un les lui avait donnés
  * (à la main), on s'arrête plutôt que de démarrer avec une isolation entre AMAP percée.
  */

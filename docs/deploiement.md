@@ -10,7 +10,7 @@ Organisation Clever Cloud « pomme » (`orga_1524590b-6edb-4a4d-9bfb-c7f021ab473
 
 | Environnement  | Application                                                  | Base PostgreSQL                           |
 | -------------- | ------------------------------------------------------------ | ----------------------------------------- |
-| Pré-production | `pomme-preprod` (`app_fca2a27f-93b6-46f9-ade4-f2ca84ab060c`) | plan DEV, gratuit, sans sauvegarde        |
+| Pré-production | `pomme-preprod` (`app_fca2a27f-93b6-46f9-ade4-f2ca84ab060c`) | plan XXS Small Space (passer du plan DEV) |
 | Production     | `pomme-prod` (`app_7c2265ed-74dd-4db6-a5c2-597625514a38`)    | plan XXS Small Space, sauvegardes 7 jours |
 
 Applications : taille nano, une seule instance (les limites de débit sont en mémoire), instance
@@ -19,8 +19,12 @@ automatique depuis Clever Cloud : c'est GitHub Actions qui déploie.
 
 ## Rôles PostgreSQL
 
-En attente du support de Clever Cloud (ADR 0008) : le propriétaire de la base doit pouvoir
-créer `pomme_app` et `pomme_auth` (droit `CREATEROLE`). **Ne pas déployer avant.**
+Le propriétaire de chaque base doit pouvoir créer `pomme_app` et `pomme_auth` (droit
+`CREATEROLE`). Le support de Clever Cloud l'accorde **sur les plans payants seulement** (pas
+DEV), et active l'option « dump all » pour que les rôles survivent à une migration de la base
+(ADR 0008). Pour chaque nouvelle base, lui écrire avec l'identifiant de l'add-on
+(`postgresql_…`). **Ne pas déployer sur une base qui n'a pas encore ce droit** : le démarrage
+échouerait à `pnpm db:setup`, et l'ancienne version resterait en ligne.
 
 ## Variables d'environnement de chaque application
 
