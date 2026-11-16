@@ -149,12 +149,15 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  # Déploiement en pré-production : seulement après une fusion sur main, si toutes les étapes
-  # précédentes sont au vert. GitHub note le déploiement (environnement « preprod ») : le
-  # workflow de production s'en sert pour n'accepter qu'une version déjà passée par ici.
+  # Déploiement en pré-production : après une fusion sur main, ou lancé à la main (Actions › CI ›
+  # Run workflow, sur main), et seulement si toutes les étapes précédentes sont au vert. GitHub
+  # note le déploiement (environnement « preprod ») : le workflow de production s'en sert pour
+  # n'accepter qu'une version déjà passée par ici.
   preprod-ready:
     name: Pré-production configurée ?
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    if: >-
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [quality, tests, e2e, security]
     runs-on: ubuntu-latest
     outputs:
