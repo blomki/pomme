@@ -63,7 +63,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "cheques", icon: <FactCheckOutlined /> },
         { key: "credits", icon: <UndoOutlined /> },
         { key: "orders", icon: <ReceiptLongOutlined /> },
-        { key: "catalogues", icon: <Inventory2Outlined /> },
+        { key: "catalogues", icon: <Inventory2Outlined />, href: `${base}/referent/catalogue` },
       ];
     case "platform":
       return [

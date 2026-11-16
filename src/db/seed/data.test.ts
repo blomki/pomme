@@ -59,6 +59,10 @@ describe("buildSeedData", () => {
       ...data.referentAssignments,
       ...data.producerUsers,
       ...data.distributions,
+      ...data.products,
+      ...data.catalogs,
+      ...data.catalogItems,
+      ...data.availabilities,
     ].map((row) => row.id);
     expect(new Set(ids).size).toBe(ids.length);
   });
@@ -142,6 +146,21 @@ describe("buildSeedData", () => {
       expect.objectContaining({ date: "2026-12-31", closedReason: "Vacances de Noël" }),
     ]);
     expect(first?.settings.distributionWeekday).toBe(4);
+  });
+
+  it("prépare des brouillons de catalogue disponibles à chaque distribution ouverte", () => {
+    // 7 producteurs × 2 produits ; 9 producteurs dans les AMAP × 2 mois de catalogues.
+    expect(data.products).toHaveLength(14);
+    expect(data.catalogs).toHaveLength(18);
+    expect(data.catalogItems).toHaveLength(36);
+    expect(data.catalogItems.every((i) => i.priceCents > 0)).toBe(true);
+    const closed = new Set(data.distributions.filter((d) => !d.isOpen).map((d) => d.id));
+    expect(data.availabilities.some((a) => closed.has(a.distributionId))).toBe(false);
+    for (const a of data.availabilities) {
+      const item = data.catalogItems.find((i) => i.id === a.catalogItemId);
+      const d = data.distributions.find((x) => x.id === a.distributionId);
+      expect(item?.amapId).toBe(d?.amapId);
+    }
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

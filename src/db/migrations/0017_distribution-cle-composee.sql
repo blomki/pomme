@@ -1,0 +1,1 @@
+ALTER TABLE "distribution" ADD CONSTRAINT "distribution_amap_unique" UNIQUE("id","amap_id");

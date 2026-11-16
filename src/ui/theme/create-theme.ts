@@ -207,6 +207,18 @@ export function createAmapTheme(config: ThemeConfig): Theme {
           action: { color: m3("inversePrimary"), "& .MuiButton-root": { color: "inherit" } },
         },
       },
+      // Infobulle « simple » de Material Design 3 : fond opaque inverseSurface. Le gris
+      // semi-transparent de MUI laissait passer le fond, et le contraste du texte en dépendait
+      // (signalé par axe sur l'infobulle « Mon compte »).
+      MuiTooltip: {
+        styleOverrides: {
+          tooltip: {
+            backgroundColor: m3("inverseSurface"),
+            color: m3("inverseOnSurface"),
+            borderRadius: M3_SHAPE.extraSmall,
+          },
+        },
+      },
       MuiSkeleton: {
         styleOverrides: { root: { backgroundColor: m3("surfaceContainerHighest") } },
       },

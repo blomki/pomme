@@ -14,7 +14,6 @@ const pages = [
   { path: "/hommesdeterre/famille", title: "Espace famille" },
   { path: "/hommesdeterre/referent", title: "Espace référent" },
   { path: "/producteur", title: "Espace producteur" },
-  { path: "/producteur/catalogue", title: "Catalogue" },
   { path: "/plateforme/theme/hommesdeterre", title: "Thème de AMAP de démonstration de Cambremer" },
   { path: "/plateforme/theme/pays-d-auge-demo", title: "Thème de AMAP fictive du Pays d'Auge" },
 ];

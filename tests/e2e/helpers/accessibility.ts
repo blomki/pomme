@@ -9,7 +9,16 @@ const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
  * (exigence du cahier technique). Le message d'erreur liste les règles en cause.
  */
 export async function expectNoSeriousA11yViolations(page: Page): Promise<void> {
-  const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
+  const results = await new AxeBuilder({ page })
+    .withTags(WCAG_TAGS)
+    // Balise ajoutée par Next.js quand une page redirige après avoir commencé à envoyer son HTML
+    // (<meta id="__next-page-redirect" http-equiv="refresh">) : filet de secours pour un
+    // navigateur sans JavaScript. Avec JavaScript, la redirection est immédiate et la balise
+    // reste sans effet. Selon le rythme du serveur, elle apparaît ou non : sans cette
+    // exclusion, le test échouait au hasard. La règle meta-refresh reste vérifiée partout
+    // ailleurs.
+    .exclude("#__next-page-redirect")
+    .analyze();
   const blocking = results.violations
     .filter((violation) => violation.impact === "serious" || violation.impact === "critical")
     .map((violation) => ({

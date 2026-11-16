@@ -39,8 +39,59 @@
       "cancel": "Annuler",
       "save": "Enregistrer",
       "saved": "{name} enregistré.",
-      "catalogueSoon": "Le catalogue du mois s'affichera ici (story C3)."
+      "catalogueSoon": "Préparer le catalogue du mois"
+    },
+    "catalogue": {
+      "back": "Mes producteurs",
+      "tabs": "Producteurs suivis",
+      "noProducers": "Aucun producteur ne vous est confié pour l'instant."
     }
+  },
+  "Catalog": {
+    "title": "Catalogue de {month}",
+    "intro": "Visible par les familles à l'ouverture des commandes, une fois publié.",
+    "previousMonth": "Mois précédent",
+    "nextMonth": "Mois suivant",
+    "statusNew": "Pas encore de catalogue · non visible des familles",
+    "statusDraft": "Brouillon · non visible des familles",
+    "statusPublished": "Publié",
+    "noDistributions": "Aucune distribution en {month} : l'administrateur doit d'abord créer le calendrier (Planning des permanences).",
+    "empty": "Aucun produit dans ce catalogue. Ajoutez le premier ci-dessous.",
+    "product": "Produit et conditionnement",
+    "productOf": "Produit et conditionnement, ligne {number}",
+    "price": "Prix (€)",
+    "priceOf": "Prix en euros de {name}",
+    "week": "Sem. {number}",
+    "weekOf": "{date}",
+    "closedWeek": "fermée",
+    "availableOf": "{name} disponible le {date}",
+    "remove": "Retirer",
+    "removeOf": "Retirer {name} de ce catalogue",
+    "removedTitle": "{count, plural, one {Produit retiré · #} other {Produits retirés · #}}",
+    "removedIntro": "Conservés pour pouvoir les remettre au catalogue. Non visibles des familles. Les catalogues des autres AMAP ne changent pas.",
+    "restore": "Remettre au catalogue",
+    "restoreOf": "Remettre au catalogue : {name}",
+    "addTitle": "Ajouter un produit",
+    "newName": "Produit et conditionnement",
+    "newNameHelp": "Par exemple « Œufs, boîte de 6 » ou « Miel, pot de 500 g ».",
+    "newPrice": "Prix (€)",
+    "add": "Ajouter",
+    "note": "Cochez les semaines où le produit est disponible. Le conditionnement fait partie du nom (boîte de 6, pot de 500 g…). Renommer un produit le renomme pour toutes les AMAP que ce producteur livre. Après l'ouverture des commandes, un changement de prix ne s'applique qu'aux nouvelles commandes.",
+    "save": "Enregistrer le brouillon",
+    "saved": "Brouillon du catalogue de {month} enregistré.",
+    "errors": {
+      "summary": "Le brouillon n'a pas été enregistré. Corrigez les lignes signalées.",
+      "name": "Saisissez le nom du produit (120 caractères au plus).",
+      "price": "Prix invalide. Exemple : 4,50.",
+      "available": "Une semaine cochée n'est plus ouverte : rechargez la page.",
+      "duplicate": "Ce produit figure deux fois : {names}.",
+      "forbidden": "Vous ne pouvez pas modifier ce catalogue.",
+      "error": "L'enregistrement n'a pas pu être fait."
+    },
+    "availabilityOf": "Disponibilités de {name}",
+    "weekLabel": "Sem. {number} · {date}",
+    "weekClosedLabel": "Sem. {number} · fermée",
+    "cardsHelp": "Décochez une semaine pour rendre le produit indisponible ce jour-là."
   },
   "Admin": {
     "title": "Administration de l'AMAP",
@@ -341,7 +392,10 @@
     }
   },
   "Producer": {
-    "title": "Espace producteur"
+    "title": "Espace producteur",
+    "catalogue": {
+      "tabs": "Vos AMAP"
+    }
   },
   "Platform": {
     "title": "Gestion de la plateforme",

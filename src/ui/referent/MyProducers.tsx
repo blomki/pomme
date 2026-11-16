@@ -16,6 +16,7 @@ import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import { useState } from "react";
 
 import { formatPhone } from "@/domain/phone";
@@ -132,9 +133,16 @@ export function MyProducers({
             </Stack>
           </Paper>
         </Box>
-        <Typography variant="bodySmall" sx={{ color: "text.secondary" }}>
-          {t("catalogueSoon")}
-        </Typography>
+        <Box>
+          <Button
+            variant="outlined"
+            component={Link}
+            nativeButton={false}
+            href={`/${amapSlug}/referent/catalogue?producteur=${producer.id}`}
+          >
+            {t("catalogueSoon")}
+          </Button>
+        </Box>
       </Box>
 
       {editing && (

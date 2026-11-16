@@ -14,7 +14,7 @@
  * transaction (voir ../context.ts et docs/adr/0003-isolation-par-amap-rls.md). Une table
  * avec RLS et sans politique pour une opération refuse cette opération.
  */
-import { sql } from "drizzle-orm";
+import { sql, type SQL } from "drizzle-orm";
 import {
   boolean,
   check,
@@ -79,6 +79,34 @@ const isReferentOf = (producerId: unknown) => sql`exists (
   where amap_producer.producer_id = ${producerId}
     and referent_assignment.user_id = ${currentUserId}
 )`;
+
+/** L'utilisateur connecté a un compte de ce producteur (table producer_user). */
+const isProducerAccount = (producerId: unknown) => sql`exists (
+  select 1 from producer_user
+  where producer_user.producer_id = ${producerId} and producer_user.user_id = ${currentUserId}
+)`;
+
+/**
+ * Peut modifier le catalogue de ce producteur dans l'AMAP courante (story C2) : son référent, ou
+ * le producteur lui-même. Ni l'admin ni les familles.
+ */
+const isCatalogEditor = (producerId: unknown) =>
+  sql`(${isReferentOf(producerId)} or ${isProducerAccount(producerId)})`;
+
+/** Politiques d'écriture d'une table du catalogue, toutes avec la même condition. */
+function editorPolicies(
+  table: string,
+  condition: SQL,
+  operations: ReadonlyArray<"insert" | "update" | "delete">,
+) {
+  return operations.map((operation) =>
+    pgPolicy(`${table}_${operation}`, {
+      for: operation,
+      ...(operation === "insert" ? {} : { using: condition }),
+      ...(operation === "delete" ? {} : { withCheck: condition }),
+    }),
+  );
+}
 
 /** Accès complet pour Better Auth, qui gère lui-même les comptes et les sessions. */
 const authFullAccess = (name: string) =>
@@ -364,6 +392,8 @@ export const distribution = pgTable(
   },
   (t) => [
     unique("distribution_amap_date_unique").on(t.amapId, t.date),
+    // Cible des clés étrangères composées (disponibilités du catalogue, même AMAP garantie).
+    unique("distribution_amap_unique").on(t.id, t.amapId),
     check("distribution_times", sql`${t.startTime} < ${t.endTime}`),
     // Fermée = motif obligatoire ; ouverte = pas de motif. coalesce : sans lui, un motif NULL
     // rendrait la condition NULL, et PostgreSQL accepte une contrainte CHECK qui vaut NULL.
@@ -435,6 +465,178 @@ export const producer = pgTable(
       using: sql`${isReferentOf(t.id)}`,
       withCheck: sql`${isReferentOf(t.id)}`,
     }),
+  ],
+);
+
+// --- product : fiche produit ----------------------------------------------------------------
+// Commune au producteur, donc à toutes ses AMAP (modèle de données, section 5). Le nom contient
+// le conditionnement (« Œufs, boîte de 6 ») : un seul champ, comme à l'écran (décision du
+// 2026-11-15). Le prix et la disponibilité sont propres à chaque AMAP et à chaque mois.
+
+export const product = pgTable(
+  "product",
+  {
+    id: id(),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    name: text("name").notNull(),
+    // Envoi de photo : fiche dédiée aux fichiers (#64).
+    photoUrl: text("photo_url"),
+    createdBy: uuid("created_by").references(() => user.id),
+    // Produit qui n'est plus fabriqué du tout (C3) ; il reste lisible dans les catalogues passés.
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    check("product_name_not_blank", sql`length(trim(${t.name})) > 0`),
+    index("product_producer_idx").on(t.producerId),
+    // Lecture : produits d'un producteur qui livre l'AMAP courante, ou de son propre producteur.
+    pgPolicy("product_select", {
+      for: "select",
+      using: sql`exists (select 1 from amap_producer where amap_producer.producer_id = ${t.producerId})
+        or ${isProducerAccount(t.producerId)}`,
+    }),
+    // Création et modification : le référent du producteur dans l'AMAP courante, ou le
+    // producteur lui-même. La fiche étant commune, une modification vaut pour toutes ses AMAP.
+    pgPolicy("product_insert", { for: "insert", withCheck: isCatalogEditor(t.producerId) }),
+    pgPolicy("product_update", {
+      for: "update",
+      using: isCatalogEditor(t.producerId),
+      withCheck: isCatalogEditor(t.producerId),
+    }),
+  ],
+);
+
+// --- catalog : catalogue du mois -------------------------------------------------------------
+// Un par AMAP, producteur et mois. Rattaché à son MOIS, comme les distributions (ADR 0012), et
+// non à une période de commande. Brouillon tant qu'il n'est pas publié (publication : C3).
+
+export const catalogStatus = pgEnum("catalog_status", ["draft", "published"]);
+
+export const catalog = pgTable(
+  "catalog",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    // Premier jour du mois (« 2026-12-01 »).
+    month: date("month", { mode: "string" }).notNull(),
+    status: catalogStatus("status").notNull().default("draft"),
+    publishedAt: timestamp("published_at", { withTimezone: true }),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("catalog_unique").on(t.amapId, t.producerId, t.month),
+    unique("catalog_amap_unique").on(t.id, t.amapId),
+    check("catalog_month_first_day", sql`extract(day from ${t.month}) = 1`),
+    // Lecture : toute l'AMAP courante (les familles liront les catalogues publiés, D3 ; le
+    // masquage des brouillons est fait par l'application). Écriture : création et
+    // modification par le référent ou le producteur ; jamais de suppression.
+    pgPolicy("catalog_select", { for: "select", using: sql`${t.amapId} = ${currentAmapId}` }),
+    ...editorPolicies(
+      "catalog",
+      sql`${t.amapId} = ${currentAmapId} and ${isCatalogEditor(t.producerId)}`,
+      ["insert", "update"],
+    ),
+  ],
+);
+
+/** L'utilisateur peut modifier le catalogue de cette ligne (jointure sur catalog, filtrée). */
+const isEditorOfCatalog = (catalogId: unknown) => sql`exists (
+  select 1 from catalog where catalog.id = ${catalogId} and ${isCatalogEditor(sql`catalog.producer_id`)}
+)`;
+
+// --- catalog_item : produit au catalogue -----------------------------------------------------
+
+export const catalogItem = pgTable(
+  "catalog_item",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    catalogId: uuid("catalog_id").notNull(),
+    productId: uuid("product_id")
+      .notNull()
+      .references(() => product.id),
+    priceCents: integer("price_cents").notNull(),
+    // Minimum de commande : possible techniquement, jamais affiché (cahier des charges).
+    minQuantity: integer("min_quantity"),
+    position: integer("position").notNull().default(0),
+    // Retiré de CE catalogue (« Produits retirés ») : la fiche produit, commune, n'est pas
+    // touchée, et les autres AMAP non plus (décision du 2026-11-16).
+    removedAt: timestamp("removed_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "catalog_item_catalog_fk",
+      columns: [t.catalogId, t.amapId],
+      foreignColumns: [catalog.id, catalog.amapId],
+    }),
+    unique("catalog_item_unique").on(t.catalogId, t.productId),
+    unique("catalog_item_amap_unique").on(t.id, t.amapId),
+    check("catalog_item_price_positive", sql`${t.priceCents} > 0`),
+    check("catalog_item_min_quantity", sql`${t.minQuantity} is null or ${t.minQuantity} > 0`),
+    pgPolicy("catalog_item_select", {
+      for: "select",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+    ...editorPolicies(
+      "catalog_item",
+      sql`${t.amapId} = ${currentAmapId} and ${isEditorOfCatalog(t.catalogId)}`,
+      ["insert", "update"],
+    ),
+  ],
+);
+
+// --- catalog_item_availability : disponibilité -----------------------------------------------
+// Une ligne = ce produit est disponible à cette distribution.
+
+export const catalogItemAvailability = pgTable(
+  "catalog_item_availability",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    catalogItemId: uuid("catalog_item_id").notNull(),
+    distributionId: uuid("distribution_id").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "catalog_item_availability_item_fk",
+      columns: [t.catalogItemId, t.amapId],
+      foreignColumns: [catalogItem.id, catalogItem.amapId],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "catalog_item_availability_distribution_fk",
+      columns: [t.distributionId, t.amapId],
+      foreignColumns: [distribution.id, distribution.amapId],
+    }),
+    unique("catalog_item_availability_unique").on(t.catalogItemId, t.distributionId),
+    pgPolicy("catalog_item_availability_select", {
+      for: "select",
+      using: sql`${t.amapId} = ${currentAmapId}`,
+    }),
+    ...editorPolicies(
+      "catalog_item_availability",
+      sql`${t.amapId} = ${currentAmapId} and exists (
+        select 1 from catalog_item where catalog_item.id = ${t.catalogItemId}
+          and ${isEditorOfCatalog(sql`catalog_item.catalog_id`)})`,
+      ["insert", "delete"],
+    ),
   ],
 );
 
