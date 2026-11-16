@@ -305,8 +305,8 @@ const AMAPS = [
       tertiary: "#c9a227",
       headingFont: "Pattaya",
     },
-    // Distribution habituelle (fictive) : le mardi de 18 h à 19 h 30.
-    distribution: { weekday: 2, start: "18:00", end: "19:30" },
+    // Distribution habituelle : le jeudi (comme à Cambremer), de 18 h à 19 h 30 (horaires fictifs).
+    distribution: { weekday: 4, start: "18:00", end: "19:30" },
     admins: 2,
     referents: 6,
   },

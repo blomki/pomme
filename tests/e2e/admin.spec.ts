@@ -514,8 +514,8 @@ test.describe("administration (ordinateur)", () => {
     await expect(
       page.getByRole("heading", { level: 1, name: "Planning des permanences" }),
     ).toBeVisible();
-    // Jeu de données : le mardi de 18 h à 19 h 30.
-    await expect(page.getByText("Chaque mardi, de 18:00 à 19:30")).toBeVisible();
+    // Jeu de données : le jeudi de 18 h à 19 h 30.
+    await expect(page.getByText("Chaque jeudi, de 18:00 à 19:30")).toBeVisible();
     await expectNoSeriousA11yViolations(page);
 
     await page.goto(`/hommesdeterre/admin/planning?mois=${year}-03`);
@@ -524,7 +524,7 @@ test.describe("administration (ordinateur)", () => {
     await page.getByRole("button", { name: `Créer les distributions de mars ${year}` }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByText(/distributions créées\./)).toBeVisible();
-    // 4 ou 5 mardis selon le mois.
+    // 4 ou 5 jeudis selon le mois.
     await expect(region.getByRole("listitem").nth(3)).toBeVisible();
     // Contrôle une fois le message de confirmation entièrement apparu (animation).
     await expect(page.locator(".MuiSnackbarContent-root")).toHaveCSS("opacity", "1");
@@ -549,5 +549,22 @@ test.describe("administration (ordinateur)", () => {
     await page.getByRole("button", { name: `Rouvrir la distribution du ${date}` }).click();
     await expect(page.getByText(`Distribution du ${date} rouverte.`)).toBeVisible();
     await expect(region.getByText("Motif : Jour férié")).toHaveCount(0);
+
+    // Changer de jour habituel déplace aussi les distributions à venir (retour de recette).
+    const changeDay = async (weekday: string, expected: RegExp) => {
+      await page.getByRole("button", { name: "Modifier les réglages" }).click();
+      const settings = page.getByRole("dialog", { name: "Distribution habituelle" });
+      await expect(
+        settings.getByRole("checkbox", { name: "Déplacer aussi les distributions à venir" }),
+      ).toBeChecked();
+      await settings.getByRole("combobox", { name: "Jour" }).click();
+      await page.getByRole("option", { name: weekday }).click();
+      await settings.getByRole("button", { name: "Enregistrer" }).click();
+      await expect(page.getByText(/distributions à venir déplacées/)).toBeVisible();
+      await expect(region.getByRole("listitem").first()).toContainText(expected);
+    };
+    await changeDay("vendredi", /^Semaine 1vendredi/);
+    // Ménage : retour au jeudi pour les autres tests.
+    await changeDay("jeudi", /^Semaine 1jeudi/);
   });
 });

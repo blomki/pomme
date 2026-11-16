@@ -5,12 +5,15 @@ import ChevronRight from "@mui/icons-material/ChevronRight";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
+import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormHelperText from "@mui/material/FormHelperText";
 import IconButton from "@mui/material/IconButton";
 import MenuItem from "@mui/material/MenuItem";
 import Paper from "@mui/material/Paper";
@@ -335,6 +338,9 @@ function SettingsDialog({
   const [startTime, setStartTime] = useState(settings.startTime || "18:00");
   const [endTime, setEndTime] = useState(settings.endTime || "19:30");
   const [place, setPlace] = useState(settings.place);
+  // Coché par défaut : changer de jour sans déplacer les distributions à venir obligerait à les
+  // fermer une à une (retour de recette du 2026-11-16).
+  const [moveUpcoming, setMoveUpcoming] = useState(true);
   const [invalid, setInvalid] = useState(false);
   const [pending, setPending] = useState(false);
 
@@ -346,10 +352,21 @@ function SettingsDialog({
       startTime,
       endTime,
       place,
+      moveUpcoming,
     });
     setPending(false);
     if (result.status === "saved") {
-      showSnackbar({ message: t("saved") });
+      const parts = [t("saved")];
+      if (moveUpcoming) parts.push(t("moved", { count: result.moved }));
+      if (result.skipped.length > 0) {
+        parts.push(
+          t("skipped", {
+            count: result.skipped.length,
+            dates: result.skipped.map((d) => day(d, "d MMMM")).join(", "),
+          }),
+        );
+      }
+      showSnackbar({ message: parts.join(" ") });
       onClose();
       return;
     }
@@ -400,6 +417,21 @@ function SettingsDialog({
               onChange={(e) => setPlace(e.target.value)}
               fullWidth
             />
+            <Box>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={moveUpcoming}
+                    onChange={(e) => setMoveUpcoming(e.target.checked)}
+                    slotProps={{ input: { "aria-describedby": "move-upcoming-help" } }}
+                  />
+                }
+                label={t("moveUpcoming")}
+              />
+              <FormHelperText id="move-upcoming-help" sx={{ mt: -0.5, ml: 4 }}>
+                {t("moveUpcomingHelp")}
+              </FormHelperText>
+            </Box>
             <div role="status" aria-live="polite">
               {invalid && <Alert severity="error">{t("invalidSettings")}</Alert>}
             </div>

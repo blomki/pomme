@@ -136,12 +136,12 @@ describe("buildSeedData", () => {
   it("crée les distributions de trois mois au jour habituel, dont une fermée à Noël", () => {
     const [first] = data.amaps;
     const ofFirst = data.distributions.filter((d) => d.amapId === first?.id);
-    // Mardis de novembre 2026 (4), décembre (5) et janvier 2027 (4).
+    // Jeudis de novembre 2026 (4), décembre (5) et janvier 2027 (4).
     expect(ofFirst).toHaveLength(13);
     expect(ofFirst.filter((d) => !d.isOpen)).toEqual([
-      expect.objectContaining({ date: "2026-12-29", closedReason: "Vacances de Noël" }),
+      expect.objectContaining({ date: "2026-12-31", closedReason: "Vacances de Noël" }),
     ]);
-    expect(first?.settings.distributionWeekday).toBe(2);
+    expect(first?.settings.distributionWeekday).toBe(4);
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

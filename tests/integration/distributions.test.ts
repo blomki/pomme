@@ -79,7 +79,7 @@ describe("Distributions (D1)", () => {
           place: "Salle des fêtes",
         }),
       ),
-    ).toEqual({ status: "saved" });
+    ).toEqual({ status: "saved", moved: 0, skipped: [] });
     expect(await inA((tx, ctx) => generateDistributions(tx, ctx, { month: "2026-12" }))).toEqual({
       status: "generated",
       created: 5,
@@ -142,6 +142,63 @@ describe("Distributions (D1)", () => {
         tx.update(distribution).set({ isOpen: false }).where(eq(distribution.id, first!.id)),
       ),
     ).rejects.toThrow();
+  });
+
+  it("déplace les distributions à venir au nouveau jour habituel, jamais le passé", async () => {
+    // Décembre 2026 : mardis 1, 8, 15, 22, 29. On ferme le 22 ; un jeudi 31 existe déjà.
+    const before = await inA((tx, ctx) => listDistributions(tx, ctx, "2026-12"));
+    const tuesday22 = before.find((d) => d.date === "2026-12-22")!;
+    await inA((tx, ctx) =>
+      setDistributionOpen(tx, ctx, { distributionId: tuesday22.id, open: false, reason: "Noël" }),
+    );
+    await db.owner.insert(distribution).values({
+      amapId: amapA.id,
+      date: "2026-12-31",
+      startTime: "18:00",
+      endTime: "19:30",
+    });
+
+    // Aujourd'hui : mercredi 9 décembre. Passage au jeudi, 17 h 30 – 19 h.
+    const result = await inA((tx, ctx) =>
+      saveDistributionSettings(
+        tx,
+        ctx,
+        { weekday: 4, startTime: "17:30", endTime: "19:00", moveUpcoming: true },
+        "2026-12-09",
+      ),
+    );
+    // 15 → 17, 22 → 24 ; le 31 reste à sa date mais prend les nouveaux horaires ; le 29 ne
+    // peut pas aller au 31, déjà pris.
+    expect(result).toEqual({ status: "saved", moved: 3, skipped: ["2026-12-29"] });
+
+    const after = await inA((tx, ctx) => listDistributions(tx, ctx, "2026-12"));
+    expect(after.map((d) => [d.date, d.startTime, d.isOpen])).toEqual([
+      ["2026-12-01", "18:00", true], // passé : intact
+      ["2026-12-08", "18:00", true], // passé : intact
+      ["2026-12-17", "17:30", true],
+      ["2026-12-24", "17:30", false], // reste fermée, avec son motif
+      ["2026-12-29", "18:00", true], // le jeudi 31 était déjà pris
+      ["2026-12-31", "17:30", true],
+    ]);
+    expect(after.find((d) => d.date === "2026-12-24")?.closedReason).toBe("Noël");
+    const [entry] = await db.owner
+      .select({ after: auditLog.after })
+      .from(auditLog)
+      .where(eq(auditLog.action, "move_distributions"));
+    expect(entry?.after).toMatchObject({ weekday: 4, moved: 3, skipped: ["2026-12-29"] });
+  });
+
+  it("ne déplace pas une distribution vers un jour déjà passé de la même semaine", async () => {
+    // Aujourd'hui : mercredi 16 décembre ; le jeudi 17 repasserait au lundi 14, déjà passé.
+    const result = await inA((tx, ctx) =>
+      saveDistributionSettings(
+        tx,
+        ctx,
+        { weekday: 1, startTime: "17:30", endTime: "19:00", moveUpcoming: true },
+        "2026-12-16",
+      ),
+    );
+    expect(result.status === "saved" && result.skipped).toContain("2026-12-17");
   });
 
   it("isole les AMAP : l'AMAP B ne voit ni ne ferme les distributions de l'AMAP A", async () => {

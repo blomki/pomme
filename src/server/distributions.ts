@@ -1,4 +1,4 @@
-import { and, asc, eq, gte, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, lt } from "drizzle-orm";
 import { z } from "zod";
 
 import type { Transaction } from "@/db/client";
@@ -11,12 +11,16 @@ import {
   isValidTime,
   isValidTimeRange,
   parseMonth,
+  sameWeekDate,
   WEEKDAYS,
   type Weekday,
 } from "@/domain/distributions";
 
+import { formatDate } from "@/i18n/dates";
+
 import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
+import { uniqueViolation } from "./db-errors";
 
 // Calendrier des distributions (story D1). Réservé aux admins : ils fixent le calendrier.
 
@@ -53,19 +57,37 @@ export const settingsSchema = z
     startTime: z.string().refine(isValidTime),
     endTime: z.string().refine(isValidTime),
     place: z.string().trim().max(200).default(""),
+    // Déplacer aussi les distributions à venir au nouveau jour et aux nouveaux horaires.
+    moveUpcoming: z.boolean().default(false),
   })
   .refine((s) => isValidTimeRange(s.startTime, s.endTime), { path: ["endTime"] });
 
-export type SaveSettingsResult = { status: "saved" } | { status: "invalid"; fields: string[] };
+export type SaveSettingsResult =
+  | {
+      status: "saved";
+      /** Distributions à venir déplacées (ou dont seuls les horaires ont changé). */
+      moved: number;
+      /**
+       * Dates laissées telles quelles : une distribution existe déjà au jour visé, ou ce jour
+       * est déjà passé (même semaine).
+       */
+      skipped: string[];
+    }
+  | { status: "invalid"; fields: string[] };
 
 /**
- * Règle la distribution habituelle. Ne touche pas aux distributions déjà créées : seules les
- * prochaines générations prennent les nouveaux horaires.
+ * Règle la distribution habituelle. Les prochaines générations prennent le nouveau jour et les
+ * nouveaux horaires. Avec `moveUpcoming`, les distributions À VENIR (après `today`) sont aussi
+ * déplacées au nouveau jour de la même semaine, avec les nouveaux horaires ; une distribution
+ * fermée le reste. Le passé ne bouge jamais. Journalisé.
+ *
+ * @param today jour de référence (« 2026-11-16 ») : celui de Paris par défaut
  */
 export async function saveDistributionSettings(
   tx: Transaction,
   ctx: AmapContext,
   input: unknown,
+  today: string = formatDate(new Date(), "yyyy-MM-dd"),
 ): Promise<SaveSettingsResult> {
   await requireRole(tx, ctx, ["admin"]);
   const parsed = settingsSchema.safeParse(input);
@@ -75,7 +97,8 @@ export async function saveDistributionSettings(
       fields: [...new Set(parsed.error.issues.map((i) => String(i.path[0])))],
     };
   }
-  const { weekday, startTime, endTime, place } = parsed.data;
+  const { startTime, endTime, place, moveUpcoming } = parsed.data;
+  const weekday = parsed.data.weekday as Weekday;
   const [row] = await tx
     .select({ settings: amap.settings })
     .from(amap)
@@ -92,7 +115,44 @@ export async function saveDistributionSettings(
       },
     })
     .where(eq(amap.id, ctx.amapId!));
-  return { status: "saved" };
+  if (!moveUpcoming) return { status: "saved", moved: 0, skipped: [] };
+
+  const upcoming = await tx
+    .select({ id: distribution.id, date: distribution.date })
+    .from(distribution)
+    .where(gt(distribution.date, today))
+    .orderBy(asc(distribution.date));
+  let moved = 0;
+  const skipped: string[] = [];
+  for (const row of upcoming) {
+    const target = sameWeekDate(row.date, weekday);
+    // Le jour visé de cette semaine est déjà passé (ou c'est aujourd'hui) : on n'y touche pas.
+    if (target <= today) {
+      skipped.push(row.date);
+      continue;
+    }
+    try {
+      // Sous-transaction : si une distribution existe déjà au jour visé (date unique), seule
+      // celle-ci est laissée telle quelle.
+      await tx.transaction((sub) =>
+        sub
+          .update(distribution)
+          .set({ date: target, startTime, endTime })
+          .where(eq(distribution.id, row.id)),
+      );
+      moved += 1;
+    } catch (error) {
+      if (uniqueViolation(error) !== "distribution_amap_date_unique") throw error;
+      skipped.push(row.date);
+    }
+  }
+  await writeAuditLog(tx, ctx, {
+    entityType: "amap",
+    entityId: ctx.amapId!,
+    action: "move_distributions",
+    after: { weekday, startTime, endTime, moved, skipped },
+  });
+  return { status: "saved", moved, skipped };
 }
 
 export type DistributionView = {
