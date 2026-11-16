@@ -1,0 +1,77 @@
+# Sonde de disponibilité (fiche S7) : toutes les 5 minutes, interroge /api/health de chaque
+# environnement en ligne. Si une adresse ne répond plus, ouvre une issue « Panne » : GitHub
+# l'envoie par email au responsable du dépôt. Quand l'adresse répond de nouveau, l'issue est
+# commentée puis fermée (deuxième email). Voir docs/deploiement.md et ADR 0014.
+#
+# Adresses surveillées : variable de dépôt UPTIME_URLS (séparées par des espaces), à défaut la
+# pré-production. Ajouter https://pomme.cloud à la mise en production.
+#
+# Le contrôle reste « réussi » même en cas de panne : sinon GitHub enverrait en plus un email
+# d'échec toutes les 5 minutes. L'alerte, c'est l'issue (un email à l'ouverture).
+#
+# Limite connue : GitHub lance les tâches planifiées « au mieux » ; aux heures chargées, l'écart
+# entre deux contrôles peut dépasser 5 minutes.
+name: Sonde de disponibilité
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+# Un seul contrôle à la fois : un contrôle lent ne se superpose pas au suivant.
+concurrency:
+  group: uptime
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  probe:
+    name: Contrôle de /api/health
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      GH_REPO: ${{ github.repository }}
+      URLS: ${{ vars.UPTIME_URLS || 'https://preprod.pomme.cloud' }}
+    steps:
+      - name: Interroger chaque adresse
+        run: |
+          gh label create panne --color B60205 \
+            --description "Ouverte par la sonde de disponibilité" --force >/dev/null
+
+          for base in $URLS; do
+            title="Panne : $base ne répond plus"
+            # Trois essais à 20 secondes d'écart : un redémarrage ou un raté réseau isolé
+            # ne déclenche pas d'alerte.
+            ok=false
+            for attempt in 1 2 3; do
+              body=$(curl --silent --max-time 15 "$base/api/health" || true)
+              if [ "$body" = '{"status":"ok"}' ]; then ok=true; break; fi
+              if [ "$attempt" -lt 3 ]; then sleep 20; fi
+            done
+
+            issue=$(gh issue list --label panne --state open --search "in:title \"$title\"" \
+              --json number,title --jq ".[] | select(.title == \"$title\") | .number" | head -n 1)
+
+            if $ok; then
+              echo "OK : $base"
+              if [ -n "$issue" ]; then
+                gh issue close "$issue" --comment "Rétabli : $base/api/health répond de nouveau ($(date -u +'%Y-%m-%d %H:%M') UTC)."
+              fi
+            else
+              echo "::warning::$base/api/health ne répond pas comme attendu : ${body:-aucune réponse}"
+              if [ -z "$issue" ]; then
+                gh issue create --label panne --title "$title" --body "$(printf '%s\n' \
+                  "La sonde de disponibilité n'obtient pas \`{\"status\":\"ok\"}\` de $base/api/health après trois essais." \
+                  "" \
+                  "- Dernière réponse : \`${body:-aucune réponse}\`" \
+                  "- Contrôle : $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+                  "" \
+                  "À regarder : les journaux de l'application chez Clever Cloud (voir docs/deploiement.md)." \
+                  "Cette issue se ferme seule quand l'adresse répond de nouveau.")"
+              fi
+            fi
+          done

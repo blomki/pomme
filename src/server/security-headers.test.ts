@@ -28,6 +28,17 @@ describe("contentSecurityPolicy", () => {
     expect(directive(csp, "connect-src")).toBe("connect-src 'self' https://*.frcapi.com");
   });
 
+  it("autorise le serveur de Sentry quand il est configuré", () => {
+    const csp = contentSecurityPolicy({
+      nonce: "abc",
+      isDev: false,
+      errorReportOrigin: "https://o1.ingest.de.sentry.io",
+    });
+    expect(directive(csp, "connect-src")).toBe(
+      "connect-src 'self' https://*.frcapi.com https://o1.ingest.de.sentry.io",
+    );
+  });
+
   it("ne met pas de nonce dans style-src (il ferait ignorer 'unsafe-inline')", () => {
     const csp = contentSecurityPolicy({ nonce: "abc", isDev: false });
     expect(directive(csp, "style-src")).toBe("style-src 'self' 'unsafe-inline'");
