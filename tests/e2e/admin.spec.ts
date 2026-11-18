@@ -786,4 +786,54 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("button", { name: "Enregistrer le brouillon" })).toHaveCount(0);
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("un admin renouvelle au clavier l'adhésion d'un foyer qui expire bientôt (B1)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers");
+
+    // Filtre par statut : un onglet par statut, avec le nombre de foyers.
+    const filter = page.getByRole("tablist", { name: "Filtrer par adhésion" });
+    await press(filter.getByRole("tab", { name: /^Expire bientôt \(\d+\)$/ }));
+    await expect(page).toHaveURL(/adhesion=expiring/);
+    await expectNoSeriousA11yViolations(page);
+    // Jeu de données : quelques foyers dans cet état. Le test les rend tels qu'il les a trouvés.
+    const firstHousehold = page.getByRole("main").getByRole("table").getByRole("link").first();
+    await press(firstHousehold);
+
+    const section = page.getByRole("region", { name: "Adhésion" });
+    await expect(section.getByText("Expire bientôt", { exact: true })).toBeVisible();
+
+    // Renouvellement : dates proposées à la suite de l'adhésion en cours.
+    await press(section.getByRole("button", { name: "Ajouter une adhésion" }));
+    const dialog = page.getByRole("dialog", { name: "Ajouter une adhésion" });
+    await expect(dialog.getByLabel("Début")).not.toHaveValue("");
+    await dialog.getByRole("textbox", { name: "Cotisation (€)" }).focus();
+    await page.keyboard.type("15");
+    // Fenêtre entièrement affichée (fin du fondu) avant de mesurer les contrastes.
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await press(dialog.getByRole("button", { name: "Enregistrer" }));
+    await expect(page.getByText(/^Adhésion du .* enregistrée\.$/)).toBeVisible();
+    await expect(section.getByText("Active", { exact: true })).toBeVisible();
+    await expect(section.getByRole("cell", { name: "15,00 €" })).toBeVisible();
+
+    // Une adhésion qui chevauche est refusée, avec un message clair.
+    await press(section.getByRole("button", { name: "Ajouter une adhésion" }));
+    await dialog.getByLabel("Début").fill(new Date().toLocaleDateString("sv-SE"));
+    await press(dialog.getByRole("button", { name: "Enregistrer" }));
+    await expect(dialog.getByText(/chevauchent une autre adhésion/)).toBeVisible();
+    await press(dialog.getByRole("button", { name: "Annuler" }));
+
+    // Ménage : la nouvelle adhésion (la plus récente, en premier) est archivée.
+    await press(section.getByRole("button", { name: /^Archiver l'adhésion du / }).first());
+    await expect(page.getByText(/^Adhésion du .* archivée\.$/)).toBeVisible();
+    await expect(section.getByText("Expire bientôt", { exact: true })).toBeVisible();
+  });
 });

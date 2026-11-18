@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 
+import { coversDay, membershipState } from "@/domain/memberships";
+
 import { validateAmapSlug } from "@/domain/amap-slug";
 
 import { buildSeedData, DEMO_ACCOUNTS, MEMBERS_PER_AMAP, SECOND_MEMBER_EVERY } from "./data";
@@ -204,5 +206,26 @@ describe("assertSeedAllowed", () => {
     expect(() =>
       assertSeedAllowed("postgres://u:p@localhost/pomme", { NODE_ENV: "production" }),
     ).toThrow();
+  });
+
+  it("donne une adhésion à la plupart des foyers, et quelques foyers dans chaque autre état", () => {
+    const today = new Date("2026-11-18T10:00:00Z");
+    const data = buildSeedData(today);
+    const states = data.households.map((h) =>
+      membershipState(
+        data.memberships.filter((m) => m.householdId === h.id),
+        "2026-11-18",
+      ),
+    );
+    const count = (status: string) => states.filter((s) => s.status === status).length;
+    expect(count("active")).toBeGreaterThan(data.households.length / 2);
+    for (const status of ["expiring", "upcoming", "expired", "none"]) {
+      expect(count(status)).toBeGreaterThan(0);
+    }
+    // Les foyers qui commandent sont adhérents.
+    for (const o of data.orders) {
+      const own = data.memberships.filter((m) => m.householdId === o.householdId);
+      expect(coversDay(own, "2026-11-18")).toBe(true);
+    }
   });
 });

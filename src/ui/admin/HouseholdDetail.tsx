@@ -26,7 +26,7 @@ import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { formatPhone } from "@/domain/phone";
 import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
@@ -52,9 +52,12 @@ const fullName = (m: { firstName: string; lastName: string }) =>
 export function HouseholdDetail({
   amapSlug,
   household,
+  memberships,
 }: {
   amapSlug: string;
   household: HouseholdView;
+  /** Section « Adhésion » (story B1), placée après les membres. */
+  memberships?: ReactNode;
 }) {
   const t = useTranslations("Admin.household");
   const tl = useTranslations("Admin.households");
@@ -220,6 +223,8 @@ export function HouseholdDetail({
       </TableContainer>
 
       {!archived && <AddMemberForm amapSlug={amapSlug} householdId={household.id} />}
+
+      {memberships}
 
       {!anonymized && (
         <Box component="section" aria-labelledby="privacy-title" sx={{ mt: 5, maxWidth: 720 }}>
