@@ -730,4 +730,60 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByText(/^Commandes de .* rouvertes jusqu'au /)).toBeVisible();
     await expect(banner.getByText(/^Rouvertes jusqu'au /)).toBeVisible();
   });
+
+  test("un référent publie le catalogue, prépare le suivant et consulte un mois passé (C3)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent/catalogue");
+    await page.getByRole("tab", { name: "Les Ruches du Vallon" }).click();
+    await expect(page).toHaveURL(/producteur=/);
+    const producerParam = new URL(page.url()).searchParams.get("producteur") ?? "";
+
+    // Mois prochain (par défaut) : le brouillon du jeu de données, chaque semaine cochée.
+    await press(page.getByRole("button", { name: /^Publier pour / }));
+    await expect(page.getByText(/^Catalogue de .* publié\.$/)).toBeVisible();
+    await expect(page.getByText("Publié", { exact: true })).toBeVisible();
+    await expect(page.getByText(/^Publié : les familles le verront/)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Le mois d'après n'a pas encore de catalogue : on le prépare à partir du précédent.
+    await press(page.getByRole("link", { name: "Mois suivant" }));
+    const prepare = page.getByRole("button", { name: /^Préparer à partir de / });
+    // Déjà préparé si le test a tourné sur cette base : on passe directement à la suite.
+    if (await prepare.isVisible()) {
+      await expectNoSeriousA11yViolations(page);
+      await press(prepare);
+      await expect(page.getByText(/^Catalogue de .* préparé : 2 produits repris\./)).toBeVisible();
+    }
+    const firstWeek = page
+      .getByRole("checkbox", { name: /^Miel de printemps, pot de 500 g disponible le/ })
+      .first();
+    await expect(firstWeek).toBeVisible();
+    // Semaines non cochées : publication refusée, avec le nom des produits.
+    if (!(await firstWeek.isChecked())) {
+      await press(page.getByRole("button", { name: /^Publier pour / }));
+      await expect(page.getByText(/^Cochez au moins une semaine pour : /)).toBeVisible();
+    }
+
+    // Un mois passé : lecture seule, sans bouton d'enregistrement.
+    const now = new Date();
+    const past = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 15));
+    await page.goto(
+      `/hommesdeterre/referent/catalogue?mois=${past.toISOString().slice(0, 7)}&producteur=${producerParam}`,
+    );
+    // Dans la zone principale : pendant le chargement, le texte peut exister en double.
+    await expect(
+      page
+        .getByRole("main")
+        .getByText("Catalogue en lecture seule : mois passé ou commandes clôturées."),
+    ).toBeVisible();
+    await expect(page.getByRole("button", { name: "Enregistrer le brouillon" })).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
+  });
 });

@@ -65,7 +65,9 @@ export function CatalogPage({
         ))}
       </Tabs>
 
+      {/* Remonté à chaque producteur, mois ou statut : l'éditeur repart du catalogue enregistré. */}
       <CatalogEditor
+        key={`${currentId}-${draft.month}-${draft.status ?? "new"}`}
         amapSlug={amapSlug}
         amapProducerId={currentId}
         draft={draft}

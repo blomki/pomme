@@ -72,3 +72,24 @@ courante (ADR 0003).
   couvrent, avec axe-core.
 - À surveiller : renommer une fiche commune depuis une AMAP surprend peut-être un autre
   référent. Si cela pose problème, le journal permet de retrouver qui a changé quoi.
+
+## Complément du 2026-11-18 : préparer, publier, lecture seule (story C3)
+
+- **Préparer à partir du mois précédent** : bouton proposé tant que le mois n'a pas de
+  catalogue et que le précédent propose au moins un produit. Les produits proposés sont repris
+  à leurs prix et dans leur ordre ; les produits retirés ne le sont pas. **Aucune semaine
+  n'est cochée** : les distributions changent d'un mois à l'autre, et une case cochée d'office
+  risquerait d'être publiée sans relecture (« les disponibilités sont à revoir »).
+- **Publier pour [mois]** enregistre puis publie. Refusé sans produit proposé, ou si un produit
+  proposé n'a aucune semaine cochée (il faut cocher ou retirer). Un catalogue publié reste
+  modifiable et publié (décision du 2026-11-16) ; pas de dépublication.
+- **Lecture seule**, calculée : mois passé, ou commandes du mois clôturées (l'heure fait foi,
+  ADR 0015). La réouverture des commandes rend le catalogue de nouveau modifiable. Le serveur
+  refuse aussi toute modification ; un produit retiré reste lisible.
+- **Tâche « Bloquant »** au tableau de bord admin : un catalogue pas encore publié à trois
+  jours (ou moins) de l'ouverture des commandes, pour chaque producteur actif. Elle disparaît
+  à la publication. Un producteur qui ne livre rien ce mois-là apparaît aussi : « Rien ce
+  mois-ci » viendra avec les récapitulatifs.
+- L'éditeur est remonté (`key`) à chaque changement de producteur, de mois ou de statut : il
+  repart toujours du catalogue enregistré (auparavant, passer d'un onglet à l'autre pouvait
+  garder les lignes saisies sur l'onglet précédent).

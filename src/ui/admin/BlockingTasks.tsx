@@ -13,13 +13,18 @@ import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
-type Task = { kind: "producer_without_referent"; amapProducerId: string; name: string };
+import { formatDate } from "@/i18n/dates";
+import type { BlockingTask } from "@/server/producers";
+
+/** Un jour du calendrier (« 2026-11-15 ») affiché en français, sans effet de fuseau. */
+const day = (date: string, pattern: string) => formatDate(`${date}T12:00:00Z`, pattern);
 
 /**
  * Tâches « Bloquant » du tableau de bord admin : détectées automatiquement, elles disparaissent
- * d'elles-mêmes une fois le problème réglé (rien à cocher).
+ * d'elles-mêmes une fois le problème réglé (rien à cocher). Producteur sans référent (C1),
+ * catalogue pas encore publié à trois jours de l'ouverture des commandes (C3).
  */
-export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Task[] }) {
+export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: BlockingTask[] }) {
   const t = useTranslations("Admin.dashboard");
   return (
     <Paper variant="outlined" component="section" aria-labelledby="tasks-title" sx={{ p: 3 }}>
@@ -33,7 +38,7 @@ export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Ta
       ) : (
         <List>
           {tasks.map((task) => (
-            <ListItem key={task.amapProducerId} divider>
+            <ListItem key={`${task.kind}-${task.amapProducerId}`} divider>
               <ListItemIcon>
                 <ErrorOutlined sx={{ color: "error.main" }} />
               </ListItemIcon>
@@ -45,7 +50,15 @@ export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Ta
                     sx={{ alignItems: "center", flexWrap: "wrap" }}
                   >
                     <Chip size="small" color="error" label={t("blocking")} />
-                    <span>{t("producerWithoutReferent", { name: task.name })}</span>
+                    <span>
+                      {task.kind === "producer_without_referent"
+                        ? t("producerWithoutReferent", { name: task.name })
+                        : t("catalogNotPublished", {
+                            name: task.name,
+                            month: day(`${task.month}-01`, "MMMM"),
+                            opensOn: day(task.opensOn, "d MMMM"),
+                          })}
+                    </span>
                   </Stack>
                 }
                 secondary={
@@ -53,7 +66,9 @@ export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Ta
                     component={Link}
                     href={`/${amapSlug}/admin/producteurs/${task.amapProducerId}`}
                   >
-                    {t("assignReferent", { name: task.name })}
+                    {task.kind === "producer_without_referent"
+                      ? t("assignReferent", { name: task.name })
+                      : t("contactReferent", { name: task.name })}
                   </MuiLink>
                 }
               />

@@ -23,6 +23,7 @@ import {
 import { emailSchema } from "./auth/request-magic-link";
 import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
+import { unpublishedCatalogTasks, type UnpublishedCatalogTask } from "./catalogs";
 import { foreignKeyViolation, uniqueViolation } from "./db-errors";
 
 // Producteurs et référents, côté administrateur (story C1). Chaque fonction commence par
@@ -172,15 +173,28 @@ export async function getAmapProducer(
   return found ?? null;
 }
 
-/** Tâches « Bloquant » du tableau de bord : pour l'instant, les producteurs sans référent. */
+export type BlockingTask =
+  | { kind: "producer_without_referent"; amapProducerId: string; name: string }
+  | UnpublishedCatalogTask;
+
+/**
+ * Tâches « Bloquant » du tableau de bord : producteurs sans référent, puis catalogues pas
+ * encore publiés à trois jours de l'ouverture des commandes (story C3).
+ */
 export async function blockingTasks(
   tx: Transaction,
   ctx: AmapContext,
-): Promise<Array<{ kind: "producer_without_referent"; amapProducerId: string; name: string }>> {
+  now = new Date(),
+): Promise<BlockingTask[]> {
   const producers = await listAmapProducers(tx, ctx);
-  return producersWithoutReferent(
+  const withoutReferent = producersWithoutReferent(
     producers.map((p) => ({ ...p, referentCount: p.referents.length })),
-  ).map((p) => ({ kind: "producer_without_referent", amapProducerId: p.id, name: p.name }));
+  ).map((p) => ({
+    kind: "producer_without_referent" as const,
+    amapProducerId: p.id,
+    name: p.name,
+  }));
+  return [...withoutReferent, ...(await unpublishedCatalogTasks(tx, now))];
 }
 
 /** Personnes qui ont le rôle référent dans l'AMAP courante : les seules qu'on peut affecter. */
