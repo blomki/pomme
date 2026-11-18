@@ -64,3 +64,58 @@ export function producerAccess(
   if (accounts.some((account) => account.emailVerified)) return "active";
   return accounts.length > 0 ? "invited" : "none";
 }
+
+/**
+ * AMAP courante de l'espace producteur (story C4) : celle choisie et gardée avec le compte si
+ * elle est toujours dans sa liste, sinon la première (liste par nom d'AMAP). Un lien retiré
+ * depuis (producteur inactif dans cette AMAP, par exemple) ne bloque donc jamais l'écran.
+ * `undefined` seulement pour une liste vide.
+ */
+export function pickCurrentAmap<T extends { amapProducerId: string }>(
+  amaps: readonly T[],
+  chosenId: string | null,
+): T | undefined {
+  return amaps.find((a) => a.amapProducerId === chosenId) ?? amaps[0];
+}
+
+/** Ce que l'accueil du producteur met en avant : publier le catalogue d'un mois. */
+export type ProducerHomeTask = {
+  /** Mois du catalogue à publier, « AAAA-MM ». */
+  month: string;
+  /** Jour d'ouverture des commandes (« AAAA-MM-JJ »), ou null si l'admin ne l'a pas encore fixé. */
+  opensOn: string | null;
+  /** Commandes déjà ouvertes : les familles commandent sans les produits de ce producteur. */
+  ordersOpen: boolean;
+};
+
+/**
+ * Seule action datée du producteur sur son accueil (story C4) : publier son catalogue avant
+ * l'ouverture des commandes du mois.
+ *
+ * Le mois visé est celui de la première période de commande pas encore clôturée ; sans
+ * période, le mois prochain (l'admin n'a pas encore fixé les dates). Rien à faire si ce
+ * catalogue est publié, ou si les commandes de ce mois sont déjà clôturées.
+ *
+ * @param periods périodes de l'AMAP, avec leur état calculé à l'heure actuelle
+ * @param publishedMonths mois (« AAAA-MM ») dont le catalogue du producteur est publié
+ */
+export function producerHomeTask(params: {
+  nextMonth: string;
+  periods: ReadonlyArray<{
+    month: string;
+    opensOn: string;
+    status: "scheduled" | "open" | "closed";
+  }>;
+  publishedMonths: readonly string[];
+}): ProducerHomeTask | null {
+  const { nextMonth, periods, publishedMonths } = params;
+  const pending = periods
+    .filter((p) => p.status !== "closed")
+    .sort((a, b) => a.month.localeCompare(b.month))[0];
+  if (!pending && periods.some((p) => p.month === nextMonth)) return null;
+
+  const task: ProducerHomeTask = pending
+    ? { month: pending.month, opensOn: pending.opensOn, ordersOpen: pending.status === "open" }
+    : { month: nextMonth, opensOn: null, ordersOpen: false };
+  return publishedMonths.includes(task.month) ? null : task;
+}

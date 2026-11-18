@@ -5,7 +5,8 @@ import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
 // Chaque page existante s'affiche, a un titre de niveau 1 et passe le contrôle d'accessibilité
 // (contrastes compris), en mode clair et en mode sombre. La base doit contenir le jeu de données
 // fictif (pnpm db:seed). La liste s'allongera avec les écrans de chaque fiche.
-// Les espaces réservés (administration, plateforme) sont testés après connexion : admin.spec.ts.
+// Les espaces réservés (administration, plateforme) sont testés après connexion : admin.spec.ts ;
+// l'espace producteur : producer.spec.ts.
 const pages = [
   { path: "/", title: "Pomme" },
   { path: "/connexion", title: "Connexion" },
@@ -13,7 +14,6 @@ const pages = [
   { path: "/pays-d-auge-demo", title: "AMAP fictive du Pays d'Auge" },
   { path: "/hommesdeterre/famille", title: "Espace famille" },
   { path: "/hommesdeterre/referent", title: "Espace référent" },
-  { path: "/producteur", title: "Espace producteur" },
   { path: "/plateforme/theme/hommesdeterre", title: "Thème de AMAP de démonstration de Cambremer" },
   { path: "/plateforme/theme/pays-d-auge-demo", title: "Thème de AMAP fictive du Pays d'Auge" },
 ];

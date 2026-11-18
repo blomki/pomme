@@ -33,6 +33,7 @@ import {
   unique,
   uniqueIndex,
   uuid,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
@@ -172,6 +173,13 @@ export const user = pgTable(
     // Application d'authentification (TOTP) activée : nom imposé par le plugin twoFactor.
     twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+    // AMAP courante de l'espace producteur (story C4) : le lien producteur–AMAP choisi dans la
+    // liste de l'accueil. Gardé avec le compte, pour le retrouver sur un autre appareil. Vide,
+    // ou lien qui n'est plus le sien : l'application prend la première AMAP de sa liste.
+    currentAmapProducerId: uuid("current_amap_producer_id").references(
+      (): AnyPgColumn => amapProducer.id,
+      { onDelete: "set null" },
+    ),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

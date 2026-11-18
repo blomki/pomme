@@ -24,20 +24,6 @@ test("le mode automatique suit l'appareil", async ({ page }) => {
   await expect(page.locator("html")).toHaveAttribute("data-mui-color-scheme", "light");
 });
 
-test("la barre du bas du producteur mène au catalogue et indique la page courante", async ({
-  page,
-}) => {
-  await page.goto("/producteur");
-  const nav = page.getByRole("navigation", { name: "Navigation de l'espace producteur" });
-  await expect(nav.getByRole("link", { name: "Accueil" })).toHaveAttribute("aria-current", "page");
-  await nav.getByRole("link", { name: "Catalogue" }).click();
-  await expect(page).toHaveURL(/\/producteur\/catalogue$/);
-  await expect(nav.getByRole("link", { name: "Catalogue" })).toHaveAttribute(
-    "aria-current",
-    "page",
-  );
-});
-
 test("un message de confirmation propose d'annuler", async ({ page }) => {
   await page.goto("/plateforme/theme/hommesdeterre");
   const quantity = page.getByRole("spinbutton", { name: "Quantité" });
