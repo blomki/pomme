@@ -163,6 +163,21 @@ describe("buildSeedData", () => {
     }
   });
 
+  it("ouvre la période du mois suivant et fait commander 12 foyers de la première AMAP", () => {
+    const [period] = data.orderPeriods;
+    expect(data.orderPeriods).toHaveLength(1);
+    expect(period?.amapId).toBe(data.amaps[0]?.id);
+    expect(period?.month).toBe("2026-12-01");
+    expect(period!.opensAt < today && today < period!.closesAt).toBe(true);
+    expect(new Set(data.orders.map((o) => o.householdId)).size).toBe(12);
+    expect(data.orders).toHaveLength(24);
+    for (const line of data.orderLines) {
+      const item = data.catalogItems.find((i) => i.id === line.catalogItemId);
+      expect(line.unitPriceCents).toBe(item?.priceCents);
+      expect(line.quantity).toBeGreaterThan(0);
+    }
+  });
+
   it("donne au moins un administrateur à chaque AMAP", () => {
     for (const amap of data.amaps) {
       expect(data.roles.some((r) => r.amapId === amap.id && r.role === "admin")).toBe(true);

@@ -33,7 +33,8 @@
     "db:migrate": "tsx --env-file-if-exists=.env src/db/scripts/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/db/scripts/seed.ts",
     "db:reset": "docker compose down -v && pnpm db:up && pnpm db:setup && pnpm db:migrate && pnpm db:seed",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "jobs:hourly": "tsx --env-file-if-exists=.env src/jobs/hourly.ts"
   },
   "dependencies": {
     "@better-auth/passkey": "^1.7.0",

@@ -36,6 +36,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
+import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
 import { AMAP_ROLES } from "@/domain/roles";
 
 import { uuidv7 } from "../uuid";
@@ -637,6 +638,254 @@ export const catalogItemAvailability = pgTable(
           and ${isEditorOfCatalog(sql`catalog_item.catalog_id`)})`,
       ["insert", "delete"],
     ),
+  ],
+);
+
+/** Lecture et écriture limitées à l'AMAP courante, pour les opérations indiquées. */
+function amapPolicies(
+  table: string,
+  amapId: unknown,
+  operations: ReadonlyArray<"select" | "insert" | "update" | "delete">,
+) {
+  const condition = sql`${amapId} = ${currentAmapId}`;
+  return operations.map((operation) =>
+    pgPolicy(`${table}_${operation}`, {
+      for: operation,
+      ...(operation === "insert" ? {} : { using: condition }),
+      ...(operation === "select" || operation === "delete" ? {} : { withCheck: condition }),
+    }),
+  );
+}
+
+// --- order_period : période de commande -----------------------------------------------------
+// Une par mois et par AMAP, commune à tous les producteurs (story D2, ADR 0015). L'admin fixe
+// des jours ; on garde les instants exacts (0 h à l'ouverture, minuit à la clôture, Paris).
+// status suit les passages faits par la tâche planifiée ou par l'admin ; entre deux passages,
+// l'heure fait foi (domain/order-periods.ts, effectiveStatus).
+
+export const orderPeriodStatus = pgEnum("order_period_status", ORDER_PERIOD_STATUSES);
+
+export const orderPeriod = pgTable(
+  "order_period",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    // Premier jour du mois commandé (« 2026-12-01 »).
+    month: date("month", { mode: "string" }).notNull(),
+    opensAt: timestamp("opens_at", { withTimezone: true }).notNull(),
+    closesAt: timestamp("closes_at", { withTimezone: true }).notNull(),
+    status: orderPeriodStatus("status").notNull().default("scheduled"),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
+    reopenedAt: timestamp("reopened_at", { withTimezone: true }),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("order_period_month_unique").on(t.amapId, t.month),
+    unique("order_period_amap_unique").on(t.id, t.amapId),
+    check("order_period_month_first_day", sql`extract(day from ${t.month}) = 1`),
+    check("order_period_dates", sql`${t.opensAt} < ${t.closesAt}`),
+    // Lecture par toute l'AMAP (accueil des familles) ; écriture réservée aux admins par
+    // requireRole, ou faite par la tâche planifiée. Jamais supprimée.
+    ...amapPolicies("order_period", t.amapId, ["select", "insert", "update"]),
+  ],
+);
+
+// --- order : commande -------------------------------------------------------------------------
+// Pour un foyer, les lignes d'un catalogue (donc d'un producteur et d'un mois). Saisie : D3.
+
+export const order = pgTable(
+  "order",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    catalogId: uuid("catalog_id").notNull(),
+    createdBy: uuid("created_by").references(() => user.id),
+    updatedBy: uuid("updated_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "order_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    foreignKey({
+      name: "order_catalog_fk",
+      columns: [t.catalogId, t.amapId],
+      foreignColumns: [catalog.id, catalog.amapId],
+    }),
+    unique("order_household_catalog_unique").on(t.householdId, t.catalogId),
+    unique("order_amap_unique").on(t.id, t.amapId),
+    index("order_catalog_idx").on(t.catalogId),
+    // Dans l'AMAP courante ; qui peut voir ou modifier quelle commande : D3.
+    ...amapPolicies("order", t.amapId, ["select", "insert", "update"]),
+  ],
+);
+
+// --- order_line : ligne de commande -----------------------------------------------------------
+// Une quantité d'un produit du catalogue pour une distribution. Le prix est gardé au moment de
+// la commande (décision du 2026-11-15, ADR 0015) : un nouveau prix au catalogue ne touche pas
+// les commandes déjà enregistrées.
+
+export const orderLine = pgTable(
+  "order_line",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    orderId: uuid("order_id").notNull(),
+    catalogItemId: uuid("catalog_item_id").notNull(),
+    distributionId: uuid("distribution_id").notNull(),
+    quantity: integer("quantity").notNull(),
+    unitPriceCents: integer("unit_price_cents").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "order_line_order_fk",
+      columns: [t.orderId, t.amapId],
+      foreignColumns: [order.id, order.amapId],
+    }),
+    foreignKey({
+      name: "order_line_catalog_item_fk",
+      columns: [t.catalogItemId, t.amapId],
+      foreignColumns: [catalogItem.id, catalogItem.amapId],
+    }),
+    foreignKey({
+      name: "order_line_distribution_fk",
+      columns: [t.distributionId, t.amapId],
+      foreignColumns: [distribution.id, distribution.amapId],
+    }),
+    unique("order_line_unique").on(t.orderId, t.catalogItemId, t.distributionId),
+    check("order_line_quantity", sql`${t.quantity} >= 0`),
+    check("order_line_price_positive", sql`${t.unitPriceCents} > 0`),
+    ...amapPolicies("order_line", t.amapId, ["select", "insert", "update", "delete"]),
+  ],
+);
+
+// --- cheque : chèque attendu, puis reçu et remis --------------------------------------------
+// Un par foyer, producteur et période. Créé à la clôture avec son montant attendu (total
+// commandé − avoirs, jamais négatif), complété au pointage (F1) et à la remise (F3). Un chèque
+// qui n'a plus de commande après une réouverture est archivé, jamais supprimé.
+
+export const chequeStatus = pgEnum("cheque_status", ["expected", "received", "handed_over"]);
+
+export const cheque = pgTable(
+  "cheque",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    orderPeriodId: uuid("order_period_id").notNull(),
+    grossCents: integer("gross_cents").notNull(),
+    creditsCents: integer("credits_cents").notNull().default(0),
+    expectedCents: integer("expected_cents").notNull(),
+    status: chequeStatus("status").notNull().default("expected"),
+    receivedCents: integer("received_cents"),
+    receivedAt: timestamp("received_at", { withTimezone: true }),
+    receivedBy: uuid("received_by").references(() => user.id),
+    handedOverAt: timestamp("handed_over_at", { withTimezone: true }),
+    handedOverBy: uuid("handed_over_by").references(() => user.id),
+    // Facultatif ; ni émetteur ni banque (décision du 2026-11-04).
+    chequeNumber: text("cheque_number"),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "cheque_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    foreignKey({
+      name: "cheque_order_period_fk",
+      columns: [t.orderPeriodId, t.amapId],
+      foreignColumns: [orderPeriod.id, orderPeriod.amapId],
+    }),
+    unique("cheque_unique").on(t.householdId, t.producerId, t.orderPeriodId),
+    unique("cheque_amap_unique").on(t.id, t.amapId),
+    index("cheque_period_idx").on(t.orderPeriodId),
+    check(
+      "cheque_amounts",
+      sql`${t.grossCents} >= 0 and ${t.creditsCents} >= 0
+        and ${t.expectedCents} = ${t.grossCents} - ${t.creditsCents} and ${t.expectedCents} >= 0`,
+    ),
+    check("cheque_received_cents", sql`${t.receivedCents} is null or ${t.receivedCents} >= 0`),
+    // Journal financier : jamais supprimé (pas de politique DELETE).
+    ...amapPolicies("cheque", t.amapId, ["select", "insert", "update"]),
+  ],
+);
+
+// --- credit : avoir ---------------------------------------------------------------------------
+// Montant dû à un foyer par un producteur (produit manquant ou abîmé, F2). En attente (created)
+// jusqu'à la clôture suivante où le foyer commande chez ce producteur : il est alors déduit de
+// ce chèque (deducted). Le lien avec le signalement viendra avec F5.
+
+export const creditStatus = pgEnum("credit_status", ["created", "deducted"]);
+
+export const credit = pgTable(
+  "credit",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    producerId: uuid("producer_id")
+      .notNull()
+      .references(() => producer.id),
+    amountCents: integer("amount_cents").notNull(),
+    status: creditStatus("status").notNull().default("created"),
+    deductedOnChequeId: uuid("deducted_on_cheque_id"),
+    // Reste d'un avoir déduit en partie (plus grand que la commande) : avoir d'origine.
+    splitFromCreditId: uuid("split_from_credit_id"),
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "credit_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    foreignKey({
+      name: "credit_cheque_fk",
+      columns: [t.deductedOnChequeId, t.amapId],
+      foreignColumns: [cheque.id, cheque.amapId],
+    }),
+    foreignKey({
+      name: "credit_split_from_fk",
+      columns: [t.splitFromCreditId],
+      foreignColumns: [t.id],
+    }),
+    index("credit_pending_idx")
+      .on(t.householdId, t.producerId)
+      .where(sql`${t.status} = 'created'`),
+    check("credit_amount_positive", sql`${t.amountCents} > 0`),
+    // Déduit ⇔ rattaché à un chèque. coalesce inutile : les deux côtés sont des booléens non NULL.
+    check(
+      "credit_deducted_on_cheque",
+      sql`(${t.status} = 'deducted') = (${t.deductedOnChequeId} is not null)`,
+    ),
+    ...amapPolicies("credit", t.amapId, ["select", "insert", "update"]),
   ],
 );
 

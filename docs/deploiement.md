@@ -102,6 +102,16 @@ Emails : `pomme.cloud` est authentifié dans Brevo (code de vérification, DKIM 
 réception derrière. SPF : `v=spf1 include:mx.ovh.com include:spf.brevo.com -all` (un seul
 enregistrement SPF). Voir ADR 0006.
 
+## Tâches planifiées (ADR 0015)
+
+`clevercloud/cron.json` lance `clevercloud/cron-hourly.sh` à la 5e minute de chaque heure
+(UTC), sur la première instance seulement : `pnpm jobs:hourly` ouvre et clôture les périodes de
+commande. Clever Cloud installe les tâches à chaque déploiement (journal : « Importing
+cronjobs ») ; leur sortie apparaît dans les journaux de l'application, préfixée par `CMDOUT`,
+par exemple `Tâches horaires terminées (0 changement(s)).`
+
+Essai à la main, sur un poste de développement : `pnpm jobs:hourly`.
+
 ## Surveillance (ADR 0014)
 
 **Erreurs : Sentry.** Éteint tant que `NEXT_PUBLIC_SENTRY_DSN` est vide. Pour l'allumer :
@@ -128,4 +138,4 @@ Actions › « Sonde de disponibilité » › Run workflow.
 ## Reste à faire (fiche S7)
 
 - Production sur `pomme.cloud` : domaine, `UPTIME_URLS`, note A+ sur Mozilla Observatory.
-- Tâches planifiées (`clevercloud/cron.json`) : avec les fiches qui en ont besoin (D2, D5, S8).
+- Autres tâches planifiées : avec les fiches qui en ont besoin (D5, S8).

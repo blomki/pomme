@@ -389,6 +389,52 @@
       "moveUpcomingHelp": "Chaque distribution à venir passe au nouveau jour de la même semaine, avec les nouveaux horaires. Une distribution fermée le reste. Les distributions passées ne changent pas.",
       "moved": "{count, plural, =0 {Aucune distribution à venir déplacée.} one {# distribution à venir déplacée.} other {# distributions à venir déplacées.}}",
       "skipped": "{count, plural, one {Laissée telle quelle : {dates} (le jour visé est déjà pris ou passé).} other {Laissées telles quelles : {dates} (le jour visé est déjà pris ou passé).}}"
+    },
+    "orders": {
+      "title": "Commandes de {month}",
+      "none": "Dates à fixer : du {opensOn} au {closesOn} proposés.",
+      "scheduled": "Prévues du {opensOn} au {closesOn}.",
+      "open": "Ouvertes du {opensOn} au {closesOn}.",
+      "reopened": "Rouvertes jusqu'au {closesOn}.",
+      "closed": "Clôturées le {closedOn}.",
+      "progress": "{ordered} {ordered, plural, one {foyer} other {foyers}} sur {total} {ordered, plural, one {a commandé} other {ont commandé}}",
+      "setDates": "Fixer les dates",
+      "editDates": "Modifier les dates",
+      "remind": "Relancer",
+      "closeNow": "Clôturer maintenant",
+      "reopen": "Rouvrir les commandes",
+      "datesTitle": "Dates des commandes de {month}",
+      "datesIntro": "Les commandes ouvrent à 0 h le premier jour et ferment à minuit le dernier jour, heure de Paris. Pomme les ouvre et les clôture tout seul.",
+      "datesOpenIntro": "Les commandes sont ouvertes : seul le jour de clôture peut encore changer.",
+      "opensOn": "Ouverture le",
+      "closesOn": "Clôture le (inclus)",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "datesSaved": "Dates des commandes de {month} enregistrées.",
+      "errors": {
+        "opensOn": "Saisissez le jour d'ouverture.",
+        "closesOn": "Saisissez le jour de clôture.",
+        "before_opening": "Le jour de clôture doit être le jour d'ouverture ou après.",
+        "past": "Le jour de clôture est déjà passé.",
+        "closed": "Les commandes sont clôturées : utilisez « Rouvrir les commandes ».",
+        "notOpen": "Les commandes ne sont pas ouvertes.",
+        "notClosed": "Les commandes ne sont pas clôturées.",
+        "forbidden": "Action réservée aux administrateurs de l'AMAP.",
+        "error": "L'action n'a pas pu être faite. Réessayez."
+      },
+      "closeTitle": "Clôturer les commandes de {month} maintenant ?",
+      "closeIntro": "Les familles ne pourront plus commander. Pomme calcule aussitôt les chèques attendus, avoirs déduits. Vous pourrez rouvrir les commandes si besoin.",
+      "confirmClose": "Clôturer",
+      "closedNow": "Commandes de {month} clôturées : {count, plural, =0 {aucun chèque} one {# chèque attendu} other {# chèques attendus}}.",
+      "reopenTitle": "Rouvrir les commandes de {month}",
+      "reopenIntro": "Les familles pourront de nouveau commander jusqu'au jour choisi. Les commandes dont le chèque est déjà pointé et les distributions passées restent verrouillées. À la clôture suivante, les chèques non pointés sont recalculés.",
+      "confirmReopen": "Rouvrir",
+      "reopenedNow": "Commandes de {month} rouvertes jusqu'au {closesOn}.",
+      "remindTitle": "Relancer les foyers sans commande ?",
+      "remindIntro": "{count, plural, =0 {Tous les foyers ont commandé : personne à relancer.} one {# foyer n'a encore rien commandé : ses membres recevront un email, sauf s'ils ont déjà été relancés ce mois-ci.} other {# foyers n'ont encore rien commandé : leurs membres recevront un email, sauf ceux déjà relancés ce mois-ci.}}",
+      "confirmRemind": "Envoyer",
+      "reminded": "{sent, plural, =0 {Aucun email envoyé} one {# email envoyé} other {# emails envoyés}}{skipped, plural, =0 {.} one {, # personne déjà relancée.} other {, # personnes déjà relancées.}}",
+      "remindFailed": "{count, plural, one {# email n'a pas pu partir} other {# emails n'ont pas pu partir}} : réessayez plus tard."
     }
   },
   "Producer": {
@@ -621,6 +667,15 @@
       "button": "Me connecter à Pomme",
       "noPassword": "Aucun mot de passe à retenir : à chaque connexion, Pomme vous envoie un lien, ou vous utilisez une passkey.",
       "footer": "Vous recevez cet email parce qu'un administrateur de « {amap} » vous a ouvert un compte producteur."
+    },
+    "orderReminder": {
+      "subject": "{amap} : les commandes de {month} ferment le {closesOn}",
+      "preview": "Vous n'avez encore rien commandé pour {month}.",
+      "greeting": "Bonjour {firstName},",
+      "intro": "Les commandes de {month} sont ouvertes jusqu'au {closesOn} inclus, et votre foyer n'a encore rien commandé.",
+      "nothing": "Rien à prendre ce mois-ci ? Vous pouvez ignorer ce message.",
+      "button": "Passer ma commande",
+      "footer": "Vous recevez cet email parce que votre foyer fait partie de « {amap} ». Une seule relance par mois."
     }
   },
   "Roles": {
