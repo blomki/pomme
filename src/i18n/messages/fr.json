@@ -86,12 +86,25 @@
       "available": "Une semaine cochée n'est plus ouverte : rechargez la page.",
       "duplicate": "Ce produit figure deux fois : {names}.",
       "forbidden": "Vous ne pouvez pas modifier ce catalogue.",
-      "error": "L'enregistrement n'a pas pu être fait."
+      "error": "L'enregistrement n'a pas pu être fait.",
+      "empty": "Ajoutez au moins un produit avant de publier.",
+      "noWeek": "Cochez au moins une semaine pour : {names}. Ou retirez ces produits.",
+      "readOnly": "Ce catalogue n'est plus modifiable : mois passé ou commandes clôturées."
     },
     "availabilityOf": "Disponibilités de {name}",
     "weekLabel": "Sem. {number} · {date}",
     "weekClosedLabel": "Sem. {number} · fermée",
-    "cardsHelp": "Décochez une semaine pour rendre le produit indisponible ce jour-là."
+    "cardsHelp": "Décochez une semaine pour rendre le produit indisponible ce jour-là.",
+    "readOnly": "Catalogue en lecture seule : mois passé ou commandes clôturées.",
+    "prepareTitle": "Pas encore de catalogue pour {month}",
+    "prepareIntro": "Reprenez les {count, plural, one {# produit} other {# produits}} de {previous}, à leurs prix. Les semaines sont à cocher : les distributions changent d'un mois à l'autre.",
+    "prepare": "Préparer à partir de {previous}",
+    "prepared": "Catalogue de {month} préparé : {count, plural, one {# produit repris} other {# produits repris}}. Cochez leurs semaines.",
+    "startEmpty": "Ou ajoutez les produits un par un ci-dessous.",
+    "publish": "Publier pour {month}",
+    "published": "Catalogue de {month} publié.",
+    "publishedNote": "Publié : les familles le verront à l'ouverture des commandes. Il reste modifiable ; enregistrez après chaque changement.",
+    "nothingThisMonth": "Aucun catalogue pour {month}."
   },
   "Admin": {
     "title": "Administration de l'AMAP",
@@ -233,7 +246,9 @@
       "blocking": "Bloquant",
       "noBlocking": "Aucune tâche bloquante.",
       "producerWithoutReferent": "{name} n'a pas de référent : personne ne pointe ses chèques.",
-      "assignReferent": "Affecter un référent à {name}"
+      "assignReferent": "Affecter un référent à {name}",
+      "catalogNotPublished": "Catalogue de {month} de {name} pas encore publié : les commandes ouvrent le {opensOn}.",
+      "contactReferent": "Voir {name} et son référent"
     },
     "producers": {
       "title": "Producteurs et référents",

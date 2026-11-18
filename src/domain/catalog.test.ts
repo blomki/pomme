@@ -3,9 +3,12 @@ import { describe, expect, it } from "vitest";
 import {
   duplicateNames,
   formatEuros,
+  isCatalogReadOnly,
   normalizeProductName,
   parsePriceCents,
   priceInput,
+  publishDeadline,
+  publishProblem,
   sameProductName,
 } from "./catalog";
 
@@ -67,5 +70,46 @@ describe("noms de produit", () => {
         { name: "Miel", removed: true },
       ]),
     ).toEqual(["Œufs, boîte de 6"]);
+  });
+});
+
+describe("isCatalogReadOnly", () => {
+  it("bloque un mois passé ou dont les commandes sont clôturées", () => {
+    const base = { currentMonth: "2026-11", ordersClosed: false };
+    expect(isCatalogReadOnly({ ...base, month: "2026-12" })).toBe(false);
+    expect(isCatalogReadOnly({ ...base, month: "2026-11" })).toBe(false);
+    expect(isCatalogReadOnly({ ...base, month: "2026-10" })).toBe(true);
+    expect(isCatalogReadOnly({ ...base, month: "2026-12", ordersClosed: true })).toBe(true);
+  });
+});
+
+describe("publishProblem", () => {
+  const line = (name: string, available: string[], removed = false) => ({
+    name,
+    available,
+    removed,
+  });
+
+  it("accepte un catalogue dont chaque produit proposé a au moins une semaine", () => {
+    expect(publishProblem([line("Pain", ["d1"]), line("Brioche", [], true)])).toBeNull();
+  });
+
+  it("refuse un catalogue sans produit proposé", () => {
+    expect(publishProblem([])).toEqual({ kind: "empty" });
+    expect(publishProblem([line("Pain", ["d1"], true)])).toEqual({ kind: "empty" });
+  });
+
+  it("nomme les produits disponibles à aucune semaine", () => {
+    expect(publishProblem([line("Pain", []), line("Miel", ["d1"]), line("Œufs", [])])).toEqual({
+      kind: "no_week",
+      names: ["Pain", "Œufs"],
+    });
+  });
+});
+
+describe("publishDeadline", () => {
+  it("tombe trois jours avant l'ouverture, en changeant de mois si besoin", () => {
+    expect(publishDeadline("2026-11-15")).toBe("2026-11-12");
+    expect(publishDeadline("2026-12-02")).toBe("2026-11-29");
   });
 });

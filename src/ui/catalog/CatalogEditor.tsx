@@ -23,7 +23,11 @@ import { useRef, useState } from "react";
 import { formatEuros, parsePriceCents, priceInput } from "@/domain/catalog";
 import { formatDate } from "@/i18n/dates";
 import type { CatalogDistribution, CatalogDraft, LineError } from "@/server/catalogs";
-import { saveCatalogDraftAction } from "@/server/catalogs-actions";
+import {
+  copyPreviousCatalogAction,
+  publishCatalogAction,
+  saveCatalogDraftAction,
+} from "@/server/catalogs-actions";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 import { visuallyHidden } from "../visually-hidden";
@@ -47,6 +51,8 @@ type LinesProps = {
   update: (key: string, change: Partial<Line>) => void;
   toggle: (line: Line, distributionId: string, checked: boolean) => void;
   errorOf: (line: Line, field: LineError["field"]) => boolean;
+  /** Consultation seulement : champs en lecture, cases figées, pas de « Retirer ». */
+  readOnly: boolean;
 };
 
 /**
@@ -56,6 +62,11 @@ type LinesProps = {
  *
  * Deux dispositions, mêmes règles : `table` pour le référent sur ordinateur (écran R6), `cards`
  * pour le producteur sur téléphone (écran P2, une carte par produit).
+ *
+ * Story C3 : « Préparer à partir de [mois précédent] » quand le mois n'a pas encore de
+ * catalogue, « Publier pour [mois] » (enregistre puis publie), lecture seule pour un mois passé
+ * ou des commandes clôturées. Le parent remonte ce composant (`key`) quand le statut change,
+ * pour repartir du catalogue enregistré.
  */
 export function CatalogEditor({
   amapSlug,
@@ -118,9 +129,13 @@ export function CatalogEditor({
     setNewPrice("");
   };
 
-  const save = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setPending(true);
+  const showProblem = (message: string) => {
+    setProblem(message);
+    requestAnimationFrame(() => summaryRef.current?.focus());
+  };
+
+  /** Enregistre le brouillon ; affiche le problème s'il est refusé. */
+  const persist = async (): Promise<boolean> => {
     const result = await saveCatalogDraftAction(amapSlug, {
       amapProducerId,
       month: draft.month,
@@ -132,24 +147,84 @@ export function CatalogEditor({
         removed,
       })),
     });
-    setPending(false);
     if (result.status === "saved") {
       setErrors([]);
       setProblem(null);
-      showSnackbar({ message: t("saved", { month: monthLabel }) });
-      return;
+      return true;
     }
     setErrors(result.status === "invalid" ? result.errors : []);
-    setProblem(
+    showProblem(
       result.status === "invalid"
         ? t("errors.summary")
         : result.status === "duplicate"
           ? t("errors.duplicate", { names: result.names.join(", ") })
           : result.status === "forbidden"
             ? t("errors.forbidden")
+            : result.status === "read_only"
+              ? t("errors.readOnly")
+              : t("errors.error"),
+    );
+    return false;
+  };
+
+  // Pendant l'envoi, les boutons restent actifs (un deuxième clic est ignoré) : un bouton
+  // désactivé perdrait le focus clavier.
+  const save = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pending) return;
+    setPending(true);
+    const saved = await persist();
+    setPending(false);
+    if (saved) showSnackbar({ message: t("saved", { month: monthLabel }) });
+  };
+
+  /** « Publier pour [mois] » : enregistre d'abord, puis publie. */
+  const publish = async () => {
+    if (pending) return;
+    setPending(true);
+    const saved = await persist();
+    const result = saved
+      ? await publishCatalogAction(amapSlug, { amapProducerId, month: draft.month })
+      : null;
+    setPending(false);
+    if (!result) return;
+    if (result.status === "published") {
+      showSnackbar({ message: t("published", { month: monthLabel }) });
+      return;
+    }
+    showProblem(
+      result.status === "problem"
+        ? result.problem.kind === "empty"
+          ? t("errors.empty")
+          : t("errors.noWeek", { names: result.problem.names.join(", ") })
+        : result.status === "read_only"
+          ? t("errors.readOnly")
+          : result.status === "forbidden"
+            ? t("errors.forbidden")
             : t("errors.error"),
     );
-    requestAnimationFrame(() => summaryRef.current?.focus());
+  };
+
+  /** « Préparer à partir de [mois précédent] » : le parent remonte l'éditeur ensuite. */
+  const prepare = async () => {
+    if (pending || !draft.previous) return;
+    setPending(true);
+    const result = await copyPreviousCatalogAction(amapSlug, {
+      amapProducerId,
+      month: draft.month,
+    });
+    setPending(false);
+    if (result.status === "copied") {
+      showSnackbar({ message: t("prepared", { month: monthLabel, count: result.products }) });
+      return;
+    }
+    showProblem(
+      result.status === "read_only"
+        ? t("errors.readOnly")
+        : result.status === "forbidden"
+          ? t("errors.forbidden")
+          : t("errors.error"),
+    );
   };
 
   const active = lines.filter((l) => !l.removed);
@@ -158,7 +233,17 @@ export function CatalogEditor({
     errors.some((e) => e.field === field && lines.indexOf(line) === e.line);
 
   if (draft.distributions.length === 0) {
-    return <Typography>{t("noDistributions", { month: monthLabel })}</Typography>;
+    // Mois passé sans distribution : rien à consulter. Sinon, le calendrier reste à créer.
+    return draft.readOnly ? (
+      <>
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t("readOnly")}
+        </Alert>
+        <Typography>{t("nothingThisMonth", { month: monthLabel })}</Typography>
+      </>
+    ) : (
+      <Typography>{t("noDistributions", { month: monthLabel })}</Typography>
+    );
   }
 
   const linesProps: LinesProps = {
@@ -168,13 +253,49 @@ export function CatalogEditor({
     update,
     toggle,
     errorOf,
+    readOnly: draft.readOnly,
   };
+  const previousLabel = draft.previous
+    ? formatDate(`${draft.previous.month}-01T12:00:00Z`, "MMMM")
+    : "";
 
   return (
     <Box component="form" onSubmit={(e) => void save(e)} noValidate>
       <Box ref={summaryRef} tabIndex={-1} sx={{ mb: problem ? 2 : 0 }}>
         {problem && <Alert severity="error">{problem}</Alert>}
       </Box>
+      {draft.readOnly && (
+        <Alert severity="info" sx={{ mb: 2 }}>
+          {t("readOnly")}
+        </Alert>
+      )}
+      {!draft.readOnly && draft.status === "published" && (
+        <Alert severity="success" sx={{ mb: 2 }}>
+          {t("publishedNote")}
+        </Alert>
+      )}
+
+      {draft.previous && (
+        <Paper
+          variant="outlined"
+          component="section"
+          aria-labelledby="prepare-title"
+          sx={{ p: 2, mb: 3 }}
+        >
+          <Typography id="prepare-title" variant="titleMedium" component="h2" sx={{ mb: 1 }}>
+            {t("prepareTitle", { month: monthLabel })}
+          </Typography>
+          <Typography sx={{ mb: 2 }}>
+            {t("prepareIntro", { count: draft.previous.products, previous: previousLabel })}
+          </Typography>
+          <Button variant="contained" onClick={() => void prepare()}>
+            {t("prepare", { previous: previousLabel })}
+          </Button>
+          <Typography variant="bodySmall" sx={{ color: "text.secondary", mt: 1 }}>
+            {t("startEmpty")}
+          </Typography>
+        </Paper>
+      )}
 
       {active.length === 0 ? (
         <Typography sx={{ mb: 2 }}>{t("empty")}</Typography>
@@ -184,51 +305,53 @@ export function CatalogEditor({
         <LinesCards {...linesProps} />
       )}
 
-      <Box
-        component="fieldset"
-        sx={{ border: 0, p: 0, m: 0, mb: 3 }}
-        aria-describedby="add-product-help"
-      >
-        <Typography component="legend" variant="titleMedium" sx={{ mb: 1 }}>
-          {t("addTitle")}
-        </Typography>
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={2}
-          sx={{ alignItems: "flex-start" }}
+      {!draft.readOnly && (
+        <Box
+          component="fieldset"
+          sx={{ border: 0, p: 0, m: 0, mb: 3 }}
+          aria-describedby="add-product-help"
         >
-          <TextField
-            label={t("newName")}
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            // Entrée ajoute le produit (et n'enregistre pas tout le brouillon).
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addProduct();
-              }
-            }}
-            helperText={<span id="add-product-help">{t("newNameHelp")}</span>}
-            sx={{ flexGrow: 1, width: { xs: "100%", sm: "auto" } }}
-          />
-          <TextField
-            label={t("newPrice")}
-            value={newPrice}
-            onChange={(e) => setNewPrice(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                addProduct();
-              }
-            }}
-            inputMode="decimal"
-            sx={{ width: 140 }}
-          />
-          <Button startIcon={<Add />} onClick={addProduct} sx={{ mt: 1 }}>
-            {t("add")}
-          </Button>
-        </Stack>
-      </Box>
+          <Typography component="legend" variant="titleMedium" sx={{ mb: 1 }}>
+            {t("addTitle")}
+          </Typography>
+          <Stack
+            direction={{ xs: "column", sm: "row" }}
+            spacing={2}
+            sx={{ alignItems: "flex-start" }}
+          >
+            <TextField
+              label={t("newName")}
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+              // Entrée ajoute le produit (et n'enregistre pas tout le brouillon).
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addProduct();
+                }
+              }}
+              helperText={<span id="add-product-help">{t("newNameHelp")}</span>}
+              sx={{ flexGrow: 1, width: { xs: "100%", sm: "auto" } }}
+            />
+            <TextField
+              label={t("newPrice")}
+              value={newPrice}
+              onChange={(e) => setNewPrice(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  addProduct();
+                }
+              }}
+              inputMode="decimal"
+              sx={{ width: 140 }}
+            />
+            <Button startIcon={<Add />} onClick={addProduct} sx={{ mt: 1 }}>
+              {t("add")}
+            </Button>
+          </Stack>
+        </Box>
+      )}
 
       {removed.length > 0 && (
         <Box component="section" aria-labelledby="removed-title" sx={{ mb: 3 }}>
@@ -261,28 +384,45 @@ export function CatalogEditor({
                     return cents === null ? line.price : formatEuros(cents);
                   })()}
                 </Typography>
-                <Button
-                  size="small"
-                  onClick={() => update(line.key, { removed: false, available: openIds })}
-                  aria-label={t("restoreOf", { name: line.name })}
-                >
-                  {t("restore")}
-                </Button>
+                {!draft.readOnly && (
+                  <Button
+                    size="small"
+                    onClick={() => update(line.key, { removed: false, available: openIds })}
+                    aria-label={t("restoreOf", { name: line.name })}
+                  >
+                    {t("restore")}
+                  </Button>
+                )}
               </Stack>
             ))}
           </Paper>
         </Box>
       )}
 
-      <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "action.hover", border: 0 }}>
-        <Typography variant="bodySmall">{t("note")}</Typography>
-      </Paper>
+      {!draft.readOnly && (
+        <>
+          <Paper variant="outlined" sx={{ p: 2, mb: 3, bgcolor: "action.hover", border: 0 }}>
+            <Typography variant="bodySmall">{t("note")}</Typography>
+          </Paper>
 
-      <Stack direction="row" sx={{ justifyContent: "flex-end" }}>
-        <Button type="submit" variant="contained" disabled={pending} fullWidth={layout === "cards"}>
-          {t("save")}
-        </Button>
-      </Stack>
+          <Stack
+            direction={layout === "cards" ? "column" : "row"}
+            spacing={1}
+            sx={{ justifyContent: "flex-end" }}
+          >
+            <Button type="submit" variant="outlined" fullWidth={layout === "cards"}>
+              {t("save")}
+            </Button>
+            <Button
+              variant="contained"
+              onClick={() => void publish()}
+              fullWidth={layout === "cards"}
+            >
+              {t("publish", { month: monthLabel })}
+            </Button>
+          </Stack>
+        </>
+      )}
     </Box>
   );
 }
@@ -295,7 +435,15 @@ function useLineName() {
 }
 
 /** Référent, sur ordinateur : un tableau, une colonne par semaine. */
-function LinesTable({ lines, active, distributions, update, toggle, errorOf }: LinesProps) {
+function LinesTable({
+  lines,
+  active,
+  distributions,
+  update,
+  toggle,
+  errorOf,
+  readOnly,
+}: LinesProps) {
   const t = useTranslations("Catalog");
   const nameOf = useLineName();
   return (
@@ -337,7 +485,7 @@ function LinesTable({ lines, active, distributions, update, toggle, errorOf }: L
                     error={errorOf(line, "name")}
                     helperText={errorOf(line, "name") ? t("errors.name") : undefined}
                     slotProps={{
-                      htmlInput: { "aria-label": t("productOf", { number: index + 1 }) },
+                      htmlInput: { "aria-label": t("productOf", { number: index + 1 }), readOnly },
                     }}
                   />
                 </TableCell>
@@ -353,6 +501,7 @@ function LinesTable({ lines, active, distributions, update, toggle, errorOf }: L
                       htmlInput: {
                         "aria-label": t("priceOf", { name }),
                         style: { textAlign: "right" },
+                        readOnly,
                       },
                     }}
                   />
@@ -361,7 +510,7 @@ function LinesTable({ lines, active, distributions, update, toggle, errorOf }: L
                   <TableCell key={d.id} align="center">
                     <Checkbox
                       checked={line.available.includes(d.id)}
-                      disabled={!d.isOpen}
+                      disabled={!d.isOpen || readOnly}
                       onChange={(e) => toggle(line, d.id, e.target.checked)}
                       slotProps={{
                         input: {
@@ -375,13 +524,15 @@ function LinesTable({ lines, active, distributions, update, toggle, errorOf }: L
                   </TableCell>
                 ))}
                 <TableCell>
-                  <Button
-                    size="small"
-                    onClick={() => update(line.key, { removed: true })}
-                    aria-label={t("removeOf", { name })}
-                  >
-                    {t("remove")}
-                  </Button>
+                  {!readOnly && (
+                    <Button
+                      size="small"
+                      onClick={() => update(line.key, { removed: true })}
+                      aria-label={t("removeOf", { name })}
+                    >
+                      {t("remove")}
+                    </Button>
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -396,7 +547,15 @@ function LinesTable({ lines, active, distributions, update, toggle, errorOf }: L
  * Producteur, sur téléphone : une carte par produit (nom, prix, puis une case par semaine avec
  * sa date en clair). Les cases d'un produit forment un groupe nommé « Disponibilités de … ».
  */
-function LinesCards({ lines, active, distributions, update, toggle, errorOf }: LinesProps) {
+function LinesCards({
+  lines,
+  active,
+  distributions,
+  update,
+  toggle,
+  errorOf,
+  readOnly,
+}: LinesProps) {
   const t = useTranslations("Catalog");
   const nameOf = useLineName();
   return (
@@ -419,7 +578,7 @@ function LinesCards({ lines, active, distributions, update, toggle, errorOf }: L
                   error={errorOf(line, "name")}
                   helperText={errorOf(line, "name") ? t("errors.name") : undefined}
                   slotProps={{
-                    htmlInput: { "aria-label": t("productOf", { number: index + 1 }) },
+                    htmlInput: { "aria-label": t("productOf", { number: index + 1 }), readOnly },
                   }}
                 />
                 <TextField
@@ -429,7 +588,7 @@ function LinesCards({ lines, active, distributions, update, toggle, errorOf }: L
                   inputMode="decimal"
                   error={errorOf(line, "price")}
                   helperText={errorOf(line, "price") ? t("errors.price") : undefined}
-                  slotProps={{ htmlInput: { "aria-label": t("priceOf", { name }) } }}
+                  slotProps={{ htmlInput: { "aria-label": t("priceOf", { name }), readOnly } }}
                   sx={{ width: 160 }}
                 />
                 <Box component="fieldset" sx={{ border: 0, p: 0, m: 0 }}>
@@ -440,7 +599,7 @@ function LinesCards({ lines, active, distributions, update, toggle, errorOf }: L
                     {distributions.map((d, i) => (
                       <FormControlLabel
                         key={d.id}
-                        disabled={!d.isOpen}
+                        disabled={!d.isOpen || readOnly}
                         control={
                           <Checkbox
                             checked={line.available.includes(d.id)}
@@ -456,14 +615,16 @@ function LinesCards({ lines, active, distributions, update, toggle, errorOf }: L
                     ))}
                   </Box>
                 </Box>
-                <Box>
-                  <Button
-                    onClick={() => update(line.key, { removed: true })}
-                    aria-label={t("removeOf", { name })}
-                  >
-                    {t("remove")}
-                  </Button>
-                </Box>
+                {!readOnly && (
+                  <Box>
+                    <Button
+                      onClick={() => update(line.key, { removed: true })}
+                      aria-label={t("removeOf", { name })}
+                    >
+                      {t("remove")}
+                    </Button>
+                  </Box>
+                )}
               </Stack>
             </Paper>
           );

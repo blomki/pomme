@@ -64,3 +64,50 @@ export function duplicateNames(lines: readonly DraftLine[]): string[] {
   }
   return [...duplicates];
 }
+
+// --- Publication et lecture seule (story C3) -------------------------------------------------
+
+/**
+ * Le catalogue d'un mois n'est plus modifiable : mois passé (« Les catalogues passés sont en
+ * lecture seule »), ou commandes de ce mois clôturées. Une réouverture des commandes le rend de
+ * nouveau modifiable.
+ *
+ * @param currentMonth mois en cours, à Paris (« 2026-11 »)
+ */
+export function isCatalogReadOnly(params: {
+  month: string;
+  currentMonth: string;
+  ordersClosed: boolean;
+}): boolean {
+  return params.month < params.currentMonth || params.ordersClosed;
+}
+
+export type PublishProblem = { kind: "empty" } | { kind: "no_week"; names: string[] };
+
+/**
+ * Ce qui empêche de publier un catalogue : aucun produit proposé, ou un produit proposé
+ * disponible à aucune semaine (il faut cocher ses semaines, ou le retirer). Null : publiable.
+ */
+export function publishProblem(
+  lines: ReadonlyArray<{ name: string; removed: boolean; available: readonly string[] }>,
+): PublishProblem | null {
+  const offered = lines.filter((l) => !l.removed);
+  if (offered.length === 0) return { kind: "empty" };
+  const withoutWeek = offered.filter((l) => l.available.length === 0).map((l) => l.name);
+  return withoutWeek.length > 0 ? { kind: "no_week", names: withoutWeek } : null;
+}
+
+/** Délai avant l'ouverture des commandes au-delà duquel un catalogue non publié bloque. */
+export const PUBLISH_DEADLINE_DAYS = 3;
+
+/**
+ * Jour à partir duquel un catalogue non publié devient une tâche « Bloquant » : trois jours
+ * avant l'ouverture des commandes (jours au format « AAAA-MM-JJ », sans fuseau).
+ *
+ * @example publishDeadline("2026-11-15") // "2026-11-12"
+ */
+export function publishDeadline(opensOn: string): string {
+  const date = new Date(`${opensOn}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() - PUBLISH_DEADLINE_DAYS);
+  return date.toISOString().slice(0, 10);
+}

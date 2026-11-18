@@ -20,7 +20,10 @@ import { listMyProducerAmaps } from "@/server/producer-amaps";
 import { startDatabase, type TestDatabase } from "./helpers/database";
 import { fixtures } from "./helpers/fixtures";
 
-// Catalogue du mois (story C2), avec la vraie base et la RLS.
+// Jour fixe : les catalogues de décembre 2026 restent à venir, quel que soit le jour du test.
+const NOW = new Date("2026-11-18T10:00:00Z");
+
+// Catalogue du mois (stories C2 et C3), avec la vraie base et la RLS.
 describe("Catalogue du mois (C2)", () => {
   let db: TestDatabase;
   let amapA: { id: string };
@@ -49,13 +52,13 @@ describe("Catalogue du mois (C2)", () => {
     ap = farm.amapProducerId,
   ) =>
     inA(
-      (tx, ctx) => saveCatalogDraft(tx, ctx, { amapProducerId: ap, month: "2026-12", lines }),
+      (tx, ctx) => saveCatalogDraft(tx, ctx, { amapProducerId: ap, month: "2026-12", lines }, NOW),
       actor,
     );
   const draft = (actor: string = referent.id) =>
     inA(
       (tx, ctx) =>
-        getCatalogDraft(tx, ctx, { amapProducerId: farm.amapProducerId, month: "2026-12" }),
+        getCatalogDraft(tx, ctx, { amapProducerId: farm.amapProducerId, month: "2026-12" }, NOW),
       actor,
     );
 
@@ -236,7 +239,7 @@ describe("Catalogue du mois (C2)", () => {
     await expect(
       inA(
         (tx, ctx) =>
-          getCatalogDraft(tx, ctx, { amapProducerId: farm.amapProducerId, month: "2026-12" }),
+          getCatalogDraft(tx, ctx, { amapProducerId: farm.amapProducerId, month: "2026-12" }, NOW),
         null,
       ),
     ).rejects.toBeInstanceOf(UnauthenticatedError);
@@ -263,7 +266,7 @@ describe("Catalogue du mois (C2)", () => {
     expect(seen).toEqual([]);
     // Dans l'AMAP B, le producteur part d'un catalogue vide pour le même mois.
     const inB = await withAmapContext(db.app, as(farmer.id, amapB.id), (tx, ctx) =>
-      getCatalogDraft(tx, ctx, { amapProducerId: farm.inB, month: "2026-12" }),
+      getCatalogDraft(tx, ctx, { amapProducerId: farm.inB, month: "2026-12" }, NOW),
     );
     expect(inB).toMatchObject({ status: null, lines: [], distributions: [] });
     // Une disponibilité ne peut pas viser une distribution d'une autre AMAP (clé composée).
