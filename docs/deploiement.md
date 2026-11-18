@@ -79,6 +79,12 @@ Dans les journaux de Clever Cloud, un déploiement réussi affiche dans l'ordre 
 de Next.js. Si un pas échoue, l'ancienne version continue de servir. Vérifier ensuite
 `https://<adresse>/api/health` : `{"status":"ok"}`.
 
+Le build chez Clever Cloud ne vérifie pas les types (`next.config.ts`, réglage
+`typescript.ignoreBuildErrors` quand `CC_DEPLOYMENT_ID` est présent) : sur leur machine de
+build, l'étape « Running TypeScript » restait bloquée jusqu'à l'abandon du déploiement. La CI
+fait cette vérification avant tout déploiement. Relancer un déploiement échoué reconstruit le
+même commit (`--same-commit-policy rebuild`, `clevercloud/deploy.sh`).
+
 ## Domaine : pomme.cloud (OVH)
 
 | Adresse               | Application     | Zone DNS chez OVH                                                |
