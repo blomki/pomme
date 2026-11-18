@@ -25,6 +25,7 @@ foyer n'ait pas deux adhésions qui se chevauchent.
 
    Une adhésion suivie d'une autre qui commence dès le lendemain n'« expire » pas : on regarde
    la fin de la couverture continue. Un renouvellement fait à temps éteint donc l'alerte.
+
 3. **Chevauchement refusé par la base** : contrainte d'exclusion
    `membership_no_overlap` (`EXCLUDE USING gist`, foyer égal et périodes qui se recouvrent),
    sur les adhésions non archivées. Elle demande l'extension `btree_gist`. Migration écrite à la
