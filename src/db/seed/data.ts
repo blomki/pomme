@@ -22,7 +22,7 @@
  */
 import { validateAmapSlug } from "@/domain/amap-slug";
 import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
-import { addDays, parisDay, periodInstants } from "@/domain/order-periods";
+import { addDays, defaultPeriodDays, parisDay, periodInstants } from "@/domain/order-periods";
 import type { AmapRoleName } from "@/domain/roles";
 
 import type { AmapSettings, AmapTheme } from "../schema";
@@ -130,7 +130,18 @@ export type SeedOrderPeriod = {
   month: string;
   opensAt: Date;
   closesAt: Date;
-  status: "open";
+  status: "open" | "closed";
+  closedAt: Date | null;
+};
+export type SeedCheque = {
+  id: string;
+  amapId: string;
+  householdId: string;
+  producerId: string;
+  orderPeriodId: string;
+  grossCents: number;
+  creditsCents: number;
+  expectedCents: number;
 };
 export type SeedOrder = { id: string; amapId: string; householdId: string; catalogId: string };
 export type SeedOrderLine = {
@@ -171,6 +182,7 @@ export type SeedData = {
   orderPeriods: SeedOrderPeriod[];
   orders: SeedOrder[];
   orderLines: SeedOrderLine[];
+  cheques: SeedCheque[];
   memberships: SeedMembership[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
@@ -712,10 +724,12 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     for (const ap of amapProducers.filter((a) => a.producerId === producerRecord.id)) {
       for (const month of [0, 1].map((delta) => addMonths(firstMonth, delta))) {
         const catalogId = nextId();
+        // Première AMAP : catalogues du mois en cours publiés (commandes déjà clôturées), et
+        // ceux du mois prochain sauf DRAFT_NEXT_MONTH.
         const published =
           ap.amapId === amaps[0]?.id &&
-          month === addMonths(firstMonth, 1) &&
-          !DRAFT_NEXT_MONTH.includes(definition.name);
+          (month === firstMonth ||
+            (month === addMonths(firstMonth, 1) && !DRAFT_NEXT_MONTH.includes(definition.name)));
         catalogs.push({
           id: catalogId,
           amapId: ap.amapId,
@@ -765,6 +779,7 @@ export function buildSeedData(today: Date = new Date()): SeedData {
       month: `${nextMonth}-01`,
       ...periodInstants(addDays(todayInParis, -3), addDays(todayInParis, 5)),
       status: "open",
+      closedAt: null,
     });
     const nextCatalogs = catalogs.filter(
       (c) => c.amapId === firstAmap.id && c.month === `${nextMonth}-01`,
@@ -790,6 +805,65 @@ export function buildSeedData(today: Date = new Date()): SeedData {
           distributionId: firstDistribution.id,
           quantity: 1 + (index % 3),
           unitPriceCents: item.priceCents,
+        });
+      }
+    });
+  }
+
+  // Commandes du mois en cours dans la première AMAP, clôturées le mois dernier, avec leurs
+  // chèques attendus : de quoi voir un bon de commande clôturé (E1) et pointer des chèques
+  // (F1). Mêmes 12 foyers, deux producteurs chacun, une quantité à chaque distribution ouverte.
+  const cheques: SeedCheque[] = [];
+  if (firstAmap) {
+    const days = defaultPeriodDays(firstMonth);
+    const periodId = nextId();
+    const instants = periodInstants(days.opensOn, days.closesOn);
+    orderPeriods.push({
+      id: periodId,
+      amapId: firstAmap.id,
+      month: `${firstMonth}-01`,
+      ...instants,
+      status: "closed",
+      closedAt: instants.closesAt,
+    });
+    const currentCatalogs = catalogs.filter(
+      (c) => c.amapId === firstAmap.id && c.month === `${firstMonth}-01`,
+    );
+    const monthDistributions = distributions.filter(
+      (d) => d.amapId === firstAmap.id && d.isOpen && d.date.startsWith(firstMonth),
+    );
+    const ordering = households.filter((h) => h.amapId === firstAmap.id).slice(0, 12);
+    ordering.forEach((h, index) => {
+      for (const c of [0, 1].map(
+        (k) => currentCatalogs[(index + 2 * k) % currentCatalogs.length],
+      )) {
+        if (!c) continue;
+        const item = catalogItems.find((i) => i.catalogId === c.id);
+        if (!item) continue;
+        const orderId = nextId();
+        orders.push({ id: orderId, amapId: firstAmap.id, householdId: h.id, catalogId: c.id });
+        const quantity = 1 + (index % 2);
+        for (const d of monthDistributions) {
+          orderLines.push({
+            id: nextId(),
+            amapId: firstAmap.id,
+            orderId,
+            catalogItemId: item.id,
+            distributionId: d.id,
+            quantity,
+            unitPriceCents: item.priceCents,
+          });
+        }
+        const grossCents = quantity * item.priceCents * monthDistributions.length;
+        cheques.push({
+          id: nextId(),
+          amapId: firstAmap.id,
+          householdId: h.id,
+          producerId: c.producerId,
+          orderPeriodId: periodId,
+          grossCents,
+          creditsCents: 0,
+          expectedCents: grossCents,
         });
       }
     });
@@ -867,6 +941,7 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     orderPeriods,
     orders,
     orderLines,
+    cheques,
     memberships,
     totpUserIds,
   };

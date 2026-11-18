@@ -107,6 +107,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(orderPeriod).values(data.orderPeriods);
     await tx.insert(order).values(data.orders);
     await tx.insert(orderLine).values(data.orderLines);
+    await tx.insert(cheque).values(data.cheques);
     await tx.insert(membership).values(data.memberships);
     if (data.totpUserIds.length > 0) {
       await tx

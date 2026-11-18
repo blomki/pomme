@@ -62,7 +62,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/referent/producteurs` },
         { key: "cheques", icon: <FactCheckOutlined /> },
         { key: "credits", icon: <UndoOutlined /> },
-        { key: "orders", icon: <ReceiptLongOutlined /> },
+        { key: "orders", icon: <ReceiptLongOutlined />, href: `${base}/referent/bons-de-commande` },
         { key: "catalogues", icon: <Inventory2Outlined />, href: `${base}/referent/catalogue` },
       ];
     case "platform":

@@ -166,13 +166,18 @@ describe("buildSeedData", () => {
   });
 
   it("ouvre la période du mois suivant et fait commander 12 foyers de la première AMAP", () => {
-    const [period] = data.orderPeriods;
-    expect(data.orderPeriods).toHaveLength(1);
+    const [period, current] = data.orderPeriods;
+    expect(data.orderPeriods).toHaveLength(2);
     expect(period?.amapId).toBe(data.amaps[0]?.id);
     expect(period?.month).toBe("2026-12-01");
     expect(period!.opensAt < today && today < period!.closesAt).toBe(true);
+    // Le mois en cours : commandes clôturées le mois dernier, un chèque par foyer et producteur.
+    expect(current).toMatchObject({ month: "2026-11-01", status: "closed" });
+    expect(current!.closesAt < today).toBe(true);
     expect(new Set(data.orders.map((o) => o.householdId)).size).toBe(12);
-    expect(data.orders).toHaveLength(24);
+    expect(data.orders).toHaveLength(48);
+    expect(data.cheques).toHaveLength(24);
+    for (const c of data.cheques) expect(c.expectedCents).toBe(c.grossCents);
     for (const line of data.orderLines) {
       const item = data.catalogItems.find((i) => i.id === line.catalogItemId);
       expect(line.unitPriceCents).toBe(item?.priceCents);
