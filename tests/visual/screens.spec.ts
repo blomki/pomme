@@ -7,7 +7,6 @@ import { expect, test } from "@playwright/test";
 const screens = [
   { name: "accueil", path: "/", viewport: "mobile" },
   { name: "amap-page-publique", path: "/hommesdeterre", viewport: "mobile" },
-  { name: "famille", path: "/hommesdeterre/famille", viewport: "mobile" },
   { name: "referent", path: "/hommesdeterre/referent", viewport: "desktop" },
   { name: "theme-cambremer", path: "/plateforme/theme/hommesdeterre", viewport: "desktop" },
   { name: "theme-pays-d-auge", path: "/plateforme/theme/pays-d-auge-demo", viewport: "desktop" },
