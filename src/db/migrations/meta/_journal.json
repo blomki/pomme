@@ -169,6 +169,13 @@
       "when": 1795014284749,
       "tag": "0023_adhesions-sans-chevauchement",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795016831030,
+      "tag": "0024_rien-ce-mois-ci",
+      "breakpoints": true
     }
   ]
 }

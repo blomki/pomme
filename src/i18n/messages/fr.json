@@ -17,7 +17,75 @@
     "intro": "Page publique de l'AMAP : présentation, producteurs, blog et demande d'adhésion."
   },
   "Family": {
-    "title": "Espace famille"
+    "title": "Espace famille",
+    "order": {
+      "title": "Commande de {month}",
+      "titleNoMonth": "Commande du mois",
+      "editableUntil": "Modifiable jusqu'au {date} inclus",
+      "notOpen": "Les commandes ne sont pas ouvertes en ce moment. Vous serez prévenu par email à leur ouverture.",
+      "noHousehold": "Votre compte n'est rattaché à aucun foyer de cette AMAP. Contactez un administrateur.",
+      "membership": "Votre adhésion n'est pas en cours : vous ne pouvez pas commander. Contactez un administrateur de l'AMAP.",
+      "progress": "{treated} producteurs sur {count} traités",
+      "producersLabel": "Producteurs",
+      "noCatalog": "Aucun catalogue publié pour ce mois pour l'instant.",
+      "status": {
+        "complete": "Complété",
+        "todo": "À compléter",
+        "nothing": "Rien ce mois-ci"
+      },
+      "noAmount": "—",
+      "provisionalTotal": "Total provisoire",
+      "summary": "Récapitulatif",
+      "back": "Retour à la commande",
+      "producerSubtitle": "{month} · quantités par distribution",
+      "unitPrice": "{price} l'unité",
+      "quantityOf": "Quantité de {product} le {date}",
+      "unavailable": "indispo.",
+      "past": "passée",
+      "lockedCheque": "Votre chèque pour ce producteur est déjà pointé : la commande ne se modifie plus.",
+      "sameEveryWeek": "Même quantité chaque semaine",
+      "sameEveryWeekOf": "Même quantité chaque semaine pour {product}",
+      "chequeForProducer": "Chèque pour ce producteur",
+      "nothingThisMonth": "Rien ce mois-ci",
+      "nothingSet": "Noté : rien ce mois-ci chez {producer}.",
+      "nothingCancel": "Annuler « Rien ce mois-ci »",
+      "nothingCancelled": "« Rien ce mois-ci » annulé.",
+      "done": "Valider",
+      "refused": {
+        "closed": "Les commandes sont clôturées : la quantité n'a pas été enregistrée.",
+        "membership": "Votre adhésion n'est pas en cours : la quantité n'a pas été enregistrée.",
+        "locked": "Cette case ne se modifie plus : la quantité n'a pas été enregistrée.",
+        "invalid": "Quantité non valable (de 0 à 99) : elle n'a pas été enregistrée.",
+        "has_quantities": "Retirez d'abord les quantités saisies chez ce producteur.",
+        "no_household": "Votre compte n'est rattaché à aucun foyer de cette AMAP.",
+        "forbidden": "Action non autorisée.",
+        "empty": "Votre commande est vide : saisissez au moins une quantité.",
+        "network": "Connexion perdue : la quantité n'a pas été enregistrée. Réessayez."
+      },
+      "recap": {
+        "title": "Récapitulatif",
+        "subtitle": "Commande de {month}",
+        "cheques": "{count, plural, =0 {Aucun chèque à préparer} one {# chèque à préparer} other {# chèques à préparer}}",
+        "onePerProducer": "Un chèque par producteur",
+        "quantity": "{product} × {quantity}",
+        "showPayee": "Voir l'ordre du chèque",
+        "hidePayee": "Masquer l'ordre du chèque",
+        "payee": "Chèque à l'ordre de {payee}",
+        "payeeUnknown": "Ordre du chèque : à demander au référent.",
+        "nothing": "Rien ce mois-ci",
+        "todo": "À compléter",
+        "provisional": "Montants provisoires : un avoir éventuel sera déduit à la clôture.",
+        "edit": "Modifier",
+        "confirm": "Valider ma commande",
+        "confirmedTitle": "Commande enregistrée",
+        "confirmedText": "Vous pouvez la modifier jusqu'au {date} inclus.",
+        "emailed": "Un email récapitulatif vous a été envoyé.",
+        "total": "Total",
+        "backHome": "Retour à l'accueil"
+      },
+      "saving": "Enregistrement…",
+      "saved": "Modifications enregistrées"
+    }
   },
   "Referent": {
     "title": "Espace référent",
@@ -761,6 +829,18 @@
       "nothing": "Rien à prendre ce mois-ci ? Vous pouvez ignorer ce message.",
       "button": "Passer ma commande",
       "footer": "Vous recevez cet email parce que votre foyer fait partie de « {amap} ». Une seule relance par mois."
+    },
+    "orderConfirmation": {
+      "subject": "{amap} : votre commande de {month} est enregistrée",
+      "preview": "{count, plural, one {# chèque} other {# chèques}} à préparer, {total} au total.",
+      "greeting": "Bonjour {firstName},",
+      "intro": "Votre commande de {month} est enregistrée. Vous pouvez encore la modifier jusqu'au {closesOn} inclus.",
+      "cheques": "Chèques à préparer, un par producteur :",
+      "cheque": "{producer} : {amount}, à l'ordre de « {payee} »",
+      "chequeNoPayee": "{producer} : {amount}",
+      "total": "Total provisoire : {total}. Un avoir éventuel sera déduit à la clôture.",
+      "button": "Voir ma commande",
+      "footer": "Vous recevez cet email parce que vous avez validé votre commande sur « {amap} »."
     }
   },
   "Roles": {

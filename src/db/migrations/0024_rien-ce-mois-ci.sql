@@ -1,0 +1,1 @@
+ALTER TABLE "order" ADD COLUMN "declined_at" timestamp with time zone;
