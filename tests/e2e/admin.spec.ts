@@ -656,4 +656,78 @@ test.describe("administration (ordinateur)", () => {
     await save();
     await expect(page.getByText(/^Brouillon du catalogue de .* enregistré\.$/)).toBeVisible();
   });
+
+  test("un admin relance, clôture puis rouvre les commandes du mois au clavier (D2)", async ({
+    page,
+    request,
+  }) => {
+    // Jours de Paris, au format des champs de date (« 2026-11-18 »).
+    const parisDay = (offset: number) =>
+      new Date(Date.now() + offset * 86_400_000).toLocaleDateString("sv-SE", {
+        timeZone: "Europe/Paris",
+      });
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    const dialogShown = () =>
+      expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    // Jeu de données : la période du mois prochain est ouverte (rouverte si le test a déjà
+    // tourné sur cette base), et 12 foyers ont commandé.
+    const banner = page.getByRole("region", { name: /^Commandes de / });
+    await expect(banner.getByText(/^(Ouvertes du .* au|Rouvertes jusqu'au) /)).toBeVisible();
+    await expect(banner.getByText(/^\d+ foyers sur \d+ ont commandé$/)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Relancer : une seule relance par personne et par mois.
+    await press(banner.getByRole("button", { name: "Relancer" }));
+    const remind = page.getByRole("dialog", { name: "Relancer les foyers sans commande ?" });
+    await expect(remind.getByText(/foyers n'ont encore rien commandé/)).toBeVisible();
+    await dialogShown();
+    await expectNoSeriousA11yViolations(page);
+    await press(remind.getByRole("button", { name: "Envoyer" }));
+    await expect(page.getByText(/^(\d+ emails envoyés|Aucun email envoyé)/)).toBeVisible();
+    await press(banner.getByRole("button", { name: "Relancer" }));
+    await press(remind.getByRole("button", { name: "Envoyer" }));
+    await expect(
+      page.getByText(/^Aucun email envoyé, \d+ personnes déjà relancées\.$/),
+    ).toBeVisible();
+
+    // Modifier les dates : l'ouverture est passée, seule la clôture change ; pas dans le passé.
+    await press(banner.getByRole("button", { name: "Modifier les dates" }));
+    const dates = page.getByRole("dialog", { name: /^Dates des commandes de / });
+    await expect(dates.getByLabel("Ouverture le")).toBeDisabled();
+    await dialogShown();
+    await expectNoSeriousA11yViolations(page);
+    await dates.getByLabel("Clôture le (inclus)").fill(parisDay(-1));
+    await press(dates.getByRole("button", { name: "Enregistrer" }));
+    await expect(dates.getByText("Le jour de clôture est déjà passé.")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(dates).toHaveCount(0);
+
+    // Clôturer maintenant : les chèques attendus sont calculés.
+    await press(banner.getByRole("button", { name: "Clôturer maintenant" }));
+    const close = page.getByRole("dialog", {
+      name: /^Clôturer les commandes de .* maintenant \?$/,
+    });
+    await press(close.getByRole("button", { name: "Clôturer" }));
+    await expect(
+      page.getByText(/^Commandes de .* clôturées : \d+ chèques attendus\.$/),
+    ).toBeVisible();
+    await expect(banner.getByText(/^Clôturées le /)).toBeVisible();
+    await expect(banner.getByRole("button", { name: "Relancer" })).toHaveCount(0);
+
+    // Rouvrir jusqu'à un nouveau jour.
+    await press(banner.getByRole("button", { name: "Rouvrir les commandes" }));
+    const reopen = page.getByRole("dialog", { name: /^Rouvrir les commandes de / });
+    await dialogShown();
+    await expectNoSeriousA11yViolations(page);
+    await reopen.getByLabel("Clôture le (inclus)").fill(parisDay(5));
+    await press(reopen.getByRole("button", { name: "Rouvrir" }));
+    await expect(page.getByText(/^Commandes de .* rouvertes jusqu'au /)).toBeVisible();
+    await expect(banner.getByText(/^Rouvertes jusqu'au /)).toBeVisible();
+  });
 });

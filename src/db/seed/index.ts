@@ -10,10 +10,15 @@ import {
   catalogItem,
   catalogItemAvailability,
   auditLog,
+  cheque,
+  credit,
   distribution,
   household,
   householdMember,
   notificationLog,
+  order,
+  orderLine,
+  orderPeriod,
   producer,
   producerUser,
   product,
@@ -63,6 +68,11 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
     await tx.delete(notificationLog);
+    await tx.delete(credit);
+    await tx.delete(cheque);
+    await tx.delete(orderLine);
+    await tx.delete(order);
+    await tx.delete(orderPeriod);
     await tx.delete(catalogItemAvailability);
     await tx.delete(catalogItem);
     await tx.delete(catalog);
@@ -92,6 +102,9 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(catalog).values(data.catalogs);
     await tx.insert(catalogItem).values(data.catalogItems);
     await tx.insert(catalogItemAvailability).values(data.availabilities);
+    await tx.insert(orderPeriod).values(data.orderPeriods);
+    await tx.insert(order).values(data.orders);
+    await tx.insert(orderLine).values(data.orderLines);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

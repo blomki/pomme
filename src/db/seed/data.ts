@@ -12,13 +12,17 @@
  * Catalogues : deux produits par producteur (noms et prix inventés), et un brouillon de
  * catalogue par producteur pour le mois du chargement et le suivant, chaque produit disponible
  * à toutes les distributions ouvertes.
- * À compléter au fil des stories : adhésions (B1), commandes…
+ * Commandes (première AMAP) : la période du mois suivant, ouverte depuis 3 jours et jusqu'à
+ * dans 5 jours, et des commandes pour 12 foyers sur 40 (deux producteurs chacun, un produit
+ * de chaque à la première distribution).
+ * À compléter au fil des stories : adhésions (B1)…
  *
  * Toutes les données sont inventées : adresses en @example.org (domaine réservé aux exemples),
  * téléphones dans la tranche 06 39 98 xx xx réservée par l'Arcep à la fiction.
  */
 import { validateAmapSlug } from "@/domain/amap-slug";
 import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
+import { addDays, parisDay, periodInstants } from "@/domain/order-periods";
 import type { AmapRoleName } from "@/domain/roles";
 
 import type { AmapSettings, AmapTheme } from "../schema";
@@ -106,6 +110,25 @@ export type SeedAvailability = {
   distributionId: string;
 };
 
+export type SeedOrderPeriod = {
+  id: string;
+  amapId: string;
+  month: string;
+  opensAt: Date;
+  closesAt: Date;
+  status: "open";
+};
+export type SeedOrder = { id: string; amapId: string; householdId: string; catalogId: string };
+export type SeedOrderLine = {
+  id: string;
+  amapId: string;
+  orderId: string;
+  catalogItemId: string;
+  distributionId: string;
+  quantity: number;
+  unitPriceCents: number;
+};
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
@@ -121,6 +144,9 @@ export type SeedData = {
   catalogs: SeedCatalog[];
   catalogItems: SeedCatalogItem[];
   availabilities: SeedAvailability[];
+  orderPeriods: SeedOrderPeriod[];
+  orders: SeedOrder[];
+  orderLines: SeedOrderLine[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -693,6 +719,51 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     }
   }
 
+  // Période de commande du mois suivant dans la première AMAP, ouverte en ce moment, et des
+  // commandes pour 12 foyers : de quoi voir le bandeau du tableau de bord et essayer la
+  // clôture. Ajoutées en dernier, comme les catalogues.
+  const orderPeriods: SeedOrderPeriod[] = [];
+  const orders: SeedOrder[] = [];
+  const orderLines: SeedOrderLine[] = [];
+  if (firstAmap) {
+    const nextMonth = addMonths(firstMonth, 1);
+    const todayInParis = parisDay(today);
+    orderPeriods.push({
+      id: nextId(),
+      amapId: firstAmap.id,
+      month: `${nextMonth}-01`,
+      ...periodInstants(addDays(todayInParis, -3), addDays(todayInParis, 5)),
+      status: "open",
+    });
+    const nextCatalogs = catalogs.filter(
+      (c) => c.amapId === firstAmap.id && c.month === `${nextMonth}-01`,
+    );
+    const firstDistribution = distributions.find(
+      (d) => d.amapId === firstAmap.id && d.isOpen && d.date.startsWith(nextMonth),
+    );
+    const ordering = households.filter((h) => h.amapId === firstAmap.id).slice(0, 12);
+    ordering.forEach((h, index) => {
+      if (!firstDistribution) return;
+      // Deux producteurs par foyer, en tournant sur la liste.
+      for (const c of [0, 1].map((k) => nextCatalogs[(index + k) % nextCatalogs.length])) {
+        if (!c) continue;
+        const item = catalogItems.find((i) => i.catalogId === c.id);
+        if (!item) continue;
+        const orderId = nextId();
+        orders.push({ id: orderId, amapId: firstAmap.id, householdId: h.id, catalogId: c.id });
+        orderLines.push({
+          id: nextId(),
+          amapId: firstAmap.id,
+          orderId,
+          catalogItemId: item.id,
+          distributionId: firstDistribution.id,
+          quantity: 1 + (index % 3),
+          unitPriceCents: item.priceCents,
+        });
+      }
+    });
+  }
+
   return {
     users,
     amaps,
@@ -708,6 +779,9 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     catalogs,
     catalogItems,
     availabilities,
+    orderPeriods,
+    orders,
+    orderLines,
     totpUserIds,
   };
 }

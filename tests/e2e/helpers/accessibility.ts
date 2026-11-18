@@ -9,6 +9,12 @@ const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
  * (exigence du cahier technique). Le message d'erreur liste les règles en cause.
  */
 export async function expectNoSeriousA11yViolations(page: Page): Promise<void> {
+  // Après un clic, la souris reste sur le bouton : son infobulle apparaît en fondu, et axe
+  // mesurait parfois le contraste d'un texte encore à moitié transparent (échec au hasard).
+  // On écarte la souris et on attend que l'infobulle soit partie : elle n'est pas le contenu
+  // de la page, et son contraste une fois affichée est vérifié par le thème (create-theme.ts).
+  await page.mouse.move(0, 0);
+  await expect(page.locator(".MuiTooltip-popper")).toHaveCount(0);
   const results = await new AxeBuilder({ page })
     .withTags(WCAG_TAGS)
     // Balise ajoutée par Next.js quand une page redirige après avoir commencé à envoyer son HTML

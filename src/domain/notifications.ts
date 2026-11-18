@@ -17,7 +17,12 @@ export type NotificationStatus = (typeof NOTIFICATION_STATUSES)[number];
 export const BLOCKING_STATUSES: readonly NotificationStatus[] = ["pending", "sent"];
 
 /** Modèles d'email (colonne template). Une valeur par type d'email envoyé par Pomme. */
-export const NOTIFICATION_TEMPLATES = ["magic_link", "invitation", "producer_invitation"] as const;
+export const NOTIFICATION_TEMPLATES = [
+  "magic_link",
+  "invitation",
+  "producer_invitation",
+  "order_reminder",
+] as const;
 
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
 
