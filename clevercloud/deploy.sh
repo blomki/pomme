@@ -19,5 +19,9 @@ git switch --force-create deploiement
 
 $CLEVER link "$APP_ID" --org "$ORG_ID"
 # --force : la production peut recevoir un commit plus ancien que celui déjà en ligne (retour
-# en arrière). Même commit déjà en ligne : rien à faire.
-$CLEVER deploy --branch deploiement --force --same-commit-policy ignore
+# en arrière).
+# --same-commit-policy rebuild : si Clever Cloud a déjà reçu ce commit, on reconstruit quand
+# même. Avec « ignore », relancer un déploiement échoué (build interrompu, par exemple)
+# répondait « up-to-date » sans rien faire, et l'ancienne version restait en ligne en silence
+# (vu le 2026-11-18).
+$CLEVER deploy --branch deploiement --force --same-commit-policy rebuild
