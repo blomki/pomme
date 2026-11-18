@@ -145,12 +145,16 @@ test.describe("administration (ordinateur)", () => {
       page.getByRole("heading", { level: 1, name: "Administration de l'AMAP" }),
     ).toBeVisible();
 
-    // Ménage : le compte doit rester sans moyen de vérification pour la prochaine fois.
+    // Ménage : le compte doit rester sans moyen de vérification pour la prochaine fois (sinon
+    // chaque nouvel essai échoue). Un clic avant que la page ne soit prête est perdu : on
+    // recommence tant que l'application n'est pas désactivée.
     await page.goto("/compte");
-    await page.getByRole("button", { name: "Désactiver l'application" }).click();
-    await expect(
-      page.getByRole("button", { name: "Activer l'application d'authentification" }),
-    ).toBeVisible();
+    const disable = page.getByRole("button", { name: "Désactiver l'application" });
+    const enable = page.getByRole("button", { name: "Activer l'application d'authentification" });
+    await expect(async () => {
+      if (await disable.isVisible()) await disable.click();
+      await expect(enable).toBeVisible({ timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
   });
 
   test("un admin corrige l'email d'un membre depuis la fiche de son foyer", async ({
@@ -298,8 +302,10 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
 
     // Export : un fichier JSON avec les données du foyer.
+    // Au clavier : le message « Foyer créé » peut recouvrir le lien en bas de l'écran.
     const downloading = page.waitForEvent("download");
-    await page.getByRole("link", { name: "Exporter les données (JSON)" }).click();
+    await page.getByRole("link", { name: "Exporter les données (JSON)" }).focus();
+    await page.keyboard.press("Enter");
     const download = await downloading;
     const exported = JSON.parse(await text(await download.createReadStream())) as {
       household: { name: string };
@@ -924,5 +930,99 @@ test.describe("administration (ordinateur)", () => {
     } finally {
       await anonymous.close();
     }
+  });
+  test("un référent corrige au clavier la commande d'un foyer depuis le bon de commande (D7)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInByEmail(page, request, "referent.demo@example.org");
+    // Le catalogue du mois prochain des Ruches est un brouillon dans le jeu de données : on le
+    // publie s'il ne l'est pas encore (le test C3 a pu le faire).
+    await page.goto("/hommesdeterre/referent/catalogue");
+    await page.getByRole("tab", { name: "Les Ruches du Vallon" }).click();
+    await expect(page).toHaveURL(/producteur=/);
+    const publish = page.getByRole("button", { name: /^Publier pour / });
+    if (await publish.isVisible()) {
+      await press(publish);
+      await expect(page.getByText(/^Catalogue de .* publié\.$/)).toBeVisible();
+    }
+
+    // Bon de commande du mois en cours de commande : choisir un foyer à corriger.
+    await page.goto("/hommesdeterre/referent/bons-de-commande");
+    await press(page.getByRole("tab", { name: "Les Ruches du Vallon" }));
+    await expect(page).toHaveURL(/producteur=/);
+    // Dans la zone principale : pendant le chargement, le texte peut exister en double.
+    await expect(
+      page.getByRole("main").getByText(/^Provisoire : commandes ouvertes jusqu'au /),
+    ).toBeVisible();
+    const choice = page.getByRole("combobox", { name: "Foyer" });
+    await choice.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("option").first()).toBeVisible();
+    await page.keyboard.press("Home");
+    const household = (await page.getByRole("option").first().textContent())!.trim();
+    await page.keyboard.press("Enter");
+    await expect(choice).toHaveText(household);
+    await expectNoSeriousA11yViolations(page);
+    await press(page.getByRole("button", { name: "Ouvrir sa commande" }));
+
+    // Écran de correction : celui de la famille, avec l'avertissement du journal.
+    await expect(
+      page.getByRole("heading", { level: 1, name: `${household} · Les Ruches du Vallon` }),
+    ).toBeVisible();
+    await expect(page.getByText(/inscrite au journal\.$/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Rien ce mois-ci" })).toHaveCount(0);
+    const field = page.getByRole("spinbutton", { name: /^Quantité de / }).first();
+    // Une autre valeur que celle déjà là (le test a pu tourner sur cette base).
+    const quantity = (await field.inputValue()) === "2" ? "1" : "2";
+    await field.focus();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type(quantity);
+    await expect(page.getByText("Modifications enregistrées")).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // De retour sur le bon de commande, le foyer figure dans le détail, avec son lien.
+    await press(page.getByRole("link", { name: "Retour" }));
+    const correctLink = page.getByRole("link", {
+      name: `Corriger la commande du foyer ${household}`,
+    });
+    await expect(correctLink).toBeVisible();
+    await press(correctLink);
+    await expect(page.getByRole("spinbutton", { name: /^Quantité de / }).first()).toHaveValue(
+      quantity,
+    );
+  });
+
+  test("un admin corrige la commande d'un foyer depuis sa fiche (D7)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers");
+    await press(page.getByRole("main").getByRole("table").getByRole("link").first());
+
+    const section = page.getByRole("region", { name: "Commande du mois" });
+    await expect(section.getByText(/^Commande de .*, modifiable jusqu'au /)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+    await press(section.getByRole("link", { name: /Corriger$/ }).first());
+
+    await expect(page.getByRole("heading", { level: 1, name: / · / })).toBeVisible();
+    const field = page.getByRole("spinbutton", { name: /^Quantité de / }).first();
+    await field.focus();
+    await page.keyboard.press("ArrowUp");
+    await expect(page.getByText("Modifications enregistrées")).toBeVisible();
+    await page.keyboard.press("ArrowDown");
+    await expect(page.getByText("Modifications enregistrées")).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+    await press(page.getByRole("link", { name: "Retour" }));
+    await expect(page.getByRole("region", { name: "Commande du mois" })).toBeVisible();
   });
 });

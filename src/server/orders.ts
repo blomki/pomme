@@ -58,10 +58,10 @@ export async function myHousehold(
   return row ?? null;
 }
 
-type OpenPeriod = { id: string; month: string; opensOn: string; closesOn: string };
+export type OpenPeriod = { id: string; month: string; opensOn: string; closesOn: string };
 
 /** Période de commande ouverte à l'instant `now` (l'heure fait foi, ADR 0015), ou null. */
-async function openPeriod(tx: Transaction, now: Date): Promise<OpenPeriod | null> {
+export async function openPeriod(tx: Transaction, now: Date): Promise<OpenPeriod | null> {
   const periods = await tx.select().from(orderPeriod).where(ne(orderPeriod.status, "closed"));
   const open = periods
     .filter((p) => effectiveStatus(p, now) === "open")
@@ -120,6 +120,30 @@ export async function getFamilyOrder(
   if (!home) return { state: "no_household" };
   const period = await openPeriod(tx, now);
   if (!period) return { state: "not_open" };
+  const { distributions, producers } = await loadHouseholdOrder(tx, home.id, period, now);
+  return {
+    state: "open",
+    periodId: period.id,
+    month: period.month,
+    closesOn: period.closesOn,
+    membershipActive: await hasActiveMembership(tx, home.id, now),
+    distributions,
+    producers,
+  };
+}
+
+/**
+ * Commande d'un foyer pour la période ouverte, sans contrôle d'accès : l'appelant l'a fait
+ * (la famille pour son propre foyer, ou le référent / l'admin qui corrige, story D7).
+ * `producerId` : un seul producteur.
+ */
+export async function loadHouseholdOrder(
+  tx: Transaction,
+  householdId: string,
+  period: OpenPeriod,
+  now: Date,
+  producerId?: string,
+): Promise<{ distributions: Array<{ id: string; date: string }>; producers: OrderProducer[] }> {
   const today = parisDay(now);
 
   const distributions = await tx
@@ -154,6 +178,7 @@ export async function getFamilyOrder(
         eq(catalog.status, "published"),
         eq(amapProducer.active, true),
         isNull(amapProducer.archivedAt),
+        producerId ? eq(catalog.producerId, producerId) : undefined,
       ),
     )
     .orderBy(asc(sql`lower(${producer.name})`));
@@ -188,7 +213,7 @@ export async function getFamilyOrder(
     ? await tx
         .select({ id: order.id, catalogId: order.catalogId, declinedAt: order.declinedAt })
         .from(order)
-        .where(and(eq(order.householdId, home.id), inArray(order.catalogId, catalogIds)))
+        .where(and(eq(order.householdId, householdId), inArray(order.catalogId, catalogIds)))
     : [];
   const lines = orders.length
     ? await tx
@@ -207,7 +232,7 @@ export async function getFamilyOrder(
           ),
         )
     : [];
-  const received = await receivedChequeProducers(tx, home.id, period.id);
+  const received = await receivedChequeProducers(tx, householdId, period.id);
 
   const producers = catalogs.map((c): OrderProducer => {
     const own = orders.find((o) => o.catalogId === c.catalogId);
@@ -251,15 +276,7 @@ export async function getFamilyOrder(
     };
   });
 
-  return {
-    state: "open",
-    periodId: period.id,
-    month: period.month,
-    closesOn: period.closesOn,
-    membershipActive: await hasActiveMembership(tx, home.id, now),
-    distributions: distributions.map(({ id, date }) => ({ id, date })),
-    producers,
-  };
+  return { distributions: distributions.map(({ id, date }) => ({ id, date })), producers };
 }
 
 /** Producteurs dont le chèque du foyer pour cette période est déjà pointé (ou remis). */
@@ -331,7 +348,7 @@ async function ensureOrder(
   return row!;
 }
 
-const quantitySchema = z.object({
+export const quantitySchema = z.object({
   catalogItemId: z.uuid(),
   distributionId: z.uuid(),
   quantity: z.number().int().min(0).max(MAX_QUANTITY),
@@ -354,11 +371,41 @@ export async function setOrderQuantity(
 ): Promise<SetQuantityResult> {
   const parsed = quantitySchema.safeParse(input);
   if (!parsed.success) return { status: "invalid" };
-  const { catalogItemId, distributionId, quantity } = parsed.data;
   const ready = await orderingContext(tx, ctx, now, { needsMembership: true });
   if ("status" in ready) return ready;
-  const { home, period } = ready;
+  const written = await writeQuantity(tx, ctx, ready.home.id, ready.period, parsed.data, now);
+  return written.status === "saved" ? written.result : written;
+}
 
+export type QuantityInput = z.infer<typeof quantitySchema>;
+
+export type WrittenQuantity =
+  | {
+      status: "saved";
+      result: Extract<SetQuantityResult, { status: "saved" }>;
+      orderId: string;
+      producerId: string;
+      /** Quantité et prix avant la saisie (0 s'il n'y avait pas de ligne). */
+      before: { quantity: number; unitPriceCents: number | null };
+    }
+  | { status: "locked"; reason: LockReason }
+  | { status: "invalid" };
+
+/**
+ * Écrit une quantité dans la commande d'un foyer, après les contrôles de la case (produit d'un
+ * catalogue publié du mois, distribution du mois, disponibilité, date, chèque). Commun à la
+ * saisie de la famille et à la correction du référent (D7). `producerId` : le produit doit être
+ * de ce producteur.
+ */
+export async function writeQuantity(
+  tx: Transaction,
+  ctx: AmapContext,
+  householdId: string,
+  period: OpenPeriod,
+  { catalogItemId, distributionId, quantity }: QuantityInput,
+  now: Date,
+  producerId?: string,
+): Promise<WrittenQuantity> {
   // Le produit appartient à un catalogue publié du mois commandé.
   const [item] = await tx
     .select({
@@ -381,6 +428,7 @@ export async function setOrderQuantity(
     .from(distribution)
     .where(eq(distribution.id, distributionId));
   if (!item || !target || !target.date.startsWith(period.month)) return { status: "invalid" };
+  if (producerId && item.producerId !== producerId) return { status: "invalid" };
 
   const [available] = await tx
     .select({ id: catalogItemAvailability.id })
@@ -391,7 +439,7 @@ export async function setOrderQuantity(
         eq(catalogItemAvailability.distributionId, distributionId),
       ),
     );
-  const received = await receivedChequeProducers(tx, home.id, period.id);
+  const received = await receivedChequeProducers(tx, householdId, period.id);
   const lock = cellLock({
     distributionDate: target.date,
     today: parisDay(now),
@@ -402,7 +450,17 @@ export async function setOrderQuantity(
   if (lock && !(lock === "unavailable" && quantity === 0))
     return { status: "locked", reason: lock };
 
-  const own = await ensureOrder(tx, ctx, home.id, item.catalogId);
+  const own = await ensureOrder(tx, ctx, householdId, item.catalogId);
+  const [previous] = await tx
+    .select({ quantity: orderLine.quantity, unitPriceCents: orderLine.unitPriceCents })
+    .from(orderLine)
+    .where(
+      and(
+        eq(orderLine.orderId, own.id),
+        eq(orderLine.catalogItemId, catalogItemId),
+        eq(orderLine.distributionId, distributionId),
+      ),
+    );
   if (quantity === 0) {
     await tx
       .delete(orderLine)
@@ -435,10 +493,16 @@ export async function setOrderQuantity(
     .update(order)
     .set({ updatedBy: ctx.userId, ...(quantity > 0 ? { declinedAt: null } : {}) })
     .where(eq(order.id, own.id));
-  return { status: "saved", quantity, unitPriceCents: item.priceCents };
+  return {
+    status: "saved",
+    result: { status: "saved", quantity, unitPriceCents: item.priceCents },
+    orderId: own.id,
+    producerId: item.producerId,
+    before: previous ?? { quantity: 0, unitPriceCents: null },
+  };
 }
 
-const quantitiesSchema = z.object({
+export const quantitiesSchema = z.object({
   // Une case par distribution du mois pour un produit : cinq au plus, dix par prudence.
   lines: z.array(z.unknown()).min(1).max(10),
 });

@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { cellLock, linesTotal, parseQuantity, producerOrderStatus, treatedCount } from "./orders";
+import {
+  cellLock,
+  correctionAccess,
+  correctionChangesQuantity,
+  linesTotal,
+  parseQuantity,
+  producerOrderStatus,
+  treatedCount,
+} from "./orders";
 
 describe("parseQuantity", () => {
   it("lit un entier de 0 à 99, vide valant 0", () => {
@@ -71,5 +79,42 @@ describe("cellLock", () => {
     expect(cellLock({ ...open, distributionDate: "2026-12-03", chequeReceived: true })).toBe(
       "cheque_received",
     );
+  });
+});
+
+describe("correctionAccess", () => {
+  const base = { secondFactorVerified: false };
+
+  it("laisse corriger le référent de ce producteur, sans deuxième vérification", () => {
+    expect(correctionAccess({ ...base, roles: ["referent"], followsProducer: true })).toBe(
+      "allowed",
+    );
+  });
+
+  it("refuse le référent d'un autre producteur, et tout compte sans rôle", () => {
+    expect(correctionAccess({ ...base, roles: ["referent"], followsProducer: false })).toBe(
+      "forbidden",
+    );
+    expect(correctionAccess({ ...base, roles: [], followsProducer: false })).toBe("forbidden");
+  });
+
+  it("laisse corriger l'admin chez tous les producteurs, après la deuxième vérification", () => {
+    expect(
+      correctionAccess({ roles: ["admin"], followsProducer: false, secondFactorVerified: true }),
+    ).toBe("allowed");
+    expect(correctionAccess({ ...base, roles: ["admin"], followsProducer: false })).toBe(
+      "second_factor",
+    );
+    // Admin et référent de ce producteur : son rôle de référent suffit.
+    expect(correctionAccess({ ...base, roles: ["admin", "referent"], followsProducer: true })).toBe(
+      "allowed",
+    );
+  });
+});
+
+describe("correctionChangesQuantity", () => {
+  it("ne trace que les quantités qui changent", () => {
+    expect(correctionChangesQuantity(1, 2)).toBe(true);
+    expect(correctionChangesQuantity(0, 0)).toBe(false);
   });
 });

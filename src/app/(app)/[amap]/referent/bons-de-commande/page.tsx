@@ -5,6 +5,7 @@ import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { parseMonth } from "@/domain/distributions";
 import { requireAmapReferentPage } from "@/server/auth/guards";
+import { listCorrectableHouseholds } from "@/server/order-corrections";
 import { defaultOrderFormMonth, getOrderForm } from "@/server/order-forms";
 import { listMyProducers } from "@/server/producers";
 import { OrderFormPage } from "@/ui/referent/OrderFormPage";
@@ -28,7 +29,12 @@ export default async function OrderFormsPage({ params, searchParams }: Props) {
     const producers = await listMyProducers(tx, c);
     const current = producers.find((p) => p.id === producteur) ?? producers[0];
     const view = current ? await getOrderForm(tx, c, { amapProducerId: current.id, month }) : null;
-    return { month, producers, view };
+    // Commandes ouvertes : le référent peut corriger celle d'un foyer (story D7).
+    const households =
+      view?.period?.status === "open"
+        ? await listCorrectableHouseholds(tx, c, view.amapProducerId)
+        : null;
+    return { month, producers, view, households };
   });
 
   if (!data.view) return <Typography>{t("noProducers")}</Typography>;
@@ -38,6 +44,7 @@ export default async function OrderFormsPage({ params, searchParams }: Props) {
       month={data.month}
       producers={data.producers.map((p) => ({ id: p.id, name: p.name }))}
       view={data.view}
+      households={data.households}
     />
   );
 }

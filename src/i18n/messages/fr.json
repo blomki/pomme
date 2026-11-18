@@ -961,5 +961,28 @@
     "printHint": "Pour un PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.",
     "linkExpired": "Ce lien n'est plus valable. Demandez à votre référent de vous renvoyer le bon de commande.",
     "linkValidUntil": "Lien valable jusqu'au {date}."
+  },
+  "Correction": {
+    "heading": "Corriger une commande",
+    "title": "{household} · {producer}",
+    "journal": "Vous corrigez la commande de ce foyer. Chaque modification est enregistrée aussitôt, au prix actuel du catalogue, et inscrite au journal.",
+    "lockedCheque": "Le chèque de ce foyer pour ce producteur est déjà pointé : la commande ne se modifie plus.",
+    "back": "Retour",
+    "notOpen": "Les commandes ne sont pas ouvertes : il n'y a rien à corriger. Pour corriger une commande clôturée, un administrateur rouvre d'abord les commandes.",
+    "notFound": "Ce foyer n'existe pas ou a été archivé.",
+    "noCatalog": "Pas de catalogue publié de ce producteur pour ce mois.",
+    "membership": "L'adhésion de ce foyer n'est pas en cours.",
+    "correct": "Corriger",
+    "correctOf": "Corriger la commande du foyer {household}",
+    "otherHousehold": "Corriger la commande d'un autre foyer",
+    "chooseHousehold": "Foyer",
+    "open": "Ouvrir sa commande",
+    "householdOrders": "Commande du mois",
+    "householdOrdersOpen": "Commande de {month}, modifiable jusqu'au {date} inclus.",
+    "refused": {
+      "closed": "Les commandes sont clôturées : la correction n'a pas été enregistrée.",
+      "not_found": "Ce foyer n'existe plus : la correction n'a pas été enregistrée.",
+      "forbidden": "Vous ne pouvez pas corriger les commandes de ce producteur."
+    }
   }
 }

@@ -41,8 +41,8 @@ Le porteur du projet a tranché le 2026-11-18.
    « Modifications enregistrées » dit quand on peut quitter l'écran.
 6. **Pas de revalidatePath à chaque saisie** : les pages de commande sont dynamiques et se
    relisent à chaque visite ; l'écran calcule lui-même ses totaux.
-7. **La correction par un référent ou un admin** viendra avec le bon de commande (E1) ; elle
-   sera journalisée. D3 ne permet que la saisie par la famille, pour son propre foyer.
+7. **La correction par un référent ou un admin** est arrivée avec D7 (ADR 0020) ; elle est
+   journalisée. D3 ne permet que la saisie par la famille, pour son propre foyer.
 
 ## Pourquoi
 
