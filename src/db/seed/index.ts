@@ -15,6 +15,7 @@ import {
   distribution,
   household,
   householdMember,
+  membership,
   notificationLog,
   order,
   orderLine,
@@ -82,6 +83,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.delete(referentAssignment);
     await tx.delete(amapProducer);
     await tx.delete(producer);
+    await tx.delete(membership);
     await tx.delete(householdMember);
     await tx.delete(household);
     await tx.delete(amapRole);
@@ -105,6 +107,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(orderPeriod).values(data.orderPeriods);
     await tx.insert(order).values(data.orders);
     await tx.insert(orderLine).values(data.orderLines);
+    await tx.insert(membership).values(data.memberships);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

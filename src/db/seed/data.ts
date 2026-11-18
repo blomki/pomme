@@ -129,6 +129,16 @@ export type SeedOrderLine = {
   unitPriceCents: number;
 };
 
+export type SeedMembership = {
+  id: string;
+  amapId: string;
+  householdId: string;
+  startDate: string;
+  endDate: string;
+  feeCents: number | null;
+  note: string;
+};
+
 export type SeedData = {
   users: SeedUser[];
   amaps: SeedAmap[];
@@ -147,6 +157,7 @@ export type SeedData = {
   orderPeriods: SeedOrderPeriod[];
   orders: SeedOrder[];
   orderLines: SeedOrderLine[];
+  memberships: SeedMembership[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -764,6 +775,39 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     });
   }
 
+  // Adhésions (story B1), dans chaque AMAP : la plupart actives, et quelques foyers dans
+  // chacun des autres états, pour voir le filtre de la liste. Les 12 premiers foyers (ceux qui
+  // commandent) sont toujours adhérents.
+  const memberships: SeedMembership[] = [];
+  const todayDay = parisDay(today);
+  for (const a of amaps) {
+    households
+      .filter((h) => h.amapId === a.id)
+      .forEach((h, index) => {
+        const add = (startDate: string, endDate: string) =>
+          memberships.push({
+            id: nextId(),
+            amapId: a.id,
+            householdId: h.id,
+            startDate,
+            endDate,
+            feeCents: index % 4 === 0 ? null : 1500,
+            note: "",
+          });
+        if (index % 20 === 19) return; // aucune adhésion
+        if (index % 15 === 13) {
+          add(addDays(todayDay, -352), addDays(todayDay, 12)); // expire bientôt
+        } else if (index % 15 === 14) {
+          add(addDays(todayDay, -400), addDays(todayDay, -35)); // expirée
+        } else if (index === 12) {
+          add(addDays(todayDay, 10), addDays(todayDay, 374)); // à venir
+        } else {
+          const start = addDays(todayDay, -100 - (index % 60));
+          add(start, addDays(start, 364));
+        }
+      });
+  }
+
   return {
     users,
     amaps,
@@ -782,6 +826,7 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     orderPeriods,
     orders,
     orderLines,
+    memberships,
     totpUserIds,
   };
 }

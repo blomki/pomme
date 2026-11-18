@@ -155,6 +155,20 @@
       "when": 1795013236040,
       "tag": "0021_amap-courante-producteur",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1795014265921,
+      "tag": "0022_adhesions",
+      "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795014284749,
+      "tag": "0023_adhesions-sans-chevauchement",
+      "breakpoints": true
     }
   ]
 }

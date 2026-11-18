@@ -12,24 +12,36 @@ import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 
+import type { MembershipStatus } from "@/domain/memberships";
 import type { HouseholdView } from "@/server/households";
+
+import { MembershipStatusChip } from "./MembershipStatusChip";
 
 const fullName = (m: { firstName: string; lastName: string }) =>
   `${m.firstName} ${m.lastName}`.trim();
 
-/** Liste des foyers : nom (lien vers la fiche), membres, invitations en attente. */
+/**
+ * Liste des foyers : nom (lien vers la fiche), membres, invitations en attente et, pour les
+ * foyers actifs, statut d'adhésion (story B1).
+ */
 export function HouseholdsTable({
   amapSlug,
   households,
   archived = false,
+  membership,
+  emptyMessage,
 }: {
   amapSlug: string;
   households: HouseholdView[];
   archived?: boolean;
+  /** Statut d'adhésion par foyer ; absent pour les foyers archivés. */
+  membership?: Record<string, MembershipStatus>;
+  /** Message d'une liste vide, si elle est filtrée. */
+  emptyMessage?: string;
 }) {
   const t = useTranslations("Admin.households");
   if (households.length === 0) {
-    return <Typography>{archived ? t("emptyArchived") : t("empty")}</Typography>;
+    return <Typography>{emptyMessage ?? (archived ? t("emptyArchived") : t("empty"))}</Typography>;
   }
   return (
     <TableContainer sx={{ overflowX: "auto" }}>
@@ -39,6 +51,7 @@ export function HouseholdsTable({
             <TableCell scope="col">{t("household")}</TableCell>
             <TableCell scope="col">{t("members")}</TableCell>
             <TableCell scope="col">{t("status")}</TableCell>
+            {membership && <TableCell scope="col">{t("membership")}</TableCell>}
           </TableRow>
         </TableHead>
         <TableBody>
@@ -59,6 +72,11 @@ export function HouseholdsTable({
                     <Chip size="small" variant="outlined" label={t("allActive")} />
                   )}
                 </TableCell>
+                {membership && (
+                  <TableCell>
+                    <MembershipStatusChip status={membership[h.id] ?? "none"} />
+                  </TableCell>
+                )}
               </TableRow>
             );
           })}

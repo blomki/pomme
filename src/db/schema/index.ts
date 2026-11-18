@@ -377,6 +377,44 @@ export const householdMember = pgTable(
   ],
 );
 
+// --- membership : adhésion ------------------------------------------------------------------
+// Adhésion d'un foyer pour une durée : jours de début et de fin inclus (story B1). Le statut
+// (active, expire bientôt, expirée…) se calcule, il n'est jamais enregistré
+// (domain/memberships.ts). Deux adhésions d'un même foyer ne se chevauchent pas : contrainte
+// d'exclusion ajoutée à la main dans la migration (Drizzle ne sait pas la décrire, ADR 0017).
+// Une adhésion saisie par erreur est archivée, jamais supprimée.
+
+export const membership = pgTable(
+  "membership",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    startDate: date("start_date", { mode: "string" }).notNull(),
+    endDate: date("end_date", { mode: "string" }).notNull(),
+    // Cotisation facultative, en centimes (pas de paiement en ligne : simple trace).
+    feeCents: integer("fee_cents"),
+    note: text("note").notNull().default(""),
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "membership_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    check("membership_dates", sql`${t.endDate} > ${t.startDate}`),
+    check("membership_fee", sql`${t.feeCents} is null or ${t.feeCents} >= 0`),
+    index("membership_household_idx").on(t.householdId),
+    ...amapPolicies("membership", t.amapId, ["select", "insert", "update"]),
+  ],
+);
+
 // --- distribution : distribution ------------------------------------------------------------
 // Une par semaine, le jour habituel de l'AMAP (story D1). Pas de lien direct avec la période de
 // commande : une distribution appartient à la période de son mois (écart n°8, ADR 0012).

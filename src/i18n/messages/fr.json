@@ -141,7 +141,11 @@
       "back": "Retour aux foyers",
       "statusInvited": "Invité",
       "statusActive": "Actif",
-      "primaryContact": "Contact principal"
+      "primaryContact": "Contact principal",
+      "membership": "Adhésion",
+      "filterLabel": "Filtrer par adhésion",
+      "filterAll": "Tous",
+      "filterEmpty": "Aucun foyer avec ce statut d'adhésion."
     },
     "inviteHousehold": {
       "title": "Inviter un foyer",
@@ -450,6 +454,59 @@
       "confirmRemind": "Envoyer",
       "reminded": "{sent, plural, =0 {Aucun email envoyé} one {# email envoyé} other {# emails envoyés}}{skipped, plural, =0 {.} one {, # personne déjà relancée.} other {, # personnes déjà relancées.}}",
       "remindFailed": "{count, plural, one {# email n'a pas pu partir} other {# emails n'ont pas pu partir}} : réessayez plus tard."
+    },
+    "memberships": {
+      "title": "Adhésion",
+      "status": {
+        "active": "Active",
+        "expiring": "Expire bientôt",
+        "upcoming": "À venir",
+        "expired": "Expirée",
+        "none": "Aucune"
+      },
+      "summary": {
+        "active": "Adhérent jusqu'au {date}.",
+        "expiring": "Adhésion qui se termine le {date} : pensez au renouvellement.",
+        "upcoming": "Adhésion à partir du {date}. Le foyer ne peut pas commander avant.",
+        "expired": "Adhésion terminée le {date}. Le foyer ne peut plus commander.",
+        "none": "Aucune adhésion saisie. Le foyer ne peut pas commander."
+      },
+      "period": "Période",
+      "fromTo": "Du {start} au {end}",
+      "fee": "Cotisation",
+      "noFee": "—",
+      "note": "Note",
+      "actions": "Actions",
+      "empty": "Aucune adhésion pour l'instant.",
+      "add": "Ajouter une adhésion",
+      "edit": "Modifier",
+      "editOf": "Modifier l'adhésion du {start} au {end}",
+      "archive": "Archiver",
+      "archiveOf": "Archiver l'adhésion du {start} au {end}",
+      "archived": "Adhésion du {start} au {end} archivée.",
+      "restored": "Adhésion rétablie.",
+      "restoreFailed": "Impossible de rétablir l'adhésion : ses dates sont reprises par une autre.",
+      "dialogAdd": "Ajouter une adhésion",
+      "dialogEdit": "Modifier l'adhésion",
+      "dialogIntro": "Début et fin inclus. Le foyer peut commander pendant toute cette période.",
+      "startDate": "Début",
+      "endDate": "Fin",
+      "feeLabel": "Cotisation (€)",
+      "feeHelp": "Facultatif. Par exemple 15 ou 12,50.",
+      "noteLabel": "Note",
+      "noteHelp": "Facultatif. Par exemple « payé en espèces ».",
+      "save": "Enregistrer",
+      "cancel": "Annuler",
+      "saved": "Adhésion du {start} au {end} enregistrée.",
+      "errors": {
+        "startDate": "Indiquez le jour de début.",
+        "endDate": "Indiquez le jour de fin.",
+        "end_before_start": "La fin doit être après le début.",
+        "fee": "Montant non valable. Par exemple 15 ou 12,50.",
+        "overlap": "Ces dates chevauchent une autre adhésion du foyer. Modifiez-la plutôt, ou choisissez d'autres dates.",
+        "not_found": "Cette adhésion ou ce foyer n'existe plus. Rechargez la page.",
+        "forbidden": "Action réservée aux administrateurs de l'AMAP."
+      }
     }
   },
   "Producer": {
