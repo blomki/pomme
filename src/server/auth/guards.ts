@@ -1,12 +1,13 @@
 import { and, eq } from "drizzle-orm";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { amapRole } from "@/db/schema";
 
 import { getAmapBySlug } from "../amap";
-import { listMyProducerAmaps } from "../producer-amaps";
+import { getMyProducerAmaps } from "../producer-amaps";
 
 import { requireVerifiedSession } from "./second-factor";
 import { requireSession } from "./session";
@@ -40,21 +41,25 @@ export async function requireAmapAdminPage(slug: string) {
 }
 
 /**
- * Pages de l'espace producteur qui montrent des données (catalogue…) : connexion, puis compte
- * lié à un producteur qui livre au moins une AMAP. Sinon : page 404. Renvoie ces AMAP ; la page
- * lit ensuite les données dans l'AMAP choisie, où la Row Level Security refait le contrôle.
+ * Espace producteur (mise en page et pages) : connexion, puis compte lié à un producteur qui
+ * livre au moins une AMAP. Sinon : page 404. Renvoie ces AMAP et l'AMAP courante (story C4) ;
+ * la page lit ensuite les données dans l'AMAP courante, où la Row Level Security refait le
+ * contrôle. cache() : la mise en page et la page l'appellent pour la même requête.
  */
-export async function requireProducerPage() {
-  const current = await requireSession();
-  const amaps = await listMyProducerAmaps(current.user.id);
-  if (amaps.length === 0) notFound();
+export const requireProducerPage = cache(async () => {
+  const session = await requireSession();
+  const { amaps, current } = await getMyProducerAmaps(session.user.id);
+  if (!current) notFound();
+  // Couleurs, police des titres et logo de l'AMAP courante (informations publiques).
+  const amap = await getAmapBySlug(current.amapSlug);
+  if (!amap) notFound();
   const contextIn = (amapId: string) => ({
     amapId,
-    userId: current.user.id,
-    secondFactorVerified: Boolean(current.session.secondFactorVerifiedAt),
+    userId: session.user.id,
+    secondFactorVerified: Boolean(session.session.secondFactorVerifiedAt),
   });
-  return { amaps, contextIn };
-}
+  return { amaps, current, amap, contextIn };
+});
 
 /** Gestion de la plateforme : connexion, deuxième vérification, puis compte gestionnaire. */
 export async function requirePlatformAdminPage() {

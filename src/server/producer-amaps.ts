@@ -1,7 +1,10 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
+import { z } from "zod";
 
 import { getDatabase, type Database } from "@/db/client";
 import { withAmapContext } from "@/db/context";
+import { user } from "@/db/schema";
+import { pickCurrentAmap } from "@/domain/producers";
 
 /** Une AMAP livrée par le producteur du compte connecté. */
 export type ProducerAmap = {
@@ -42,4 +45,52 @@ export async function listMyProducerAmaps(
       producerName: row.producer_name,
     }));
   });
+}
+
+/**
+ * AMAP courante de l'espace producteur (story C4) : celle gardée avec le compte, si elle est
+ * toujours dans sa liste, sinon la première. Renvoie aussi la liste, pour le choix à l'écran.
+ */
+export async function getMyProducerAmaps(
+  userId: string,
+  db: Database = getDatabase(),
+): Promise<{ amaps: ProducerAmap[]; current: ProducerAmap | undefined }> {
+  const amaps = await listMyProducerAmaps(userId, db);
+  const chosen = await withAmapContext(db, { amapId: null, userId }, async (tx) => {
+    // Lecture de son propre compte : permise hors de toute AMAP (politique user_select).
+    const [row] = await tx
+      .select({ id: user.currentAmapProducerId })
+      .from(user)
+      .where(eq(user.id, userId));
+    return row?.id ?? null;
+  });
+  return { amaps, current: pickCurrentAmap(amaps, chosen) };
+}
+
+const chooseSchema = z.object({ amapProducerId: z.uuid() });
+
+export type ChooseAmapResult = { status: "saved"; amapName: string } | { status: "forbidden" };
+
+/**
+ * Change l'AMAP courante du producteur. Seulement une AMAP de SA liste (fonction
+ * list_my_producer_amaps) : un identifiant d'un autre producteur est refusé. Le choix est
+ * écrit sur son propre compte, que la Row Level Security (user_update) est seule à permettre.
+ */
+export async function chooseCurrentProducerAmap(
+  userId: string,
+  input: unknown,
+  db: Database = getDatabase(),
+): Promise<ChooseAmapResult> {
+  const parsed = chooseSchema.safeParse(input);
+  if (!parsed.success) return { status: "forbidden" };
+  const amaps = await listMyProducerAmaps(userId, db);
+  const chosen = amaps.find((a) => a.amapProducerId === parsed.data.amapProducerId);
+  if (!chosen) return { status: "forbidden" };
+  await withAmapContext(db, { amapId: null, userId }, (tx) =>
+    tx
+      .update(user)
+      .set({ currentAmapProducerId: chosen.amapProducerId })
+      .where(eq(user.id, userId)),
+  );
+  return { status: "saved", amapName: chosen.amapName };
 }

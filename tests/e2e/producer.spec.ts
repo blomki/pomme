@@ -8,6 +8,32 @@ import { signInByEmail } from "./helpers/auth";
 // compte : deux connexions simultanées au même compte se prendraient leurs liens de connexion.
 const PRODUCER_DEMO = "producteur.demo@example.org";
 
+/**
+ * Choisit l'AMAP courante dans la liste de l'accueil, au clavier : Entrée ouvre la liste,
+ * Origine va à la première AMAP et la flèche vers le bas jusqu'à la bonne, Entrée la choisit. Rien à faire si elle l'est déjà (le choix est gardé
+ * d'une exécution à l'autre). Pas de saisie du nom : l'espace choisirait l'option active.
+ */
+async function chooseAmap(page: Page, name: string) {
+  const choice = page.getByRole("combobox", { name: "AMAP courante" });
+  if ((await choice.textContent())?.includes(name)) return;
+  await choice.focus();
+  await page.keyboard.press("Enter");
+  const option = page.getByRole("option", { name });
+  await expect(option).toBeVisible();
+  await page.keyboard.press("Home");
+  for (
+    let step = 0;
+    step < 5 && !(await option.evaluate((el) => el === document.activeElement));
+    step++
+  ) {
+    await page.keyboard.press("ArrowDown");
+  }
+  await expect(option).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(`Vous êtes maintenant sur ${name}.`)).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+}
+
 /** Remplace le contenu d'un champ au clavier. */
 async function type(page: Page, field: ReturnType<Page["getByRole"]>, text: string) {
   await field.focus();
@@ -15,12 +41,12 @@ async function type(page: Page, field: ReturnType<Page["getByRole"]>, text: stri
   await page.keyboard.type(text);
 }
 
-test("un visiteur est renvoyé vers la connexion depuis le catalogue producteur", async ({
-  page,
-}) => {
-  await page.goto("/producteur/catalogue");
-  await expect(page).toHaveURL(/\/connexion$/);
-});
+for (const path of ["/producteur", "/producteur/catalogue"]) {
+  test(`un visiteur est renvoyé vers la connexion depuis ${path}`, async ({ page }) => {
+    await page.goto(path);
+    await expect(page).toHaveURL(/\/connexion$/);
+  });
+}
 
 // Écrans de téléphone : sur le projet webkit-mobile seulement, l'un après l'autre (un seul
 // compte producteur). Le refus d'un compte sans producteur est testé en intégration
@@ -37,17 +63,13 @@ test.describe("espace producteur (téléphone)", () => {
     const extra = `Miel de tilleul ${Date.now().toString(36)}, pot de 250 g`;
     await signInByEmail(page, request, PRODUCER_DEMO);
     await page.goto("/producteur");
+    await chooseAmap(page, "AMAP fictive du Pays d'Auge");
     await page
       .getByRole("navigation", { name: "Navigation de l'espace producteur" })
       .getByRole("link", { name: "Catalogue" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: /^Catalogue de / })).toBeVisible();
-
-    // Un onglet par AMAP livrée.
-    const tabs = page.getByRole("tablist", { name: "Vos AMAP" });
-    await expect(tabs.getByRole("tab")).toHaveCount(2);
-    await tabs.getByRole("tab", { name: "AMAP fictive du Pays d'Auge" }).click();
-    await expect(page).toHaveURL(/amap=pays-d-auge-demo/);
+    await expect(page.getByText("Catalogue pour AMAP fictive du Pays d'Auge")).toBeVisible();
     await expect(page.getByText("Brouillon · non visible des familles")).toBeVisible();
     await expectNoSeriousA11yViolations(page);
 
@@ -88,6 +110,61 @@ test.describe("espace producteur (téléphone)", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByRole("region", { name: /^Produits? retirés?/ })).toContainText(extra);
     await save();
+  });
+
+  test("un producteur choisit son AMAP courante au clavier et retrouve son choix (C4)", async ({
+    page,
+    request,
+    browser,
+  }) => {
+    await signInByEmail(page, request, PRODUCER_DEMO);
+    await page.goto("/producteur");
+    const nav = page.getByRole("navigation", { name: "Navigation de l'espace producteur" });
+    await expect(nav.getByRole("link", { name: "Accueil" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+    // D'abord la première AMAP, pour que le changement soit visible quel que soit l'état laissé
+    // par une exécution précédente.
+    await chooseAmap(page, "AMAP de démonstration de Cambremer");
+    await chooseAmap(page, "AMAP fictive du Pays d'Auge");
+    await expectNoSeriousA11yViolations(page);
+
+    // Pas de période de commande dans cette AMAP : le catalogue est à publier avant
+    // l'ouverture, sans date.
+    const task = page.getByRole("region", { name: /^Votre catalogue de .* n'est pas publié$/ });
+    await expect(task).toContainText("À faire avant l'ouverture des commandes");
+
+    // Choix gardé avec le compte : retrouvé sur « un autre appareil » (nouveau navigateur).
+    const other = await browser.newContext();
+    try {
+      const otherPage = await other.newPage();
+      await signInByEmail(otherPage, request, PRODUCER_DEMO);
+      await otherPage.goto("/producteur");
+      await expect(
+        otherPage.getByRole("heading", { level: 1, name: "AMAP fictive du Pays d'Auge" }),
+      ).toBeVisible();
+    } finally {
+      await other.close();
+    }
+
+    // « Vérifier et publier » mène au catalogue de ce mois, dans cette AMAP.
+    await task.getByRole("link", { name: "Vérifier et publier" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: /^Catalogue de / })).toBeVisible();
+    await expect(page.getByText("Catalogue pour AMAP fictive du Pays d'Auge")).toBeVisible();
+    await expect(nav.getByRole("link", { name: "Catalogue" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+  });
+
+  test("l'accueil du producteur est accessible en mode sombre", async ({ page, request }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await signInByEmail(page, request, PRODUCER_DEMO);
+    await page.goto("/producteur");
+    await expect(page.getByRole("combobox", { name: "AMAP courante" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 
   test("le catalogue producteur est accessible en mode sombre", async ({ page, request }) => {

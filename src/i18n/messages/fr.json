@@ -454,8 +454,21 @@
   },
   "Producer": {
     "title": "Espace producteur",
+    "home": {
+      "currentAmap": "AMAP courante",
+      "chosen": "Vous êtes maintenant sur {name}.",
+      "chooseError": "Cette AMAP n'est plus dans votre liste. Rechargez la page.",
+      "taskBefore": "À faire avant le {date}",
+      "taskOpen": "Commandes ouvertes depuis le {date}",
+      "taskNoDate": "À faire avant l'ouverture des commandes",
+      "taskTitle": "Votre catalogue de {month} n'est pas publié",
+      "taskBody": "Les familles ne pourront pas commander vos produits tant qu'il n'est pas publié.",
+      "taskBodyOpen": "Les familles commandent déjà : publiez vite pour qu'elles voient vos produits.",
+      "taskAction": "Vérifier et publier",
+      "nothingToDo": "Rien à faire pour l'instant dans cette AMAP."
+    },
     "catalogue": {
-      "tabs": "Vos AMAP"
+      "amap": "Catalogue pour {name}"
     }
   },
   "Platform": {

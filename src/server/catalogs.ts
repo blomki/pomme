@@ -26,6 +26,7 @@ import {
   sameProductName,
   type PublishProblem,
 } from "@/domain/catalog";
+import { producerHomeTask, type ProducerHomeTask } from "@/domain/producers";
 import { addMonths, parseMonth } from "@/domain/distributions";
 import { effectiveStatus, parisDay, periodDays } from "@/domain/order-periods";
 
@@ -578,4 +579,31 @@ export async function unpublishedCatalogTasks(
     }
   }
   return tasks;
+}
+
+/**
+ * Tâche datée de l'accueil du producteur (story C4) : publier son catalogue avant l'ouverture
+ * des commandes. Lue dans l'AMAP courante du producteur ; null s'il n'y a rien à faire.
+ */
+export async function getProducerHomeTask(
+  tx: Transaction,
+  ctx: AmapContext,
+  amapProducerId: string,
+  now = new Date(),
+): Promise<ProducerHomeTask | null> {
+  const editor = await requireCatalogEditor(tx, ctx, amapProducerId);
+  const periods = await tx.select().from(orderPeriod);
+  const published = await tx
+    .select({ month: catalog.month })
+    .from(catalog)
+    .where(and(eq(catalog.producerId, editor.producerId), eq(catalog.status, "published")));
+  return producerHomeTask({
+    nextMonth: addMonths(parisDay(now).slice(0, 7), 1),
+    periods: periods.map((p) => ({
+      month: p.month.slice(0, 7),
+      opensOn: periodDays(p).opensOn,
+      status: effectiveStatus(p, now),
+    })),
+    publishedMonths: published.map((c) => c.month.slice(0, 7)),
+  });
 }

@@ -1,0 +1,2 @@
+ALTER TABLE "user" ADD COLUMN "current_amap_producer_id" uuid;--> statement-breakpoint
+ALTER TABLE "user" ADD CONSTRAINT "user_current_amap_producer_id_amap_producer_id_fk" FOREIGN KEY ("current_amap_producer_id") REFERENCES "public"."amap_producer"("id") ON DELETE set null ON UPDATE no action;
