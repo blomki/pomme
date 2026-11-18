@@ -28,22 +28,24 @@ DEV), et active l'option « dump all » pour que les rôles survivent à une mig
 
 ## Variables d'environnement de chaque application
 
-| Variable                    | Valeur                                                                             |
-| --------------------------- | ---------------------------------------------------------------------------------- |
-| `NODE_ENV`                  | `production`                                                                       |
-| `CC_NODE_DEV_DEPENDENCIES`  | `install` (le build et les scripts de base en ont besoin)                          |
-| `CC_POST_BUILD_HOOK`        | `pnpm build`                                                                       |
-| `CC_PRE_RUN_HOOK`           | `bash clevercloud/pre-run.sh` (rôles et migrations)                                |
-| `CC_HEALTH_CHECK_PATH`      | `/api/health`                                                                      |
-| `DATABASE_MIGRATION_URL`    | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)               |
-| `DATABASE_URL`              | même adresse, avec `pomme_app` et un mot de passe aléatoire                        |
-| `DATABASE_AUTH_URL`         | même adresse, avec `pomme_auth` et un autre mot de passe aléatoire                 |
-| `BETTER_AUTH_URL`           | `https://preprod.pomme.cloud` (pré-production), `https://pomme.cloud` (production) |
-| `BETTER_AUTH_SECRET`        | `openssl rand -base64 32`                                                          |
-| `SMTP_URL`, `EMAIL_FROM`    | relais Brevo (ADR 0006)                                                            |
-| `FRIENDLY_CAPTCHA_SITEKEY`  | clé de site (ADR 0007)                                                             |
-| `FRIENDLY_CAPTCHA_API_KEY`  | clé d'API (ADR 0007)                                                               |
-| `FRIENDLY_CAPTCHA_ENDPOINT` | `eu` si l'offre le permet                                                          |
+| Variable                         | Valeur                                                                             |
+| -------------------------------- | ---------------------------------------------------------------------------------- |
+| `NODE_ENV`                       | `production`                                                                       |
+| `CC_NODE_DEV_DEPENDENCIES`       | `install` (le build et les scripts de base en ont besoin)                          |
+| `CC_POST_BUILD_HOOK`             | `pnpm build`                                                                       |
+| `CC_PRE_RUN_HOOK`                | `bash clevercloud/pre-run.sh` (rôles et migrations)                                |
+| `CC_HEALTH_CHECK_PATH`           | `/api/health`                                                                      |
+| `DATABASE_MIGRATION_URL`         | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)               |
+| `DATABASE_URL`                   | même adresse, avec `pomme_app` et un mot de passe aléatoire                        |
+| `DATABASE_AUTH_URL`              | même adresse, avec `pomme_auth` et un autre mot de passe aléatoire                 |
+| `BETTER_AUTH_URL`                | `https://preprod.pomme.cloud` (pré-production), `https://pomme.cloud` (production) |
+| `BETTER_AUTH_SECRET`             | `openssl rand -base64 32`                                                          |
+| `SMTP_URL`, `EMAIL_FROM`         | relais Brevo (ADR 0006)                                                            |
+| `FRIENDLY_CAPTCHA_SITEKEY`       | clé de site (ADR 0007)                                                             |
+| `FRIENDLY_CAPTCHA_API_KEY`       | clé d'API (ADR 0007)                                                               |
+| `FRIENDLY_CAPTCHA_ENDPOINT`      | `eu` si l'offre le permet                                                          |
+| `NEXT_PUBLIC_SENTRY_DSN`         | clé Sentry de la région UE (`…ingest.de.sentry.io`), lue au build (ADR 0014)       |
+| `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | `preprod` ou `production`                                                          |
 
 Mots de passe : `openssl rand -hex 24` (sans caractère spécial, rien à encoder dans
 l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces applications.
@@ -100,10 +102,30 @@ Emails : `pomme.cloud` est authentifié dans Brevo (code de vérification, DKIM 
 réception derrière. SPF : `v=spf1 include:mx.ovh.com include:spf.brevo.com -all` (un seul
 enregistrement SPF). Voir ADR 0006.
 
+## Surveillance (ADR 0014)
+
+**Erreurs : Sentry.** Éteint tant que `NEXT_PUBLIC_SENTRY_DSN` est vide. Pour l'allumer :
+
+1. Créer un compte sur <https://sentry.io>, en choisissant la région de données **UE**
+   (Allemagne) à la création de l'organisation : elle ne se change plus ensuite.
+2. Créer un projet de type « Next.js », copier sa clé (« Client Keys (DSN) ») : elle doit
+   contenir `ingest.de.sentry.io`, sinon Pomme l'ignore.
+3. Dans les réglages du projet : Security & Privacy › cocher « Prevent Storing of IP Addresses »
+   (deuxième protection, en plus du filtrage fait par Pomme).
+4. Clever Cloud › application › Environment variables : `NEXT_PUBLIC_SENTRY_DSN` et
+   `NEXT_PUBLIC_SENTRY_ENVIRONMENT`, puis redéployer (la clé est intégrée au build).
+
+**Disponibilité : sonde GitHub Actions** (`.github/workflows/uptime.yml`). Toutes les
+5 minutes, elle interroge `/api/health` des adresses de la variable de dépôt `UPTIME_URLS`
+(séparées par des espaces ; la pré-production par défaut). En panne, elle ouvre une issue
+« Panne » ; elle la ferme quand l'adresse répond de nouveau. Pour recevoir l'email : sur la page
+du dépôt, « Watch » doit être sur « All activity » (ou au moins « Issues »). Essai à la main :
+Actions › « Sonde de disponibilité » › Run workflow.
+
+**Journaux.** Clever Cloud les garde 7 jours (`clever logs --since 2h`) ; on s'en tient là
+(ADR 0014) : examiner un problème dans la semaine.
+
 ## Reste à faire (fiche S7)
 
-- Environnements de prévisualisation par pull request (application et base jetables).
-- Sentry (région UE), à ajouter à la CSP.
-- Sonde de disponibilité toutes les 5 minutes sur `/api/health`, avec alerte par email.
-- Conservation des journaux pendant 30 jours.
+- Production sur `pomme.cloud` : domaine, `UPTIME_URLS`, note A+ sur Mozilla Observatory.
 - Tâches planifiées (`clevercloud/cron.json`) : avec les fiches qui en ont besoin (D2, D5, S8).

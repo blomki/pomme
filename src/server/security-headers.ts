@@ -21,16 +21,27 @@ const CAPTCHA_ORIGINS = "https://*.frcapi.com";
  *   (attribut style), qu'un nonce ne couvre pas. Un style injecté ne peut pas exécuter de code ;
  *   le risque est faible et Mozilla Observatory ne le pénalise pas. Pas de nonce ici : sa
  *   présence ferait ignorer 'unsafe-inline' par le navigateur.
+ * - connect-src : le serveur de Sentry (région UE) quand il est configuré, pour que le navigateur
+ *   puisse signaler ses erreurs (ADR 0014).
  * - frame-ancestors 'none' : aucun site ne peut afficher Pomme dans un cadre (« clickjacking »).
  */
-export function contentSecurityPolicy({ nonce, isDev }: { nonce: string; isDev: boolean }) {
+export function contentSecurityPolicy({
+  nonce,
+  isDev,
+  errorReportOrigin = null,
+}: {
+  nonce: string;
+  isDev: boolean;
+  /** Origine du service d'erreurs (Sentry), ou null s'il est éteint. */
+  errorReportOrigin?: string | null;
+}) {
   const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    `connect-src 'self' ${CAPTCHA_ORIGINS}`,
+    `connect-src 'self' ${CAPTCHA_ORIGINS}${errorReportOrigin ? ` ${errorReportOrigin}` : ""}`,
     `frame-src ${CAPTCHA_ORIGINS}`,
     "worker-src 'self' blob:",
     "object-src 'none'",
