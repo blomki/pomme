@@ -160,6 +160,26 @@
       "back": "Mes producteurs",
       "tabs": "Producteurs suivis",
       "noProducers": "Aucun producteur ne vous est confié pour l'instant."
+    },
+    "orderForms": {
+      "title": "Bon de commande de {month}",
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "tabs": "Producteurs",
+      "noProducers": "Vous ne suivez encore aucun producteur.",
+      "closed": "Commandes clôturées le {date} · prix figés",
+      "open": "Provisoire : commandes ouvertes jusqu'au {date}",
+      "scheduled": "Commandes pas encore ouvertes (ouverture le {date})",
+      "noPeriod": "Pas de période de commande pour ce mois.",
+      "exportsAfterClosing": "L'impression, le tableur et l'envoi au producteur seront disponibles après la clôture des commandes.",
+      "print": "Imprimer ou enregistrer en PDF",
+      "spreadsheet": "Télécharger en tableur",
+      "send": "Envoyer à {producer} par email",
+      "sent": "Bon de commande envoyé à {email}.",
+      "sendFailed": "L'email n'a pas pu partir. Réessayez dans quelques minutes.",
+      "noEmail": "Ajoutez l'adresse email du producteur sur sa fiche pour lui envoyer le bon de commande.",
+      "notClosed": "Les commandes ne sont pas encore clôturées : rien n'est envoyé.",
+      "forbidden": "Vous ne suivez pas ce producteur."
     }
   },
   "Catalog": {
@@ -894,6 +914,18 @@
       "total": "Total provisoire : {total}. Un avoir éventuel sera déduit à la clôture.",
       "button": "Voir ma commande",
       "footer": "Vous recevez cet email parce que vous avez validé votre commande sur « {amap} »."
+    },
+    "orderForm": {
+      "subject": "{amap} : bon de commande de {month}",
+      "preview": "{total} pour {month}, à préparer pour {count, plural, one {# distribution} other {# distributions}}.",
+      "greeting": "Bonjour,",
+      "intro": "Voici le bon de commande de {month} de « {amap} » pour {producer} : {total} au total.",
+      "weeks": "À préparer :",
+      "week": "{date} : {items}",
+      "item": "{quantity} × {product}",
+      "button": "Ouvrir le bon de commande à imprimer",
+      "validity": "Le lien reste valable jusqu'au {date}, sans connexion.",
+      "footer": "Vous recevez cet email parce que vous livrez « {amap} ». Envoyé par votre référent."
     }
   },
   "Roles": {
@@ -908,5 +940,26 @@
     "5": "vendredi",
     "6": "samedi",
     "7": "dimanche"
+  },
+  "OrderForm": {
+    "toPrepare": "À préparer par le producteur",
+    "product": "Produit",
+    "productWithPrice": "{product} ({price})",
+    "price": "Prix",
+    "total": "Total",
+    "amount": "Montant",
+    "empty": "Aucune commande pour ce producteur ce mois-ci.",
+    "detail": "Détail par foyer ({count, plural, one {# foyer} other {# foyers}})",
+    "household": "Foyer",
+    "credit": "Avoir",
+    "expected": "Chèque attendu",
+    "provisional": "Provisoire",
+    "spreadsheetTitle": "Bon de commande {producer} · {amap} · {month}",
+    "printTitle": "Bon de commande · {producer}",
+    "printSubtitle": "{amap} · {month}",
+    "printButton": "Imprimer",
+    "printHint": "Pour un PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.",
+    "linkExpired": "Ce lien n'est plus valable. Demandez à votre référent de vous renvoyer le bon de commande.",
+    "linkValidUntil": "Lien valable jusqu'au {date}."
   }
 }

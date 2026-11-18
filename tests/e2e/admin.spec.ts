@@ -836,4 +836,93 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByText(/^Adhésion du .* archivée\.$/)).toBeVisible();
     await expect(section.getByText("Expire bientôt", { exact: true })).toBeVisible();
   });
+
+  test("un référent consulte, exporte et envoie le bon de commande au producteur (E1)", async ({
+    page,
+    request,
+    browser,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent");
+    await press(
+      page
+        .getByRole("navigation", { name: "Menu du référent" })
+        .getByRole("link", { name: "Bons de commande" }),
+    );
+    // Par défaut : le mois en cours de commande, provisoire, sans export.
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^Bon de commande de / }),
+    ).toBeVisible();
+    await expect(page.getByText(/^Provisoire : commandes ouvertes jusqu'au /)).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Envoyer à / })).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
+
+    // Mois précédent (flèche) : commandes clôturées, Boulangerie des Trois Moulins.
+    await press(page.getByRole("link", { name: "Mois précédent" }));
+    await expect(page.getByText(/^Commandes clôturées le .* · prix figés$/)).toBeVisible();
+    await press(page.getByRole("tab", { name: "Boulangerie des Trois Moulins" }));
+    await expect(page.getByRole("region", { name: "À préparer par le producteur" })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: /^Détail par foyer \(\d+ foyers?\)$/ }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Tableur : un fichier CSV avec le détail par foyer.
+    const downloading = page.waitForEvent("download");
+    await page.getByRole("link", { name: "Télécharger en tableur" }).click();
+    const download = await downloading;
+    expect(download.suggestedFilename()).toMatch(
+      /^bon-de-commande-\d{4}-\d{2}-boulangerie.*\.csv$/,
+    );
+    const csv = await text((await download.createReadStream())!);
+    expect(csv).toContain("Chèque attendu");
+    // (Le BOM est retiré au décodage ; il est vérifié par le test unitaire de orderFormCsv.)
+    expect(csv).toMatch(/^\uFEFF?Bon de commande Boulangerie des Trois Moulins/);
+
+    // Version à imprimer, dans un nouvel onglet, sans menu.
+    const opening = page.context().waitForEvent("page");
+    await page.getByRole("link", { name: "Imprimer ou enregistrer en PDF" }).click();
+    const printable = await opening;
+    await expect(
+      printable.getByRole("heading", {
+        level: 1,
+        name: "Bon de commande · Boulangerie des Trois Moulins",
+      }),
+    ).toBeVisible();
+    await expect(printable.getByRole("navigation")).toHaveCount(0);
+    await expectNoSeriousA11yViolations(printable);
+    await printable.close();
+
+    // Envoi au producteur : le lien reçu ouvre la version à imprimer sans connexion.
+    const producerEmail = "boulangeriedestroismoulins@example.org";
+    const before = await inboxSnapshot(request, producerEmail);
+    await press(
+      page.getByRole("button", { name: "Envoyer à Boulangerie des Trois Moulins par email" }),
+    );
+    await expect(page.getByText(`Bon de commande envoyé à ${producerEmail}.`)).toBeVisible();
+    const email = await newMessage(request, producerEmail, before);
+    expect(email.Subject).toMatch(/: bon de commande de /);
+    const link = /https?:\/\/\S+\/bon-de-commande\/\S+\?cle=[\w.-]+/.exec(email.Text)?.[0];
+    expect(link).toBeDefined();
+    const anonymous = await browser.newContext();
+    try {
+      const outside = await anonymous.newPage();
+      await outside.goto(link!);
+      await expect(
+        outside.getByRole("heading", {
+          level: 1,
+          name: "Bon de commande · Boulangerie des Trois Moulins",
+        }),
+      ).toBeVisible();
+      // Clé modifiée : refusée.
+      await outside.goto(link!.replace(/cle=\d/, "cle=9"));
+      await expect(outside.getByText(/^Ce lien n'est plus valable/)).toBeVisible();
+    } finally {
+      await anonymous.close();
+    }
+  });
 });
