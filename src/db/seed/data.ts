@@ -94,7 +94,21 @@ export type SeedReferentAssignment = {
 export type SeedProducerUser = { id: string; producerId: string; userId: string };
 
 export type SeedProduct = { id: string; producerId: string; name: string };
-export type SeedCatalog = { id: string; amapId: string; producerId: string; month: string };
+export type SeedCatalog = {
+  id: string;
+  amapId: string;
+  producerId: string;
+  month: string;
+  status: "draft" | "published";
+  publishedAt: Date | null;
+};
+
+/**
+ * Catalogues laissés en brouillon le mois prochain dans la première AMAP : les tests de bout
+ * en bout C2 et C3 les modifient et les publient. Les autres y sont publiés, pour que les
+ * familles puissent commander (story D3).
+ */
+const DRAFT_NEXT_MONTH = ["Les Ruches du Vallon", "Boulangerie des Trois Moulins"];
 export type SeedCatalogItem = {
   id: string;
   amapId: string;
@@ -680,8 +694,8 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     }
   }
 
-  // Produits, puis un brouillon de catalogue par producteur et par mois (ce mois-ci et le
-  // suivant), chaque produit disponible à toutes les distributions ouvertes du mois. Ajoutés
+  // Produits, puis un catalogue par producteur et par mois (ce mois-ci et le suivant : en
+  // brouillon, sauf le mois prochain dans la première AMAP, voir DRAFT_NEXT_MONTH), chaque produit disponible à toutes les distributions ouvertes du mois. Ajoutés
   // en dernier : les identifiants du reste du jeu de données ne changent pas.
   const products: SeedProduct[] = [];
   const catalogs: SeedCatalog[] = [];
@@ -698,11 +712,17 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     for (const ap of amapProducers.filter((a) => a.producerId === producerRecord.id)) {
       for (const month of [0, 1].map((delta) => addMonths(firstMonth, delta))) {
         const catalogId = nextId();
+        const published =
+          ap.amapId === amaps[0]?.id &&
+          month === addMonths(firstMonth, 1) &&
+          !DRAFT_NEXT_MONTH.includes(definition.name);
         catalogs.push({
           id: catalogId,
           amapId: ap.amapId,
           producerId: ap.producerId,
           month: `${month}-01`,
+          status: published ? "published" : "draft",
+          publishedAt: published ? today : null,
         });
         const open = distributions.filter(
           (d) => d.amapId === ap.amapId && d.isOpen && d.date.startsWith(month),
@@ -779,6 +799,17 @@ export function buildSeedData(today: Date = new Date()): SeedData {
   // chacun des autres états, pour voir le filtre de la liste. Les 12 premiers foyers (ceux qui
   // commandent) sont toujours adhérents.
   const memberships: SeedMembership[] = [];
+  // amapien2.demo : adhésion expirée, pour voir la commande refusée ; les autres comptes de
+  // démonstration qui ont un foyer : adhésion active (ils peuvent commander, story D3).
+  const demoHouseholdState = new Map<string, "active" | "expired">();
+  for (const { demoUser } of demoUsers) {
+    for (const m of householdMembers.filter((x) => x.userId === demoUser.id)) {
+      demoHouseholdState.set(
+        m.householdId,
+        demoUser.email === "amapien2.demo@example.org" ? "expired" : "active",
+      );
+    }
+  }
   const todayDay = parisDay(today);
   for (const a of amaps) {
     households
@@ -794,6 +825,16 @@ export function buildSeedData(today: Date = new Date()): SeedData {
             feeCents: index % 4 === 0 ? null : 1500,
             note: "",
           });
+        // Foyers des comptes de démonstration : état fixé, quel que soit leur rang.
+        const demo = demoHouseholdState.get(h.id);
+        if (demo === "expired") {
+          add(addDays(todayDay, -400), addDays(todayDay, -35));
+          return;
+        }
+        if (demo === "active") {
+          add(addDays(todayDay, -100), addDays(todayDay, 264));
+          return;
+        }
         if (index % 20 === 19) return; // aucune adhésion
         if (index % 15 === 13) {
           add(addDays(todayDay, -352), addDays(todayDay, 12)); // expire bientôt

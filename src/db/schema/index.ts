@@ -752,6 +752,9 @@ export const order = pgTable(
       .references(() => amap.id),
     householdId: uuid("household_id").notNull(),
     catalogId: uuid("catalog_id").notNull(),
+    // « Rien ce mois-ci » chez ce producteur : choix explicite du foyer (story D3), effacé dès
+    // qu'une quantité est saisie. Sans ce choix ni quantité : producteur « à compléter ».
+    declinedAt: timestamp("declined_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
     createdAt: createdAt(),

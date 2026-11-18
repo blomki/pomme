@@ -98,3 +98,20 @@ export async function requireAmapReferentPage(slug: string) {
   if (!isReferent) notFound();
   return { amap, ctx };
 }
+
+/**
+ * Pages de l'espace famille qui montrent des données (commande…) : connexion, puis AMAP de
+ * l'adresse. Le foyer du compte est retrouvé ensuite par la lecture elle-même (orders.ts), qui
+ * ne montre jamais que la commande de SON foyer. Pas de deuxième vérification.
+ */
+export async function requireFamilyPage(slug: string) {
+  const amap = await getAmapBySlug(slug);
+  if (!amap) notFound();
+  const current = await requireSession();
+  const ctx = {
+    amapId: amap.id,
+    userId: current.user.id,
+    secondFactorVerified: Boolean(current.session.secondFactorVerifiedAt),
+  };
+  return { amap, ctx };
+}

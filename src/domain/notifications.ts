@@ -22,6 +22,7 @@ export const NOTIFICATION_TEMPLATES = [
   "invitation",
   "producer_invitation",
   "order_reminder",
+  "order_confirmation",
 ] as const;
 
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
