@@ -85,6 +85,53 @@
       },
       "saving": "Enregistrement…",
       "saved": "Modifications enregistrées"
+    },
+    "home": {
+      "noHousehold": "Votre compte n'est rattaché à aucun foyer de cette AMAP. Contactez un administrateur.",
+      "membershipExpiring": "Votre adhésion se termine le {date}. Pensez à la renouveler auprès de l'AMAP.",
+      "membershipEnded": "Votre adhésion n'est pas en cours : vous ne pouvez pas commander. Contactez un administrateur de l'AMAP.",
+      "openLabel": "Commandes ouvertes · jusqu'au {date}",
+      "openEmptyTitle": "Commande de {month}",
+      "openEmptyText": "Vous n'avez encore rien commandé. {treated, plural, =0 {} one {# producteur traité sur {count}.} other {# producteurs traités sur {count}.}}",
+      "order": "Passer ma commande",
+      "openOrderedTitle": "Commande de {month}",
+      "openOrderedText": "{count, plural, one {# chèque} other {# chèques}} · {total} · modifiable jusqu'au {date}",
+      "editOrder": "Modifier ma commande",
+      "chequeList": "Liste des chèques",
+      "closedLabel": "Commandes clôturées",
+      "closedTitle": "Commande de {month}",
+      "closedText": "{count, plural, =0 {Aucun chèque à préparer} one {# chèque à signer} other {# chèques à signer}} · {total}",
+      "closedHandOver": "À remettre à la distribution du {date}.",
+      "scheduledLabel": "Prochaines commandes",
+      "scheduledTitle": "Commande de {month}",
+      "scheduledText": "Ouverture le {date}. Vous recevrez un email.",
+      "noPeriod": "Pas de commande en cours pour l'instant.",
+      "nextDistribution": "Prochaine distribution",
+      "nextWhen": "{date}, {start} – {end}",
+      "nothingToCollect": "Rien à retirer pour votre foyer.",
+      "line": "{product} × {quantity}",
+      "report": "Un produit manquant ou abîmé ?",
+      "reportLink": "Signaler un problème"
+    },
+    "cheques": {
+      "title": "Liste des chèques",
+      "subtitle": "Commande de {month}",
+      "handOver": "À remettre à la distribution du {date}.",
+      "none": "Aucun chèque à préparer pour l'instant.",
+      "open": "Les commandes sont ouvertes : vos chèques se préparent à partir du récapitulatif.",
+      "openLink": "Voir le récapitulatif",
+      "payee": "À l'ordre de {payee}",
+      "payeeUnknown": "Ordre du chèque : à demander au référent.",
+      "credit": "Commande {gross}, avoir déduit − {credit}",
+      "status": {
+        "expected": "À remettre",
+        "received": "Reçu",
+        "handed_over": "Reçu"
+      },
+      "total": "Total"
+    },
+    "report": {
+      "title": "Signaler un problème"
     }
   },
   "Referent": {
@@ -651,7 +698,13 @@
       "admin": "Administration",
       "referent": "Référent"
     },
-    "account": "Mon compte"
+    "account": "Mon compte",
+    "family": {
+      "label": "Navigation de l'espace famille",
+      "home": "Accueil",
+      "cheques": "Chèques",
+      "profile": "Profil"
+    }
   },
   "ThemeDemo": {
     "title": "Thème de {amap}",

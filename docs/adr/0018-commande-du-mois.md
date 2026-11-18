@@ -65,3 +65,15 @@ Le porteur du projet a tranché le 2026-11-18.
   annoncés comme provisoires.
 - L'accueil famille (D6) mènera à la commande ; en attendant, l'adresse est
   `/<amap>/famille/commande`.
+
+## Complément : accueil de la famille (story D6, 2026-11-18)
+
+- L'accueil met en avant une seule période (`homePeriod`) : celle qui est ouverte ; sinon la
+  dernière clôturée dont le mois n'est pas fini (chèques à signer, distribution où les
+  remettre) ; sinon la prochaine prévue (date d'ouverture).
+- « Liste des chèques » : pendant les commandes, le récapitulatif (montants provisoires) ;
+  après la clôture, `/<amap>/famille/cheques`, qui lit les chèques calculés à la clôture, avoirs
+  déduits. Leur impression viendra avec E2.
+- « Signaler un problème » mène à une page d'attente jusqu'à F5.
+- L'accueil demande une connexion : il sort des pages publiques testées sans compte et des
+  captures de référence.

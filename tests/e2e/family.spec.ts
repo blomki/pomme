@@ -142,4 +142,58 @@ test.describe("commande du mois (téléphone)", () => {
     await expect(first).toHaveValue("0");
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("l'accueil montre où en est la commande et mène à la commande et aux chèques (D6)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto("/hommesdeterre/famille");
+    await expect(page.getByRole("heading", { level: 1, name: "Espace famille" })).toBeAttached();
+    const nav = page.getByRole("navigation", { name: "Navigation de l'espace famille" });
+    await expect(nav.getByRole("link", { name: "Accueil" })).toHaveAttribute(
+      "aria-current",
+      "page",
+    );
+
+    // Jeu de données : commandes ouvertes ; le test D3 vient de commander.
+    const card = page.getByRole("region", { name: /^Commande de / });
+    await expect(card.getByText(/^Commandes ouvertes · jusqu'au /)).toBeVisible();
+    await expect(card.getByText(/^\d+ chèques? · .* · modifiable jusqu'au /)).toBeVisible();
+    const next = page.getByRole("region", { name: "Prochaine distribution" });
+    await expect(next.getByRole("link", { name: "Signaler un problème" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // « Liste des chèques » pendant les commandes : le récapitulatif.
+    await card.getByRole("link", { name: "Liste des chèques" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "Récapitulatif" })).toBeVisible();
+    await page.goBack();
+    await card.getByRole("link", { name: "Modifier ma commande" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: /^Commande de / })).toBeVisible();
+  });
+
+  test("l'accueil rappelle une adhésion qui n'est plus en cours (D6)", async ({
+    page,
+    request,
+  }) => {
+    await page.emulateMedia({ colorScheme: "dark" });
+    await signInByEmail(page, request, EXPIRED);
+    await page.goto("/hommesdeterre/famille");
+    await expect(page.getByText(/^Votre adhésion n'est pas en cours/)).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: /^Commande de / }).getByRole("link", {
+        name: "Passer ma commande",
+      }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+    // Barre du bas : les chèques, pendant les commandes, renvoient au récapitulatif.
+    await page
+      .getByRole("navigation", { name: "Navigation de l'espace famille" })
+      .getByRole("link", { name: "Chèques" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Liste des chèques" })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Voir le récapitulatif" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+  });
 });
