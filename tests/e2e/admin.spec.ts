@@ -1044,7 +1044,9 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("heading", { level: 1, name: /^Chèques de / })).toBeVisible();
     await press(page.getByRole("tab", { name: "Boulangerie des Trois Moulins" }));
     await expect(page).toHaveURL(/producteur=/);
-    const progress = page.getByRole("main").getByText(/^Chèques traités pour \d+ foyers sur \d+$/);
+    const progress = page
+      .getByRole("main")
+      .getByText(/^Chèques traités pour \d+ foyers sur \d+ · /);
     await expect(progress).toBeVisible();
     const before = Number(/pour (\d+)/.exec((await progress.textContent())!)![1]);
     await expectNoSeriousA11yViolations(page);
@@ -1067,9 +1069,7 @@ test.describe("administration (ordinateur)", () => {
     await page.keyboard.press("Enter");
     const next = page.getByRole("checkbox", { name: `Reçu : ${secondName}` });
     await expect(next).toBeFocused();
-    await expect(progress).toHaveText(
-      `Chèques traités pour ${before + 1} foyers sur ${/sur (\d+)/.exec((await progress.textContent())!)![1]}`,
-    );
+    await expect(progress).toContainText(`Chèques traités pour ${before + 1} foyers sur `);
 
     // Deuxième foyer : reçu, puis montant corrigé (1 € de moins) et numéro.
     await page.keyboard.press("Space");
@@ -1088,10 +1088,10 @@ test.describe("administration (ordinateur)", () => {
     const gapRow = page
       .getByRole("row")
       .filter({ has: page.getByRole("rowheader", { name: secondName }) });
-    await expect(gapRow.getByText("− 1,00 €")).toBeVisible();
+    await expect(gapRow.getByText("Écart : − 1,00 €")).toBeVisible();
 
     // Filtre « Écarts » : le foyer y figure jusqu'à ce que l'écart soit traité.
-    await press(page.getByRole("button", { name: /^Écarts \(\d+\)$/ }));
+    await press(page.getByRole("button", { name: "Écarts", exact: true }));
     await expect(page.getByRole("rowheader", { name: secondName })).toBeVisible();
     await expectNoSeriousA11yViolations(page);
     await press(page.getByRole("button", { name: `Écart traité : ${secondName}` }));
@@ -1099,7 +1099,7 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("rowheader", { name: secondName })).toHaveCount(0);
 
     // Ménage : les deux chèques redeviennent « non reçus » (Espace décoche).
-    await press(page.getByRole("button", { name: /^Tous \(\d+\)$/ }));
+    await press(page.getByRole("button", { name: "Tous", exact: true }));
     for (const name of [firstName, secondName]) {
       const box = page.getByRole("checkbox", { name: `Reçu : ${name}` });
       await box.focus();
@@ -1169,5 +1169,25 @@ test.describe("administration (ordinateur)", () => {
         .getByText("Écart rectifié sur place par les bénévoles")
         .first(),
     ).toBeVisible();
+  });
+
+  test("un admin ouvre le pointage des chèques depuis son espace (F1)", async ({
+    page,
+    request,
+  }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Chèques" })
+      .click();
+    await expect(page).toHaveURL(/\/admin\/cheques/);
+    await expect(page.getByRole("heading", { level: 1, name: /^Chèques de / })).toBeVisible();
+    // Tous les producteurs actifs, pas seulement ceux d'un référent.
+    expect(await page.getByRole("tab").count()).toBeGreaterThan(2);
+    await expect(
+      page.getByRole("main").getByText(/^Chèques traités pour \d+ foyers sur \d+ · /),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 });

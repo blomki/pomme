@@ -12,9 +12,10 @@ producteur, même si l'admin rouvre les commandes (règle du 2026-11-04).
 
 ## Décision
 
-1. **Écran « Pointage des chèques »** (`/referent/cheques`) : mois (flèches), un onglet par
-   producteur suivi, avancement « Chèques traités pour N foyers sur M », filtres Tous / Non
-   reçus / Écarts, une ligne par foyer.
+1. **Écran « Pointage des chèques »** (`/referent/cheques`, et `/admin/cheques` pour l'admin),
+   d'après la maquette R3 : titre « Chèques de novembre », résumé « Chèques traités pour N
+   foyers sur M · n en attente · n écarts », filtres Tous / Non reçus / Écarts, un onglet par
+   producteur, une ligne par foyer avec son statut (Reçu, Attendu, Écart, Remis).
 2. **Cocher « Reçu » préremplit le montant attendu** ; le montant reste corrigeable, le numéro
    est facultatif. Clavier : Espace coche, Entrée enregistre la ligne et passe au foyer suivant.
    Chaque changement est enregistré aussitôt, avec « Annuler » dans le message de confirmation.
@@ -42,5 +43,5 @@ producteur, même si l'admin rouvre les commandes (règle du 2026-11-04).
 
 - Les actions « Relancer les foyers en attente » et « Marquer les chèques reçus comme remis »
   viendront avec leurs fiches (relance, F3).
-- L'admin n'a pas encore d'entrée vers cet écran dans son menu : il passe par l'espace référent
-  s'il en a le rôle.
+- L'admin pointe depuis son propre espace (`/admin/cheques`, entrée « Chèques » de son menu),
+  chez tous les producteurs actifs : même écran que le référent (souhait du 2026-11-19).
