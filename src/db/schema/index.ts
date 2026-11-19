@@ -927,6 +927,10 @@ export const cheque = pgTable(
     handedOverBy: uuid("handed_over_by").references(() => user.id),
     // Facultatif ; ni émetteur ni banque (décision du 2026-11-04).
     chequeNumber: text("cheque_number"),
+    // Écart (reçu ≠ attendu) traité par le référent : complément reçu, avoir prévu… (F1). Tant
+    // que ces colonnes sont vides, l'écart reste signalé.
+    gapSettledAt: timestamp("gap_settled_at", { withTimezone: true }),
+    gapSettledBy: uuid("gap_settled_by").references(() => user.id),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

@@ -1025,4 +1025,87 @@ test.describe("administration (ordinateur)", () => {
     await press(page.getByRole("link", { name: "Retour" }));
     await expect(page.getByRole("region", { name: "Commande du mois" })).toBeVisible();
   });
+  test("un référent pointe les chèques reçus au clavier et traite un écart (F1)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent");
+    await press(
+      page
+        .getByRole("navigation", { name: "Menu du référent" })
+        .getByRole("link", { name: "Pointage des chèques" }),
+    );
+    // Par défaut : le mois de la dernière clôture (jeu de données : le mois en cours).
+    await expect(page.getByRole("heading", { level: 1, name: /^Chèques de / })).toBeVisible();
+    await press(page.getByRole("tab", { name: "Boulangerie des Trois Moulins" }));
+    await expect(page).toHaveURL(/producteur=/);
+    const progress = page.getByRole("main").getByText(/^Chèques traités pour \d+ foyers sur \d+$/);
+    await expect(progress).toBeVisible();
+    const before = Number(/pour (\d+)/.exec((await progress.textContent())!)![1]);
+    await expectNoSeriousA11yViolations(page);
+
+    // Deux foyers pas encore pointés (le test a pu tourner sur cette base).
+    const unchecked = page.getByRole("checkbox", {
+      name: /^Reçu : /,
+      checked: false,
+    });
+    const first = unchecked.first();
+    const firstName = (await first.getAttribute("aria-label"))!.replace("Reçu : ", "");
+    const second = unchecked.nth(1);
+    const secondName = (await second.getAttribute("aria-label"))!.replace("Reçu : ", "");
+
+    // Espace coche « Reçu » au montant attendu ; Entrée passe au foyer suivant.
+    await first.focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByText(`Chèque reçu : ${firstName} (`, { exact: false })).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: `Reçu : ${firstName}` })).toBeChecked();
+    await page.keyboard.press("Enter");
+    const next = page.getByRole("checkbox", { name: `Reçu : ${secondName}` });
+    await expect(next).toBeFocused();
+    await expect(progress).toHaveText(
+      `Chèques traités pour ${before + 1} foyers sur ${/sur (\d+)/.exec((await progress.textContent())!)![1]}`,
+    );
+
+    // Deuxième foyer : reçu, puis montant corrigé (1 € de moins) et numéro.
+    await page.keyboard.press("Space");
+    const amount = page.getByRole("textbox", {
+      name: `Montant reçu en euros : ${secondName}`,
+    });
+    await expect(amount).toBeEnabled();
+    const expected = (await amount.inputValue()).replace(",", ".");
+    const lower = (Number(expected) - 1).toFixed(2).replace(".", ",");
+    await amount.focus();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type(lower);
+    await page.keyboard.press("Tab");
+    await page.keyboard.type("1234567");
+    await page.keyboard.press("Enter");
+    const gapRow = page
+      .getByRole("row")
+      .filter({ has: page.getByRole("rowheader", { name: secondName }) });
+    await expect(gapRow.getByText("− 1,00 €")).toBeVisible();
+
+    // Filtre « Écarts » : le foyer y figure jusqu'à ce que l'écart soit traité.
+    await press(page.getByRole("button", { name: /^Écarts \(\d+\)$/ }));
+    await expect(page.getByRole("rowheader", { name: secondName })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+    await press(page.getByRole("button", { name: `Écart traité : ${secondName}` }));
+    await expect(page.getByText(`Écart traité : ${secondName}.`)).toBeVisible();
+    await expect(page.getByRole("rowheader", { name: secondName })).toHaveCount(0);
+
+    // Ménage : les deux chèques redeviennent « non reçus » (Espace décoche).
+    await press(page.getByRole("button", { name: /^Tous \(\d+\)$/ }));
+    for (const name of [firstName, secondName]) {
+      const box = page.getByRole("checkbox", { name: `Reçu : ${name}` });
+      await box.focus();
+      await page.keyboard.press("Space");
+      await expect(box).not.toBeChecked();
+    }
+    await expect(progress).toContainText(`Chèques traités pour ${before} foyers`);
+  });
 });

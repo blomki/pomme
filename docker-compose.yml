@@ -29,14 +29,27 @@ services:
 
   # Stockage des fichiers déposés (photos, logos ; fiche S11), compatible S3 comme Cellar chez
   # Clever Cloud. SeaweedFS plutôt que MinIO, qui ne publie plus d'image Docker depuis fin 2025.
-  # Identifiants et lecture publique : docker/seaweedfs-s3.json. Préparer le bucket : pnpm files:setup
+  # Réglages écrits dans le conteneur au démarrage, pas montés depuis le dépôt : sous WSL, Docker
+  # Desktop perd le montage d'un fichier seul après un redémarrage. Identité « pomme » (lecture et
+  # écriture, valeurs de développement de .env.example) ; identité « anonymous » : lecture seule,
+  # pour que le navigateur affiche les images. Préparer le bucket : pnpm files:setup
   files:
     image: chrislusf/seaweedfs:3.97
-    command: server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.config=/etc/seaweedfs/s3.json
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - |
+        cat > /tmp/s3.json <<'JSON'
+        {"identities": [
+          {"name": "pomme",
+           "credentials": [{"accessKey": "pomme", "secretKey": "pomme_fichiers_dev"}],
+           "actions": ["Admin", "Read", "Write", "List", "Tagging"]},
+          {"name": "anonymous", "actions": ["Read"]}
+        ]}
+        JSON
+        exec weed server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.config=/tmp/s3.json
     ports:
       - "8333:8333" # API S3, et lecture des images par le navigateur
     volumes:
-      - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
       - files:/data
     healthcheck:
       test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/ || exit 1"]

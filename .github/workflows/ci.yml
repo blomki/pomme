@@ -120,8 +120,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Préparer la base de test
         run: pnpm db:setup && pnpm db:migrate && pnpm db:seed
-      # Pas dans « services » : SeaweedFS a besoin d'une commande et du fichier de réglages du
-      # dépôt, qu'un service ne peut pas recevoir.
+      # Pas dans « services » : SeaweedFS a besoin d'une commande de démarrage (ses réglages),
+      # qu'un service ne peut pas recevoir. Même définition qu'en local (docker-compose.yml).
       - name: Préparer le stockage des fichiers
         run: docker compose up -d --wait files && pnpm files:setup
       - run: pnpm build
