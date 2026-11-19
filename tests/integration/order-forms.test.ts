@@ -195,16 +195,25 @@ describe("Bon de commande (E1)", () => {
   });
 
   it("par le lien signé, se lit sans compte, dans l'AMAP seulement", async () => {
-    const view = await withAmapContext(db.app, as(null), (tx) =>
+    const link = (amapId: string): AmapContext => ({
+      ...as(null, amapId),
+      trusted: "order_form_link",
+    });
+    const view = await withAmapContext(db.app, link(amapA.id), (tx) =>
       loadOrderForm(tx, farm, "2026-12", NOW),
     );
     expect(view?.form.households).toHaveLength(2);
     // Dans une autre AMAP, rien n'est visible.
     expect(
-      await withAmapContext(db.app, as(null, amapB.id), (tx) =>
+      await withAmapContext(db.app, link(amapB.id), (tx) =>
         loadOrderForm(tx, farm, "2026-12", NOW),
       ),
     ).toBeNull();
+    // Sans l'accès du lien signé (visiteur anonyme) : aucune commande (S12).
+    const anonymous = await withAmapContext(db.app, as(null), (tx) =>
+      loadOrderForm(tx, farm, "2026-12", NOW),
+    );
+    expect(anonymous?.form.households).toEqual([]);
   });
 
   it("propose le mois des commandes en cours, et l'email de la fiche du producteur", async () => {

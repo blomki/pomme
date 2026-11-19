@@ -37,9 +37,12 @@ export default async function PrintableOrderFormPage({ params, searchParams }: P
         </Typography>
       );
     }
-    // Lien valable : lecture dans l'AMAP, sans compte (la Row Level Security limite à l'AMAP).
-    const view = await withAmapContext(getDatabase(), { amapId: amap.id, userId: null }, (tx) =>
-      loadOrderForm(tx, producteur, month),
+    // Lien valable : lecture dans l'AMAP, sans compte, avec l'accès de confiance du lien signé
+    // (sans lui, la Row Level Security ne montre aucune commande : S12, ADR 0021).
+    const view = await withAmapContext(
+      getDatabase(),
+      { amapId: amap.id, userId: null, trusted: "order_form_link" },
+      (tx) => loadOrderForm(tx, producteur, month),
     );
     if (!view) notFound();
     return <PrintableOrderForm amapName={amap.name} view={view} validUntil={linkExpiry(cle)} />;

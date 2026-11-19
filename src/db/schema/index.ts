@@ -740,6 +740,60 @@ export const orderPeriod = pgTable(
   ],
 );
 
+// --- Isolation des commandes par foyer (fiche S12, ADR 0021) --------------------------------
+// Dans l'AMAP courante, une commande, ses lignes et ses chèques ne sont visibles que :
+// - du foyer lui-même (un membre non archivé) ;
+// - des admins de l'AMAP ;
+// - du référent du producteur, et du compte du producteur (lecture seule pour lui) ;
+// - d'un accès « de confiance » sans compte connecté, posé explicitement par le code serveur :
+//   la tâche horaire de clôture et le lien signé du bon de commande (app.trusted, voir
+//   src/db/context.ts). Un visiteur anonyme des pages publiques n'a rien de tout cela.
+
+/** Accès sans compte posé par le code serveur : « closing_job » ou « order_form_link ». */
+const trustedAccess = sql`coalesce(current_setting('app.trusted', true), '')`;
+
+/** L'utilisateur connecté est membre (non archivé) de ce foyer. */
+const isMemberOf = (householdId: unknown) => sql`exists (
+  select 1 from household_member
+  where household_member.household_id = ${householdId}
+    and household_member.user_id = ${currentUserId}
+    and household_member.archived_at is null
+)`;
+
+/** Producteur du catalogue de la commande, via la table catalog (filtrée par sa RLS). */
+const catalogProducerMatches = (catalogId: unknown, test: (producerId: SQL) => SQL) => sql`exists (
+  select 1 from catalog where catalog.id = ${catalogId} and ${test(sql`catalog.producer_id`)}
+)`;
+
+/** Peut écrire dans une commande : le foyer, un admin, ou le référent du producteur (D7). */
+const canWriteOrder = (householdId: unknown, catalogId: unknown) =>
+  sql`(${isMemberOf(householdId)} or ${isCurrentAmapAdmin}
+    or ${catalogProducerMatches(catalogId, isReferentOf)})`;
+
+/** Peut lire une commande : ceux qui l'écrivent, le compte du producteur, un accès de confiance. */
+const canReadOrder = (householdId: unknown, catalogId: unknown) =>
+  sql`(${canWriteOrder(householdId, catalogId)}
+    or ${catalogProducerMatches(catalogId, isProducerAccount)} or ${trustedAccess} <> '')`;
+
+/** Politiques d'une table de commande : l'AMAP courante, puis la condition de lecture ou d'écriture. */
+function orderPolicies(
+  table: string,
+  amapId: unknown,
+  read: SQL,
+  write: SQL,
+  operations: ReadonlyArray<"select" | "insert" | "update" | "delete">,
+) {
+  const inAmap = sql`${amapId} = ${currentAmapId}`;
+  return operations.map((operation) => {
+    const condition = sql`${inAmap} and ${operation === "select" ? read : write}`;
+    return pgPolicy(`${table}_${operation}`, {
+      for: operation,
+      ...(operation === "insert" ? {} : { using: condition }),
+      ...(operation === "select" || operation === "delete" ? {} : { withCheck: condition }),
+    });
+  });
+}
+
 // --- order : commande -------------------------------------------------------------------------
 // Pour un foyer, les lignes d'un catalogue (donc d'un producteur et d'un mois). Saisie : D3.
 
@@ -774,8 +828,14 @@ export const order = pgTable(
     unique("order_household_catalog_unique").on(t.householdId, t.catalogId),
     unique("order_amap_unique").on(t.id, t.amapId),
     index("order_catalog_idx").on(t.catalogId),
-    // Dans l'AMAP courante ; qui peut voir ou modifier quelle commande : D3.
-    ...amapPolicies("order", t.amapId, ["select", "insert", "update"]),
+    // Qui peut voir ou modifier quelle commande : voir plus haut (S12).
+    ...orderPolicies(
+      "order",
+      t.amapId,
+      canReadOrder(t.householdId, t.catalogId),
+      canWriteOrder(t.householdId, t.catalogId),
+      ["select", "insert", "update"],
+    ),
   ],
 );
 
@@ -818,7 +878,17 @@ export const orderLine = pgTable(
     unique("order_line_unique").on(t.orderId, t.catalogItemId, t.distributionId),
     check("order_line_quantity", sql`${t.quantity} >= 0`),
     check("order_line_price_positive", sql`${t.unitPriceCents} > 0`),
-    ...amapPolicies("order_line", t.amapId, ["select", "insert", "update", "delete"]),
+    // Les droits de la commande de la ligne (S12) : la table order est lue avec sa propre RLS.
+    ...orderPolicies(
+      "order_line",
+      t.amapId,
+      sql`exists (select 1 from "order" where "order".id = ${t.orderId})`,
+      sql`exists (
+        select 1 from "order" where "order".id = ${t.orderId}
+          and ${canWriteOrder(sql`"order".household_id`, sql`"order".catalog_id`)}
+      )`,
+      ["select", "insert", "update", "delete"],
+    ),
   ],
 );
 
@@ -876,8 +946,18 @@ export const cheque = pgTable(
         and ${t.expectedCents} = ${t.grossCents} - ${t.creditsCents} and ${t.expectedCents} >= 0`,
     ),
     check("cheque_received_cents", sql`${t.receivedCents} is null or ${t.receivedCents} >= 0`),
-    // Journal financier : jamais supprimé (pas de politique DELETE).
-    ...amapPolicies("cheque", t.amapId, ["select", "insert", "update"]),
+    // Journal financier : jamais supprimé (pas de politique DELETE). Lecture : le foyer, l'admin,
+    // le référent et le compte du producteur, un accès de confiance (S12). Écriture : la clôture
+    // (admin ou tâche horaire) et le pointage (référent du producteur ou admin, F1).
+    ...orderPolicies(
+      "cheque",
+      t.amapId,
+      sql`(${isMemberOf(t.householdId)} or ${isCurrentAmapAdmin} or ${isReferentOf(t.producerId)}
+        or ${isProducerAccount(t.producerId)} or ${trustedAccess} <> '')`,
+      sql`(${isCurrentAmapAdmin} or ${isReferentOf(t.producerId)}
+        or ${trustedAccess} = 'closing_job')`,
+      ["select", "insert", "update"],
+    ),
   ],
 );
 
