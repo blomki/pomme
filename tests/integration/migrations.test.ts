@@ -43,6 +43,7 @@ describe("Migrations", () => {
       "producer_user",
       "product",
       "referent_assignment",
+      "report",
       "session",
       "two_factor",
       "user",
