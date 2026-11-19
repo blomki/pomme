@@ -56,11 +56,8 @@ Le porteur du projet a tranché le 2026-11-18.
 
 ## Conséquences
 
-- **Isolation** : la Row Level Security isole toujours les commandes par AMAP seulement. Une
-  famille ne lit et n'écrit que la commande de SON foyer, mais par le code serveur
-  (`myHousehold`). Des politiques par foyer (famille, référent de ses producteurs, admin)
-  restent à poser ; elles devront laisser passer la tâche horaire de clôture, qui agit sans
-  compte connecté.
+- **Isolation** : une famille ne lit et n'écrit que la commande de SON foyer, par le code
+  serveur (`myHousehold`) et, depuis S12, par la base elle-même (politiques par foyer, ADR 0021).
 - Les avoirs disponibles (F2) ne sont pas encore déduits du récapitulatif : les montants sont
   annoncés comme provisoires.
 - L'accueil famille (D6) mènera à la commande ; en attendant, l'adresse est

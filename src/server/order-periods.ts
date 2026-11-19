@@ -515,7 +515,9 @@ export async function runOrderPeriodTransitions(
   const amaps = await db.select({ id: amap.id }).from(amap).orderBy(asc(amap.id));
   const report: TransitionReport[] = [];
   for (const { id: amapId } of amaps) {
-    const ctx: AmapContext = { amapId, userId: null };
+    // Accès de confiance « closing_job » : sans compte connecté, la Row Level Security ne
+    // montrerait aucune commande (S12, ADR 0021).
+    const ctx: AmapContext = { amapId, userId: null, trusted: "closing_job" };
     await withAmapContext(db, ctx, async (tx) => {
       const periods = await tx
         .select()

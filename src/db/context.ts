@@ -13,13 +13,22 @@ export type AmapContext = {
    * les actions réservées aux admins. Absent = non.
    */
   secondFactorVerified?: boolean;
+  /**
+   * Accès de confiance sans compte connecté (fiche S12, ADR 0021), posé seulement par le code
+   * serveur qui en a besoin : la tâche horaire de clôture (« closing_job ») et la page du bon de
+   * commande ouverte par un lien signé (« order_form_link »). Il ouvre la lecture des commandes et
+   * des chèques de l'AMAP ; la clôture peut aussi écrire les chèques. Absent pour les visiteurs.
+   */
+  trusted?: TrustedAccess;
 };
+
+export type TrustedAccess = "closing_job" | "order_form_link";
 
 /**
  * Ouvre une transaction dans laquelle PostgreSQL connaît l'AMAP et l'utilisateur courants.
  *
- * Pourquoi : les politiques de Row Level Security lisent ces deux variables
- * (app.amap_id et app.user_id) pour filtrer chaque requête. Le troisième argument « true »
+ * Pourquoi : les politiques de Row Level Security lisent ces variables (app.amap_id,
+ * app.user_id, et app.trusted pour un accès de confiance) pour filtrer chaque requête. Le troisième argument « true »
  * de set_config limite leur durée à la transaction : une connexion réutilisée ensuite par
  * une autre requête ne garde rien.
  *
@@ -40,7 +49,8 @@ export async function withAmapContext<T>(
   return db.transaction(async (tx) => {
     await tx.execute(
       sql`select set_config('app.amap_id', ${ctx.amapId ?? ""}, true),
-                 set_config('app.user_id', ${ctx.userId ?? ""}, true)`,
+                 set_config('app.user_id', ${ctx.userId ?? ""}, true),
+                 set_config('app.trusted', ${ctx.trusted ?? ""}, true)`,
     );
     return fn(tx, ctx);
   });

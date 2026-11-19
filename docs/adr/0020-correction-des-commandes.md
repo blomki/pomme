@@ -50,7 +50,6 @@ métier 3 et 17 du cahier des charges).
 
 - La famille voit la correction sur son accueil et dans son récapitulatif sans rien de plus :
   ce sont les mêmes lignes de commande.
-- La correction lit des commandes d'autres foyers : aujourd'hui, la Row Level Security limite à
-  l'AMAP, et c'est le code serveur qui vérifie le rôle. L'isolation par foyer dans la base est
-  la fiche S12 (#83).
+- La correction lit et écrit des commandes d'autres foyers : le code serveur vérifie le rôle, et
+  la base le vérifie aussi (référent du producteur ou admin, ADR 0021).
 - Le journal n'a pas encore d'écran de consultation : il se lit dans la base pour l'instant.

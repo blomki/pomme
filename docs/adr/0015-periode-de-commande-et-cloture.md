@@ -62,7 +62,7 @@ antérieures.
   le chèque est pointé et les lignes des distributions passées, et vérifier la disponibilité
   côté serveur. Une clé étrangère vers `catalog_item_availability` aurait bloqué la
   modification du catalogue après les premières commandes : elle n'est pas posée.
-- Qui voit quelle commande (famille, référent, producteur) : politiques RLS à affiner avec D3 ;
-  pour l'instant, isolation par AMAP seulement.
+- Qui voit quelle commande (famille, référent, producteur) : politiques par foyer posées par
+  S12 (ADR 0021). La tâche horaire y accède par l'accès de confiance « closing_job ».
 - Le bandeau du tableau de bord montre la période ouverte s'il y en a une, sinon celle du mois
   prochain. Rouvrir le mois en cours, une fois le mois suivant commencé, n'est pas prévu.
