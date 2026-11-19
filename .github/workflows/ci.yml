@@ -105,6 +105,11 @@ jobs:
       # Build de production sans clés Friendly Captcha : captcha désactivé (ADR 0007).
       CAPTCHA_DISABLED: "1"
       POMME_DEMO_PAGES: "1"
+      # Stockage des fichiers déposés (fiche S11) : le service « files » de docker-compose.yml.
+      FILES_S3_ENDPOINT: http://localhost:8333
+      FILES_S3_ACCESS_KEY: pomme
+      FILES_S3_SECRET_KEY: pomme_fichiers_dev
+      FILES_BUCKET: pomme-fichiers
     steps:
       - uses: actions/checkout@v5
       - uses: pnpm/action-setup@v4
@@ -115,6 +120,10 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Préparer la base de test
         run: pnpm db:setup && pnpm db:migrate && pnpm db:seed
+      # Pas dans « services » : SeaweedFS a besoin d'une commande et du fichier de réglages du
+      # dépôt, qu'un service ne peut pas recevoir.
+      - name: Préparer le stockage des fichiers
+        run: docker compose up -d --wait files && pnpm files:setup
       - run: pnpm build
       - name: Installer les navigateurs Playwright
         run: pnpm exec playwright install --with-deps chromium webkit

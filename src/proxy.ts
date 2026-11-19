@@ -1,10 +1,14 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sentryDsn, sentryOrigin } from "./monitoring/sentry";
+import { storageOrigin, storageSettings } from "./server/files/settings";
 import { contentSecurityPolicy, createNonce } from "./server/security-headers";
 
 /** Serveur de Sentry à autoriser dans la CSP (null tant que Sentry est éteint). */
 const ERROR_REPORT_ORIGIN = sentryOrigin(sentryDsn(process.env.NEXT_PUBLIC_SENTRY_DSN));
+
+/** Stockage des images déposées (fiche S11), à autoriser dans img-src (null sans stockage). */
+const IMAGE_ORIGIN = storageOrigin(storageSettings());
 
 /**
  * Proxy Next.js : s'exécute avant chaque page. Il tire un nonce et pose la Content-Security-Policy
@@ -20,6 +24,7 @@ export function proxy(request: NextRequest) {
     nonce,
     isDev: process.env.NODE_ENV === "development",
     errorReportOrigin: ERROR_REPORT_ORIGIN,
+    imageOrigin: IMAGE_ORIGIN,
   });
 
   const requestHeaders = new Headers(request.headers);

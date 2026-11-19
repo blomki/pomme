@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { requireAmapAdminPage } from "@/server/auth/guards";
+import { storageSettings } from "@/server/files/settings";
 import { getAmapProducer, listReferentCandidates } from "@/server/producers";
 import { ProducerDetail } from "@/ui/admin/ProducerDetail";
 
@@ -24,6 +25,7 @@ export default async function ProducerPage({ params }: Props) {
       amapSlug={slug}
       producer={data.producer}
       candidates={data.candidates}
+      photoEnabled={storageSettings() !== null}
     />
   );
 }

@@ -183,6 +183,13 @@
       "when": 1795072558199,
       "tag": "0025_commandes-par-foyer",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1795073583358,
+      "tag": "0026_textes-alternatifs-photos",
+      "breakpoints": true
     }
   ]
 }

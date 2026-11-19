@@ -21,6 +21,7 @@ import { useSnackbar } from "../feedback/SnackbarProvider";
 
 import { ProducerAccessSection } from "./ProducerAccessSection";
 import { ProducerFields, type ProducerFormValues } from "./ProducerFields";
+import { ProducerPhotoSection } from "./ProducerPhotoSection";
 
 const fullName = (r: ReferentView) => `${r.firstName} ${r.lastName}`.trim();
 
@@ -29,11 +30,14 @@ export function ProducerDetail({
   amapSlug,
   producer,
   candidates,
+  photoEnabled,
 }: {
   amapSlug: string;
   producer: AmapProducerDetail;
   /** Personnes qui ont le rôle référent dans l'AMAP. */
   candidates: ReferentView[];
+  /** Stockage des fichiers configuré : envoi de la photo possible (fiche S11). */
+  photoEnabled: boolean;
 }) {
   const t = useTranslations("Admin.producerForm");
   const tp = useTranslations("Admin.producers");
@@ -121,6 +125,8 @@ export function ProducerDetail({
             {t("save")}
           </Button>
         </Box>
+
+        <ProducerPhotoSection amapSlug={amapSlug} producer={producer} enabled={photoEnabled} />
 
         <ReferentsForm amapSlug={amapSlug} producer={producer} candidates={candidates} />
 

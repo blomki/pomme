@@ -23,23 +23,28 @@ const CAPTCHA_ORIGINS = "https://*.frcapi.com";
  *   présence ferait ignorer 'unsafe-inline' par le navigateur.
  * - connect-src : le serveur de Sentry (région UE) quand il est configuré, pour que le navigateur
  *   puisse signaler ses erreurs (ADR 0014).
+ * - img-src : le stockage des images déposées (photos, logos ; fiche S11) quand il est configuré.
+ *   blob: sert à l'aperçu d'une photo avant son envoi.
  * - frame-ancestors 'none' : aucun site ne peut afficher Pomme dans un cadre (« clickjacking »).
  */
 export function contentSecurityPolicy({
   nonce,
   isDev,
   errorReportOrigin = null,
+  imageOrigin = null,
 }: {
   nonce: string;
   isDev: boolean;
   /** Origine du service d'erreurs (Sentry), ou null s'il est éteint. */
   errorReportOrigin?: string | null;
+  /** Origine du stockage des images déposées, ou null sans stockage. */
+  imageOrigin?: string | null;
 }) {
   const directives = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     "style-src 'self' 'unsafe-inline'",
-    "img-src 'self' data: blob:",
+    `img-src 'self' data: blob:${imageOrigin ? ` ${imageOrigin}` : ""}`,
     "font-src 'self'",
     `connect-src 'self' ${CAPTCHA_ORIGINS}${errorReportOrigin ? ` ${errorReportOrigin}` : ""}`,
     `frame-src ${CAPTCHA_ORIGINS}`,

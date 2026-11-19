@@ -984,5 +984,33 @@
       "not_found": "Ce foyer n'existe plus : la correction n'a pas été enregistrée.",
       "forbidden": "Vous ne pouvez pas corriger les commandes de ce producteur."
     }
+  },
+  "ImageUpload": {
+    "none": "Pas encore de photo",
+    "choose": "Choisir une photo",
+    "replace": "Remplacer la photo",
+    "help": "JPEG, PNG ou WebP, 8 Mo au plus. La photo est réduite et ses informations cachées (dont la localisation) sont retirées.",
+    "alt": "Texte alternatif",
+    "altHelp": "Ce que montre la photo, pour les personnes qui ne la voient pas. Laissé vide : « {fallback} ».",
+    "save": "Enregistrer la photo",
+    "saving": "Envoi…",
+    "remove": "Retirer la photo",
+    "unavailable": "L'envoi de photos n'est pas encore disponible sur ce site.",
+    "errors": {
+      "empty": "Le fichier est vide. Choisissez une autre photo.",
+      "too_large": "Cette photo dépasse 8 Mo. Choisissez une photo plus légère, ou réduisez-la.",
+      "not_image": "Ce fichier n'est pas une photo lisible. Choisissez une image JPEG, PNG ou WebP.",
+      "no_file": "Choisissez d'abord une photo.",
+      "invalid_alt": "Le texte alternatif est trop long : 150 caractères au plus.",
+      "unavailable": "L'envoi de photos n'est pas encore disponible sur ce site.",
+      "forbidden": "Vous ne pouvez pas modifier cette photo.",
+      "network": "Connexion perdue : la photo n'a pas été enregistrée. Réessayez."
+    }
+  },
+  "ProducerPhoto": {
+    "title": "Photo",
+    "fallbackAlt": "Photo de {name}",
+    "saved": "Photo de {name} enregistrée.",
+    "removed": "Photo de {name} retirée."
   }
 }

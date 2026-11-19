@@ -33,7 +33,7 @@ DEV), et active l'option « dump all » pour que les rôles survivent à une mig
 | `NODE_ENV`                       | `production`                                                                       |
 | `CC_NODE_DEV_DEPENDENCIES`       | `install` (le build et les scripts de base en ont besoin)                          |
 | `CC_POST_BUILD_HOOK`             | `pnpm build`                                                                       |
-| `CC_PRE_RUN_HOOK`                | `bash clevercloud/pre-run.sh` (rôles et migrations)                                |
+| `CC_PRE_RUN_HOOK`                | `bash clevercloud/pre-run.sh` (rôles, migrations, bucket des fichiers)             |
 | `CC_HEALTH_CHECK_PATH`           | `/api/health`                                                                      |
 | `DATABASE_MIGRATION_URL`         | valeur de `POSTGRESQL_ADDON_URI` (propriétaire, ajoutée par la base)               |
 | `DATABASE_URL`                   | même adresse, avec `pomme_app` et un mot de passe aléatoire                        |
@@ -46,9 +46,28 @@ DEV), et active l'option « dump all » pour que les rôles survivent à une mig
 | `FRIENDLY_CAPTCHA_ENDPOINT`      | `eu` si l'offre le permet                                                          |
 | `NEXT_PUBLIC_SENTRY_DSN`         | clé Sentry de la région UE (`…ingest.de.sentry.io`), lue au build (ADR 0014)       |
 | `NEXT_PUBLIC_SENTRY_ENVIRONMENT` | `preprod` ou `production`                                                          |
+| `FILES_BUCKET`                   | `pomme-preprod-fichiers` ou `pomme-prod-fichiers` (voir « Fichiers déposés »)      |
 
 Mots de passe : `openssl rand -hex 24` (sans caractère spécial, rien à encoder dans
 l'adresse). Ne jamais définir `CAPTCHA_DISABLED` ni `POMME_DEMO_PAGES` sur ces applications.
+
+## Fichiers déposés (photos, logos)
+
+Stockage objet Cellar (fiche S11, ADR 0022), un add-on par environnement :
+
+1. Console Clever Cloud › Créer › un add-on › **Cellar S3 storage**, région Paris, nommé
+   `pomme-preprod-fichiers` (puis `pomme-prod-fichiers` pour la production).
+2. Le lier à l'application (onglet « Service dependencies » de l'application, ou au moment de la
+   création). Clever Cloud ajoute alors seul `CELLAR_ADDON_HOST`, `CELLAR_ADDON_KEY_ID` et
+   `CELLAR_ADDON_KEY_SECRET` : rien à recopier.
+3. Ajouter la variable `FILES_BUCKET` (tableau ci-dessus). Le nom d'un bucket est unique chez
+   tous les clients de Cellar : en cas de refus, en choisir un autre.
+4. Redéployer. Au démarrage, `clevercloud/pre-run.sh` crée le bucket et rend ses fichiers
+   lisibles par tous ; les journaux affichent `Lecture publique vérifiée.` et
+   `Liste des fichiers fermée au public.`
+
+Sans `FILES_BUCKET`, l'application fonctionne, mais l'envoi de photos est désactivé (message
+« pas encore disponible » à l'écran).
 
 ## Déploiement depuis GitHub Actions
 

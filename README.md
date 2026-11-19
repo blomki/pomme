@@ -65,10 +65,11 @@ PostgreSQL 17 tourne dans Docker (Docker Desktop doit être lancé). Première i
 
 ```bash
 cp .env.example .env   # adresses de connexion locales (jamais commité)
-pnpm db:up             # démarre PostgreSQL et Mailpit (emails de test)
+pnpm db:up             # démarre PostgreSQL, Mailpit (emails de test) et le stockage des fichiers
 pnpm db:setup          # crée les rôles de l'application (pomme_app, pomme_auth)
 pnpm db:migrate        # crée les tables
 pnpm db:seed           # charge le jeu de données fictif
+pnpm files:setup       # prépare le stockage des photos (SeaweedFS, compatible S3)
 ```
 
 Ensuite, `pnpm db:up` suffit après un redémarrage.
@@ -187,6 +188,7 @@ secrets et CodeQL. La fusion dans `main` n'est possible que si tout est au vert.
 | `pnpm db:seed`          | charge le jeu de données fictif                     |
 | `pnpm db:reset`         | efface la base et recharge tout                     |
 | `pnpm db:studio`        | explorateur de la base                              |
+| `pnpm files:setup`      | prépare le stockage des photos et logos             |
 
 ## Travailler avec Git
 

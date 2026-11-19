@@ -228,6 +228,8 @@ export const amap = pgTable(
     id: id(),
     slug: text("slug").notNull().unique(), // adresse : [domaine]/hommesdeterre
     name: text("name").notNull(),
+    // Logo (fiche S11, ADR 0022) : adresse publique de l'image ré-encodée ; texte alternatif :
+    // le nom de l'AMAP. Envoi prévu avec la fiche A4.
     logoUrl: text("logo_url"),
     theme: jsonb("theme").$type<AmapTheme>().notNull().default({}),
     contactEmail: text("contact_email"),
@@ -474,8 +476,10 @@ export const producer = pgTable(
     // Format international (+33…), comme pour les comptes : liens « Appeler » et Signal.
     phone: text("phone"),
     email: text("email"),
-    // Envoi de photo : fiche dédiée aux fichiers (stockage objet, images ré-encodées).
+    // Photo (fiche S11, ADR 0022) : adresse publique de l'image ré-encodée dans le stockage
+    // objet, et son texte alternatif (vide : « Photo de <nom> » à l'affichage).
     photoUrl: text("photo_url"),
+    photoAlt: text("photo_alt").notNull().default(""),
     createdBy: uuid("created_by").references(() => user.id),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
@@ -528,8 +532,9 @@ export const product = pgTable(
       .notNull()
       .references(() => producer.id),
     name: text("name").notNull(),
-    // Envoi de photo : fiche dédiée aux fichiers (#64).
+    // Photo (fiche S11, ADR 0022), comme celle du producteur ; envoi prévu avec les fiches produit.
     photoUrl: text("photo_url"),
+    photoAlt: text("photo_alt").notNull().default(""),
     createdBy: uuid("created_by").references(() => user.id),
     // Produit qui n'est plus fabriqué du tout (C3) ; il reste lisible dans les catalogues passés.
     archivedAt: archivedAt(),
