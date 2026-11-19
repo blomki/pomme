@@ -1108,4 +1108,66 @@ test.describe("administration (ordinateur)", () => {
     }
     await expect(progress).toContainText(`Chèques traités pour ${before} foyers`);
   });
+
+  test("un admin reporte un écart de la feuille d'émargement puis le rejette au clavier (F5)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await press(
+      page
+        .getByRole("navigation", { name: "Menu de l'administration" })
+        .getByRole("link", { name: "Signalements" }),
+    );
+    await expect(page.getByRole("heading", { level: 1, name: "Signalements" })).toBeVisible();
+
+    // Feuille d'émargement : choisir une distribution passée (au clavier), puis le foyer.
+    const distribution = page.getByRole("combobox", { name: "Distribution" });
+    await distribution.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("option").first()).toBeVisible();
+    // Une distribution avec des commandes : la deuxième ou plus ancienne (la plus récente peut
+    // être aujourd'hui sans commande dans le jeu de données).
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/distribution=/);
+      if (await page.getByRole("combobox", { name: "Foyer" }).isVisible()) break;
+      await distribution.focus();
+      await page.keyboard.press("Enter");
+    }
+    const household = (await page.getByRole("combobox", { name: "Foyer" }).textContent())!.trim();
+    await page.getByRole("radio", { name: "Produit manquant" }).focus();
+    await page.keyboard.press("Space");
+    await press(page.getByRole("button", { name: "Reporter l'écart" }));
+    await expect(page.getByText(`Écart reporté pour ${household}.`)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // À traiter : le rejeter, avec un motif (montré à la famille).
+    const toTreat = page.getByRole("region", { name: /^À traiter \(\d+\)$/ });
+    const reject = toTreat
+      .getByRole("button", { name: `Rejeter le signalement de ${household} (` })
+      .first();
+    await press(reject);
+    const dialog = page.getByRole("dialog", { name: `Rejeter le signalement de ${household} ?` });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await press(dialog.getByRole("button", { name: "Rejeter" }));
+    await expect(dialog.getByText("Indiquez un motif : la famille le verra.")).toBeVisible();
+    await dialog.getByRole("textbox", { name: "Motif du rejet" }).focus();
+    await page.keyboard.type("Écart rectifié sur place par les bénévoles");
+    await press(dialog.getByRole("button", { name: "Rejeter" }));
+    await expect(page.getByText(`Signalement de ${household} rejeté.`)).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: "Traités" })
+        .getByText("Écart rectifié sur place par les bénévoles")
+        .first(),
+    ).toBeVisible();
+  });
 });

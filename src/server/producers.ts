@@ -25,6 +25,7 @@ import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
 import { unpublishedCatalogTasks, type UnpublishedCatalogTask } from "./catalogs";
 import { foreignKeyViolation, uniqueViolation } from "./db-errors";
+import { countOpenReports } from "./reports";
 
 // Producteurs et référents, côté administrateur (story C1). Chaque fonction commence par
 // requireRole ; la Row Level Security limite de toute façon chaque requête à l'AMAP courante.
@@ -180,7 +181,9 @@ export async function getAmapProducer(
 
 export type BlockingTask =
   | { kind: "producer_without_referent"; amapProducerId: string; name: string }
-  | UnpublishedCatalogTask;
+  | UnpublishedCatalogTask
+  // Signalements pas encore traités (story F5) : un seul rappel, avec leur nombre.
+  | { kind: "open_reports"; count: number };
 
 /**
  * Tâches « Bloquant » du tableau de bord : producteurs sans référent, puis catalogues pas
@@ -199,7 +202,12 @@ export async function blockingTasks(
     amapProducerId: p.id,
     name: p.name,
   }));
-  return [...withoutReferent, ...(await unpublishedCatalogTasks(tx, now))];
+  const openReports = await countOpenReports(tx);
+  return [
+    ...withoutReferent,
+    ...(await unpublishedCatalogTasks(tx, now)),
+    ...(openReports > 0 ? [{ kind: "open_reports" as const, count: openReports }] : []),
+  ];
 }
 
 /** Personnes qui ont le rôle référent dans l'AMAP courante : les seules qu'on peut affecter. */

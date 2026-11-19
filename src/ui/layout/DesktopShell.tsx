@@ -50,7 +50,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
     case "admin":
       return [
         { key: "dashboard", icon: <DashboardOutlined />, href: `${base}/admin` },
-        { key: "reports", icon: <ReportProblemOutlined /> },
+        { key: "reports", icon: <ReportProblemOutlined />, href: `${base}/admin/signalements` },
         { key: "planning", icon: <CalendarMonthOutlined />, href: `${base}/admin/planning` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/admin/producteurs` },
         { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
@@ -61,7 +61,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "dashboard", icon: <DashboardOutlined />, href: `${base}/referent` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/referent/producteurs` },
         { key: "cheques", icon: <FactCheckOutlined />, href: `${base}/referent/cheques` },
-        { key: "credits", icon: <UndoOutlined /> },
+        { key: "credits", icon: <UndoOutlined />, href: `${base}/referent/avoirs` },
         { key: "orders", icon: <ReceiptLongOutlined />, href: `${base}/referent/bons-de-commande` },
         { key: "catalogues", icon: <Inventory2Outlined />, href: `${base}/referent/catalogue` },
       ];

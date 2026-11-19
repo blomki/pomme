@@ -196,4 +196,40 @@ test.describe("commande du mois (téléphone)", () => {
     await expect(page.getByRole("link", { name: "Voir le récapitulatif" })).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("une famille signale au clavier un produit abîmé, et suit son signalement (F5)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto("/hommesdeterre/famille/signalement");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Signaler un problème" }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Produit : le premier de la liste (une distribution passée), au clavier.
+    const product = page.getByRole("combobox", { name: "Produit" });
+    await expect(product).toHaveText(/ · .* \(× \d+\) · /);
+    const chosen = (await product.textContent())!;
+    const productName = / · (.*) \(×/.exec(chosen)![1]!;
+
+    // Motif « Autre » sans précision : refusé, avec un message clair.
+    await page.getByRole("radio", { name: "Autre" }).focus();
+    await page.keyboard.press("Space");
+    await page.getByRole("button", { name: "Envoyer le signalement" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Pour « Autre », précisez le problème.")).toBeVisible();
+
+    // Produit abîmé, une unité.
+    await page.getByRole("radio", { name: "Produit abîmé" }).focus();
+    await page.keyboard.press("Space");
+    await page.getByRole("button", { name: "Envoyer le signalement" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(/^Signalement envoyé au référent de /)).toBeVisible();
+    const mine = page.getByRole("region", { name: "Mes signalements" });
+    await expect(mine.getByText(`${productName} × 1 · `).first()).toBeVisible();
+    await expect(mine.getByText("En attente").first()).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+  });
 });
