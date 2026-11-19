@@ -3,11 +3,11 @@ import { z } from "zod";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
-import { amapProducer, household, producer, referentAssignment } from "@/db/schema";
-import { correctionAccess, correctionChangesQuantity } from "@/domain/orders";
+import { household } from "@/db/schema";
+import { correctionChangesQuantity } from "@/domain/orders";
 
 import { writeAuditLog } from "./audit";
-import { ForbiddenError, SecondFactorRequiredError } from "./auth/errors";
+import { requireReferentOrAdmin } from "./auth/referent-or-admin";
 import { requireRole } from "./auth/require-role";
 import { hasActiveMembership } from "./memberships";
 import {
@@ -26,44 +26,8 @@ import {
 // période est ouverte (une période clôturée se rouvre d'abord, D2). Chaque correction qui change
 // une quantité est écrite dans le journal.
 
-/**
- * Le compte peut corriger les commandes de ce producteur : référent qui le suit, ou admin de
- * l'AMAP (avec la deuxième vérification, comme toute action d'admin). Renvoie le producteur.
- */
-export async function requireOrderCorrector(
-  tx: Transaction,
-  ctx: AmapContext,
-  amapProducerId: string,
-): Promise<{ amapProducerId: string; producerId: string; producerName: string }> {
-  const roles = await requireRole(tx, ctx, ["referent", "admin"]);
-  if (!z.uuid().safeParse(amapProducerId).success) throw new ForbiddenError();
-  const [target] = await tx
-    .select({ producerId: amapProducer.producerId, producerName: producer.name })
-    .from(amapProducer)
-    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
-    .where(eq(amapProducer.id, amapProducerId));
-  if (!target) throw new ForbiddenError();
-
-  const [follows] = roles.includes("referent")
-    ? await tx
-        .select({ id: referentAssignment.id })
-        .from(referentAssignment)
-        .where(
-          and(
-            eq(referentAssignment.amapProducerId, amapProducerId),
-            eq(referentAssignment.userId, ctx.userId!),
-          ),
-        )
-    : [];
-  const access = correctionAccess({
-    roles,
-    followsProducer: Boolean(follows),
-    secondFactorVerified: Boolean(ctx.secondFactorVerified),
-  });
-  if (access === "second_factor") throw new SecondFactorRequiredError();
-  if (access === "forbidden") throw new ForbiddenError();
-  return { amapProducerId, ...target };
-}
+/** Le compte peut corriger les commandes de ce producteur (règle commune, voir l'import). */
+export const requireOrderCorrector = requireReferentOrAdmin;
 
 /** Foyer non archivé de l'AMAP courante (la Row Level Security limite à l'AMAP), ou null. */
 async function findHousehold(

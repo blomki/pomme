@@ -180,6 +180,53 @@
       "noEmail": "Ajoutez l'adresse email du producteur sur sa fiche pour lui envoyer le bon de commande.",
       "notClosed": "Les commandes ne sont pas encore clôturées : rien n'est envoyé.",
       "forbidden": "Vous ne suivez pas ce producteur."
+    },
+    "cheques": {
+      "title": "Chèques de {month}",
+      "previousMonth": "Mois précédent",
+      "nextMonth": "Mois suivant",
+      "tabs": "Producteurs",
+      "noProducers": "Vous ne suivez encore aucun producteur.",
+      "noPeriod": "Pas de période de commande pour ce mois : aucun chèque.",
+      "notClosed": "Les chèques sont calculés à la clôture des commandes de ce mois.",
+      "empty": "Aucun chèque pour ce producteur ce mois-ci.",
+      "progress": "Chèques traités pour {treated} foyers sur {total}",
+      "filter": "Filtrer les chèques",
+      "filters": {
+        "all": "Tous ({count})",
+        "pending": "Non reçus ({count})",
+        "gaps": "Écarts ({count})"
+      },
+      "keyboardHelp": "Au clavier : Espace coche « Reçu » (montant attendu prérempli), Entrée passe au foyer suivant.",
+      "household": "Foyer",
+      "expected": "Attendu",
+      "received": "Reçu",
+      "amount": "Montant reçu (€)",
+      "number": "N° (facultatif)",
+      "gap": "Écart",
+      "credit": "dont avoir − {amount}",
+      "receivedOf": "Reçu : {household}",
+      "amountOf": "Montant reçu en euros : {household}",
+      "numberOf": "Numéro du chèque : {household}",
+      "invalidAmount": "Montant non valable",
+      "handedOver": "Remis",
+      "noGap": "Aucun",
+      "gapAmount": "{amount}",
+      "settle": "Écart traité",
+      "settleOf": " : {household}",
+      "settled": "traité",
+      "noneInFilter": "Aucun chèque dans ce filtre.",
+      "receivedDone": "Chèque reçu : {household} ({amount}).",
+      "unmarked": "Chèque remis à « non reçu » : {household}.",
+      "gapSettled": "Écart traité : {household}.",
+      "gapReopened": "Écart de nouveau à traiter : {household}.",
+      "refused": {
+        "not_found": "Ce chèque n'existe plus (commandes rouvertes ?). Rechargez la page.",
+        "handed_over": "Ce chèque est déjà remis au producteur : il ne se modifie plus.",
+        "invalid": "Montant ou numéro non valable : rien n'a été enregistré.",
+        "no_gap": "Pas d'écart à traiter sur ce chèque.",
+        "forbidden": "Vous ne suivez pas ce producteur."
+      }
     }
   },
   "Catalog": {

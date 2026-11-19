@@ -60,7 +60,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
       return [
         { key: "dashboard", icon: <DashboardOutlined />, href: `${base}/referent` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/referent/producteurs` },
-        { key: "cheques", icon: <FactCheckOutlined /> },
+        { key: "cheques", icon: <FactCheckOutlined />, href: `${base}/referent/cheques` },
         { key: "credits", icon: <UndoOutlined /> },
         { key: "orders", icon: <ReceiptLongOutlined />, href: `${base}/referent/bons-de-commande` },
         { key: "catalogues", icon: <Inventory2Outlined />, href: `${base}/referent/catalogue` },

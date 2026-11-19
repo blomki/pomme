@@ -1,9 +1,8 @@
-import { and, eq } from "drizzle-orm";
-import { z } from "zod";
+import { eq } from "drizzle-orm";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
-import { amapProducer, producer, referentAssignment } from "@/db/schema";
+import { producer } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import {
   checkUpload,
@@ -12,10 +11,8 @@ import {
   MAX_UPLOAD_BYTES,
   type UploadProblem,
 } from "@/domain/images";
-import { referentOrAdminAccess } from "@/domain/roles";
 
-import { ForbiddenError, SecondFactorRequiredError } from "./auth/errors";
-import { requireRole } from "./auth/require-role";
+import { requireReferentOrAdmin } from "./auth/referent-or-admin";
 import { reencodeImage } from "./files/images";
 import type { FileStore } from "./files/storage";
 
@@ -24,37 +21,18 @@ import type { FileStore } from "./files/storage";
 // admin qui n'est pas son référent). Le fichier est contrôlé, ré-encodé, puis stocké hors du
 // serveur web ; la base ne garde que son adresse publique et son texte alternatif.
 
-/** Le compte peut changer la photo de ce producteur. Renvoie le producteur. */
+/** Le compte peut changer la photo de ce producteur. Renvoie le producteur et sa photo. */
 export async function requireProducerManager(
   tx: Transaction,
   ctx: AmapContext,
   amapProducerId: string,
 ): Promise<{ producerId: string; photoUrl: string | null }> {
-  const roles = await requireRole(tx, ctx, ["referent", "admin"]);
-  if (!z.uuid().safeParse(amapProducerId).success) throw new ForbiddenError();
-  const [target] = await tx
-    .select({ producerId: amapProducer.producerId, photoUrl: producer.photoUrl })
-    .from(amapProducer)
-    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
-    .where(eq(amapProducer.id, amapProducerId));
-  if (!target) throw new ForbiddenError();
-  const [follows] = await tx
-    .select({ id: referentAssignment.id })
-    .from(referentAssignment)
-    .where(
-      and(
-        eq(referentAssignment.amapProducerId, amapProducerId),
-        eq(referentAssignment.userId, ctx.userId!),
-      ),
-    );
-  const access = referentOrAdminAccess({
-    roles,
-    followsProducer: Boolean(follows),
-    secondFactorVerified: Boolean(ctx.secondFactorVerified),
-  });
-  if (access === "second_factor") throw new SecondFactorRequiredError();
-  if (access === "forbidden") throw new ForbiddenError();
-  return target;
+  const { producerId } = await requireReferentOrAdmin(tx, ctx, amapProducerId);
+  const [row] = await tx
+    .select({ photoUrl: producer.photoUrl })
+    .from(producer)
+    .where(eq(producer.id, producerId));
+  return { producerId, photoUrl: row?.photoUrl ?? null };
 }
 
 export type SavePhotoResult =
