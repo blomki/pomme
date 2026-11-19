@@ -5,12 +5,15 @@ import ChevronRight from "@mui/icons-material/ChevronRight";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
+import MenuItem from "@mui/material/MenuItem";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Tabs from "@mui/material/Tabs";
+import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { addMonths } from "@/domain/distributions";
@@ -31,13 +34,19 @@ export function OrderFormPage({
   month,
   producers,
   view,
+  households,
 }: {
   amapSlug: string;
   month: string;
   producers: Array<{ id: string; name: string }>;
   view: OrderFormView;
+  /** Foyers de l'AMAP, quand les commandes sont ouvertes : pour corriger (story D7). */
+  households: Array<{ id: string; name: string }> | null;
 }) {
   const t = useTranslations("Referent.orderForms");
+  const tc = useTranslations("Correction");
+  const router = useRouter();
+  const [chosen, setChosen] = useState("");
   const showSnackbar = useSnackbar();
   const [pending, setPending] = useState(false);
   const base = `/${amapSlug}/referent/bons-de-commande`;
@@ -46,6 +55,8 @@ export function OrderFormPage({
   const monthLabel = formatDate(`${month}-01T12:00:00Z`, "MMMM yyyy");
   const day = (d: string) => formatDate(`${d}T12:00:00Z`, "EEEE d MMMM");
   const closed = view.period?.status === "closed";
+  const correctHref = (householdId: string) =>
+    `${base}/corriger/${view.amapProducerId}/${householdId}`;
 
   const status = !view.period
     ? t("noPeriod")
@@ -122,7 +133,43 @@ export function OrderFormPage({
         ))}
       </Tabs>
 
-      <OrderFormTables form={view.form} />
+      <OrderFormTables form={view.form} correctHref={households ? correctHref : undefined} />
+
+      {households && (
+        <Stack
+          component="form"
+          direction="row"
+          spacing={2}
+          sx={{ mt: 4, alignItems: "center", flexWrap: "wrap", gap: 2 }}
+          aria-labelledby="corriger-autre-foyer"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (chosen) router.push(correctHref(chosen));
+          }}
+        >
+          <Typography id="corriger-autre-foyer" variant="titleMedium" component="h2">
+            {tc("otherHousehold")}
+          </Typography>
+          <TextField
+            id="foyer-a-corriger"
+            select
+            size="small"
+            label={tc("chooseHousehold")}
+            value={chosen}
+            onChange={(e) => setChosen(e.target.value)}
+            sx={{ minWidth: "16rem" }}
+          >
+            {households.map((h) => (
+              <MenuItem key={h.id} value={h.id}>
+                {h.name}
+              </MenuItem>
+            ))}
+          </TextField>
+          <Button type="submit" variant="outlined" disabled={!chosen}>
+            {tc("open")}
+          </Button>
+        </Stack>
+      )}
 
       {closed ? (
         <Stack direction="row" spacing={2} sx={{ mt: 4, flexWrap: "wrap", gap: 2 }}>

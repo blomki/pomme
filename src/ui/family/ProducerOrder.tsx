@@ -18,6 +18,11 @@ import { formatDate } from "@/i18n/dates";
 import type { OrderItem, OrderProducer } from "@/server/orders";
 import type { SetQuantityResult } from "@/server/orders";
 import {
+  correctOrderQuantitiesAction,
+  correctOrderQuantityAction,
+} from "@/server/order-corrections-actions";
+import type { CorrectionResult } from "@/server/order-corrections";
+import {
   setNothingThisMonthAction,
   setOrderQuantitiesAction,
   setOrderQuantityAction,
@@ -36,19 +41,32 @@ const key = (itemId: string, distributionId: string) => `${itemId}:${distributio
  * distribution. Chaque changement est enregistré aussitôt ; le total du chèque se calcule dans
  * le navigateur, sans attendre le serveur. Si le serveur refuse, la case reprend sa valeur
  * précédente et un message explique pourquoi. Flèches haut et bas : +1 / −1 (champ numérique).
+ *
+ * Avec `correction` : le même écran sert au référent ou à l'admin qui corrige la commande d'un
+ * foyer (story D7). Mêmes cases et mêmes contrôles ; pas de « Rien ce mois-ci », qui reste le
+ * choix de la famille ; chaque correction est inscrite au journal par le serveur.
  */
 export function ProducerOrder({
   amapSlug,
   month,
   distributions,
   producer,
+  correction,
 }: {
   amapSlug: string;
   month: string;
   distributions: Array<{ id: string; date: string }>;
   producer: OrderProducer;
+  correction?: {
+    householdId: string;
+    householdName: string;
+    amapProducerId: string;
+    /** Page d'où vient la correction (bon de commande, fiche du foyer). */
+    backHref: string;
+  };
 }) {
   const t = useTranslations("Family.order");
+  const tc = useTranslations("Correction");
   const showSnackbar = useSnackbar();
   const [cells, setCells] = useState<Cells>(() => {
     const initial: Cells = {};
@@ -69,14 +87,31 @@ export function ProducerOrder({
   const hasQuantities = Object.values(cells).some((c) => c.quantity > 0);
   const status = hasQuantities ? "complete" : declined ? "nothing" : "todo";
   const monthLabel = formatDate(`${month}-01T12:00:00Z`, "MMMM");
-  const base = `/${amapSlug}/famille/commande`;
+  const base = correction?.backHref ?? `/${amapSlug}/famille/commande`;
+  const target = correction && {
+    householdId: correction.householdId,
+    amapProducerId: correction.amapProducerId,
+  };
+  const saveOne = (line: { catalogItemId: string; distributionId: string; quantity: number }) =>
+    target
+      ? correctOrderQuantityAction(amapSlug, target, line)
+      : setOrderQuantityAction(amapSlug, line);
+  const saveMany = (
+    lines: Array<{ catalogItemId: string; distributionId: string; quantity: number }>,
+  ) =>
+    target
+      ? correctOrderQuantitiesAction(amapSlug, target, lines)
+      : setOrderQuantitiesAction(amapSlug, lines);
 
   // Nombre d'enregistrements en cours, pour « Enregistrement… » / « Modifications enregistrées ».
   const [saving, setSaving] = useState(0);
   const [touched, setTouched] = useState(false);
 
   /** Applique la réponse du serveur à une case : valeur confirmée, ou retour en arrière. */
-  const apply = (k: string, result: SetQuantityResult | { status: "forbidden" | "network" }) => {
+  const apply = (
+    k: string,
+    result: SetQuantityResult | CorrectionResult | { status: "forbidden" | "network" },
+  ) => {
     if (result.status === "saved") {
       saved.current[k] = { quantity: result.quantity, unitPriceCents: result.unitPriceCents };
       if (result.quantity > 0) setDeclined(false);
@@ -88,7 +123,15 @@ export function ProducerOrder({
     // Refus : retour à la dernière valeur enregistrée, et on oublie la suite.
     delete wanted.current[k];
     setCells((all) => ({ ...all, [k]: saved.current[k]! }));
-    showSnackbar({ message: t(`refused.${result.status}`) });
+    showSnackbar({
+      message:
+        correction &&
+        (result.status === "closed" ||
+          result.status === "not_found" ||
+          result.status === "forbidden")
+          ? tc(`refused.${result.status}`)
+          : t(`refused.${result.status === "not_found" ? "invalid" : result.status}`),
+    });
     return false;
   };
 
@@ -102,7 +145,7 @@ export function ProducerOrder({
       while (wanted.current[k] !== undefined) {
         const quantity = wanted.current[k]!;
         delete wanted.current[k];
-        const result = await setOrderQuantityAction(amapSlug, {
+        const result = await saveOne({
           catalogItemId: itemId,
           distributionId,
           quantity,
@@ -149,8 +192,7 @@ export function ProducerOrder({
     });
     setSaving((n) => n + 1);
     try {
-      const results = await setOrderQuantitiesAction(
-        amapSlug,
+      const results = await saveMany(
         batch.map((c) => ({
           catalogItemId: item.itemId,
           distributionId: c.distributionId,
@@ -192,11 +234,13 @@ export function ProducerOrder({
           startIcon={<ArrowBack />}
           sx={{ mb: 1, ml: -1 }}
         >
-          {t("back")}
+          {correction ? tc("back") : t("back")}
         </Button>
         <Stack direction="row" spacing={2} sx={{ alignItems: "center", flexWrap: "wrap" }}>
           <Typography variant="h1" sx={{ flex: 1 }}>
-            {producer.name}
+            {correction
+              ? tc("title", { household: correction.householdName, producer: producer.name })
+              : producer.name}
           </Typography>
           <OrderStatusChip status={status} />
         </Stack>
@@ -207,7 +251,10 @@ export function ProducerOrder({
         </Typography>
       </Box>
 
-      {producer.chequeReceived && <Alert severity="info">{t("lockedCheque")}</Alert>}
+      {correction && <Alert severity="info">{tc("journal")}</Alert>}
+      {producer.chequeReceived && (
+        <Alert severity="info">{correction ? tc("lockedCheque") : t("lockedCheque")}</Alert>
+      )}
 
       {producer.items.map((item) => {
         const editable = item.cells.some((c) => c.lock === null);
@@ -331,7 +378,7 @@ export function ProducerOrder({
           )}
         </Box>
         <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
-          {!hasQuantities && !producer.chequeReceived && (
+          {!correction && !hasQuantities && !producer.chequeReceived && (
             <Button variant="outlined" onClick={() => void toggleNothing()}>
               {declined ? t("nothingCancel") : t("nothingThisMonth")}
             </Button>

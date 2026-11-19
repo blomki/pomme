@@ -7,12 +7,15 @@ import { parisDay } from "@/domain/order-periods";
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { getHousehold } from "@/server/households";
 import { listMemberships, membershipStates } from "@/server/memberships";
+import { getHouseholdOrderOverview } from "@/server/order-corrections";
 import { HouseholdDetail } from "@/ui/admin/HouseholdDetail";
+import { HouseholdOrderSection } from "@/ui/admin/HouseholdOrderSection";
 import { MembershipsSection } from "@/ui/admin/MembershipsSection";
 
 type Props = { params: Promise<{ amap: string; id: string }> };
 
-// [domaine]/<amap>/admin/foyers/<id> : fiche d'un foyer (membres, rôles, adhésions, archivage).
+// [domaine]/<amap>/admin/foyers/<id> : fiche d'un foyer (membres, rôles, adhésions, commande du
+// mois, archivage).
 export default async function HouseholdPage({ params }: Props) {
   const { amap: slug, id } = await params;
   const { ctx } = await requireAmapAdminPage(slug);
@@ -21,10 +24,12 @@ export default async function HouseholdPage({ params }: Props) {
     if (!found) return null;
     const memberships = await listMemberships(tx, c, id);
     const states = await membershipStates(tx, c, [id]);
-    return { found, memberships, state: states.get(id)! };
+    // Commande du mois, à corriger au besoin (story D7) : pas pour un foyer archivé.
+    const orders = found.archivedAt ? null : await getHouseholdOrderOverview(tx, c, id);
+    return { found, memberships, state: states.get(id)!, orders };
   });
   if (!data) notFound();
-  const { found, memberships, state } = data;
+  const { found, memberships, state, orders } = data;
   return (
     <HouseholdDetail
       amapSlug={slug}
@@ -41,6 +46,9 @@ export default async function HouseholdPage({ params }: Props) {
             readOnly={found.archivedAt !== null}
           />
         )
+      }
+      orders={
+        orders && <HouseholdOrderSection amapSlug={slug} householdId={id} overview={orders} />
       }
     />
   );

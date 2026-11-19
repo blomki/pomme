@@ -1,6 +1,7 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import MuiLink from "@mui/material/Link";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
@@ -10,6 +11,7 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 
 import { formatEuros } from "@/domain/catalog";
 import { creditLabel, type OrderForm } from "@/domain/order-forms";
@@ -21,9 +23,18 @@ const numeric = { fontVariantNumeric: "tabular-nums", textAlign: "right" } as co
  * Tableaux du bon de commande (story E1) : quantités à préparer par produit et par
  * distribution, puis détail par foyer avec l'avoir déduit et le chèque attendu. Communs à
  * l'écran du référent et à la version imprimable : une seule mise en forme à faire évoluer.
+ * `correctHref` (écran du référent, commandes ouvertes) : lien « Corriger » sous chaque foyer
+ * (story D7).
  */
-export function OrderFormTables({ form }: { form: OrderForm }) {
+export function OrderFormTables({
+  form,
+  correctHref,
+}: {
+  form: OrderForm;
+  correctHref?: (householdId: string) => string;
+}) {
   const t = useTranslations("OrderForm");
+  const tc = useTranslations("Correction");
   const days = form.distributions.map((d) => formatDate(`${d.date}T12:00:00Z`, "d MMM"));
   const fullDays = form.distributions.map((d) => formatDate(`${d.date}T12:00:00Z`, "EEEE d MMMM"));
 
@@ -118,6 +129,16 @@ export function OrderFormTables({ form }: { form: OrderForm }) {
                     {index === 0 && (
                       <TableCell component="th" scope="rowgroup" rowSpan={h.rows.length}>
                         {h.name}
+                        {correctHref && (
+                          <MuiLink
+                            component={Link}
+                            href={correctHref(h.id)}
+                            aria-label={tc("correctOf", { household: h.name })}
+                            sx={{ display: "block", fontWeight: 400 }}
+                          >
+                            {tc("correct")}
+                          </MuiLink>
+                        )}
                       </TableCell>
                     )}
                     <TableCell>{row.name}</TableCell>

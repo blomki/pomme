@@ -74,3 +74,30 @@ export function cellLock(params: {
   if (!params.available) return "unavailable";
   return null;
 }
+
+/**
+ * Qui peut corriger la commande d'un foyer chez un producteur (story D7) : le référent qui suit
+ * ce producteur, ou un admin de l'AMAP, chez tous les producteurs. L'admin qui n'est pas le
+ * référent de ce producteur doit avoir fait la deuxième vérification, comme pour toute action
+ * d'admin (story A1). Les familles et les producteurs ne corrigent pas.
+ *
+ * @example correctionAccess({ roles: ["referent"], followsProducer: true, secondFactorVerified: false }) // "allowed"
+ * @example correctionAccess({ roles: ["referent"], followsProducer: false, secondFactorVerified: true }) // "forbidden"
+ */
+export function correctionAccess(input: {
+  roles: readonly ("admin" | "referent")[];
+  followsProducer: boolean;
+  secondFactorVerified: boolean;
+}): "allowed" | "forbidden" | "second_factor" {
+  if (input.roles.includes("referent") && input.followsProducer) return "allowed";
+  if (!input.roles.includes("admin")) return "forbidden";
+  return input.secondFactorVerified ? "allowed" : "second_factor";
+}
+
+/**
+ * Faut-il écrire la correction dans le journal ? Seulement si la quantité change : rien à
+ * tracer quand le référent retape la même valeur.
+ */
+export function correctionChangesQuantity(before: number, after: number): boolean {
+  return before !== after;
+}

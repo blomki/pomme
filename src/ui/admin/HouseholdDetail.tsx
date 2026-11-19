@@ -53,11 +53,14 @@ export function HouseholdDetail({
   amapSlug,
   household,
   memberships,
+  orders,
 }: {
   amapSlug: string;
   household: HouseholdView;
   /** Section « Adhésion » (story B1), placée après les membres. */
   memberships?: ReactNode;
+  /** Section « Commande du mois » (story D7), après l'adhésion. */
+  orders?: ReactNode;
 }) {
   const t = useTranslations("Admin.household");
   const tl = useTranslations("Admin.households");
@@ -225,6 +228,8 @@ export function HouseholdDetail({
       {!archived && <AddMemberForm amapSlug={amapSlug} householdId={household.id} />}
 
       {memberships}
+
+      {orders}
 
       {!anonymized && (
         <Box component="section" aria-labelledby="privacy-title" sx={{ mt: 5, maxWidth: 720 }}>
