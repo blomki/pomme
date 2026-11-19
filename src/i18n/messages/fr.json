@@ -1115,7 +1115,6 @@
     "treat": {
       "openTitle": "À traiter ({count})",
       "noneOpen": "Aucun signalement en attente.",
-      "creditSoon": "Rejetez un signalement avec un motif, montré à la famille. La création des avoirs arrive bientôt.",
       "decidedTitle": "Traités",
       "household": "Foyer",
       "product": "Produit",
@@ -1144,7 +1143,10 @@
         "already_decided": "Ce signalement a déjà été traité.",
         "invalid": "Indiquez un motif (500 caractères au plus).",
         "forbidden": "Vous ne suivez pas ce producteur."
-      }
+      },
+      "credit": "Créer un avoir",
+      "creditOf": "Créer un avoir pour {household} ({product})",
+      "credited": "Avoir de {amount} créé pour {household} : déduit de son prochain chèque."
     },
     "admin": {
       "pageTitle": "Signalements",
@@ -1165,6 +1167,41 @@
     },
     "referent": {
       "title": "Signalements et avoirs"
+    },
+    "credit": {
+      "title": "Créer un avoir pour {household}",
+      "intro": "{product} × {quantity} ({producer}). Montant proposé : {proposed}, le prix payé. L'avoir sera déduit du prochain chèque du foyer chez ce producteur.",
+      "amount": "Montant de l'avoir",
+      "amountHelp": "En euros, plus de 0. Ajustable.",
+      "pickedUp": "Le produit a bien été retiré (pas d'avoir pour un produit non retiré)",
+      "cancel": "Annuler",
+      "confirm": "Créer l'avoir",
+      "errors": {
+        "amount": "Montant non valable : plus de 0 €, deux décimales au plus.",
+        "picked_up": "Confirmez que le produit a été retiré : pas d'avoir pour un produit non retiré.",
+        "network": "Connexion perdue : l'avoir n'a pas été créé. Réessayez."
+      },
+      "refused": {
+        "not_found": "Ce signalement n'existe plus. Rechargez la page.",
+        "already_decided": "Ce signalement a déjà été traité.",
+        "forbidden": "Vous ne suivez pas ce producteur."
+      }
+    },
+    "history": {
+      "title": "Historique des avoirs",
+      "empty": "Aucun avoir pour l'instant.",
+      "producer": "Producteur",
+      "household": "Foyer",
+      "all": "Tous",
+      "summary": "{count, plural, =0 {Aucun avoir} one {# avoir} other {# avoirs}} · {pending} en attente de déduction",
+      "date": "Créé le",
+      "origin": "Origine",
+      "amount": "Montant",
+      "state": "Déduction",
+      "fromReport": "{product}, {day} · {reason}",
+      "remainder": "Reste d'un avoir plus grand que la commande",
+      "pending": "En attente du prochain chèque",
+      "deducted": "Déduit du chèque de {month}"
     }
   }
 }

@@ -1057,7 +1057,7 @@ export const report = pgTable(
 // --- credit : avoir ---------------------------------------------------------------------------
 // Montant dû à un foyer par un producteur (produit manquant ou abîmé, F2). En attente (created)
 // jusqu'à la clôture suivante où le foyer commande chez ce producteur : il est alors déduit de
-// ce chèque (deducted). Le lien avec le signalement viendra avec F5.
+// ce chèque (deducted). Créé à partir d'un signalement (F2, ADR 0025).
 
 export const creditStatus = pgEnum("credit_status", ["created", "deducted"]);
 
@@ -1077,6 +1077,8 @@ export const credit = pgTable(
     deductedOnChequeId: uuid("deducted_on_cheque_id"),
     // Reste d'un avoir déduit en partie (plus grand que la commande) : avoir d'origine.
     splitFromCreditId: uuid("split_from_credit_id"),
+    // Signalement d'où vient l'avoir (story F2) ; vide pour le reste d'un avoir partagé.
+    reportId: uuid("report_id").references(() => report.id),
     createdBy: uuid("created_by").references(() => user.id),
     archivedAt: archivedAt(),
     createdAt: createdAt(),
@@ -1107,7 +1109,19 @@ export const credit = pgTable(
       "credit_deducted_on_cheque",
       sql`(${t.status} = 'deducted') = (${t.deductedOnChequeId} is not null)`,
     ),
-    ...amapPolicies("credit", t.amapId, ["select", "insert", "update"]),
+    // Un seul avoir par signalement.
+    uniqueIndex("credit_report_unique").on(t.reportId),
+    // Comme les chèques (S12) : lu par le foyer, l'admin, le référent et le compte du producteur,
+    // la tâche de clôture ; écrit par l'admin, le référent du producteur (F2) et la clôture.
+    ...orderPolicies(
+      "credit",
+      t.amapId,
+      sql`(${isMemberOf(t.householdId)} or ${isCurrentAmapAdmin} or ${isReferentOf(t.producerId)}
+        or ${isProducerAccount(t.producerId)} or ${trustedAccess} <> '')`,
+      sql`(${isCurrentAmapAdmin} or ${isReferentOf(t.producerId)}
+        or ${trustedAccess} = 'closing_job')`,
+      ["select", "insert", "update"],
+    ),
   ],
 );
 

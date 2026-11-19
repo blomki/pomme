@@ -204,6 +204,13 @@
       "when": 1795096913910,
       "tag": "0028_signalements",
       "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795105562980,
+      "tag": "0029_avoirs-signalements",
+      "breakpoints": true
     }
   ]
 }

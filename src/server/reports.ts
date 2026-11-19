@@ -418,11 +418,16 @@ export type DecideReportResult =
   | { status: "invalid" };
 
 /** Le producteur de la ligne signalée, dans l'AMAP courante (pour vérifier le droit). */
-async function amapProducerOfReport(tx: Transaction, reportId: string) {
+export async function amapProducerOfReport(tx: Transaction, reportId: string) {
   const [row] = await tx
     .select({
       amapProducerId: amapProducer.id,
+      producerId: catalog.producerId,
+      householdId: report.householdId,
       status: report.status,
+      reason: report.reason,
+      quantity: report.quantity,
+      unitPriceCents: orderLine.unitPriceCents,
       decisionNote: report.decisionNote,
     })
     .from(report)
