@@ -4,6 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { requireAmapReferentPage } from "@/server/auth/guards";
+import { storageSettings } from "@/server/files/settings";
 import { listMyProducers } from "@/server/producers";
 import { MyProducers } from "@/ui/referent/MyProducers";
 
@@ -23,7 +24,11 @@ export default async function MyProducersPage({ params }: Props) {
       {producers.length === 0 ? (
         <Typography>{t("empty")}</Typography>
       ) : (
-        <MyProducers amapSlug={slug} producers={producers} />
+        <MyProducers
+          amapSlug={slug}
+          producers={producers}
+          photoEnabled={storageSettings() !== null}
+        />
       )}
     </>
   );

@@ -24,6 +24,7 @@ import type { MyProducer } from "@/server/producers";
 import { updateMyProducerAction } from "@/server/producers-actions";
 
 import { ProducerFields, type ProducerFormValues } from "../admin/ProducerFields";
+import { ProducerPhotoSection } from "../admin/ProducerPhotoSection";
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
 /**
@@ -33,9 +34,12 @@ import { useSnackbar } from "../feedback/SnackbarProvider";
 export function MyProducers({
   amapSlug,
   producers,
+  photoEnabled,
 }: {
   amapSlug: string;
   producers: MyProducer[];
+  /** Stockage des fichiers configuré : envoi de la photo possible (fiche S11). */
+  photoEnabled: boolean;
 }) {
   const t = useTranslations("Referent.producers");
   const [current, setCurrent] = useState(0);
@@ -143,6 +147,7 @@ export function MyProducers({
             {t("catalogueSoon")}
           </Button>
         </Box>
+        <ProducerPhotoSection amapSlug={amapSlug} producer={producer} enabled={photoEnabled} />
       </Box>
 
       {editing && (

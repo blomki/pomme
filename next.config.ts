@@ -21,6 +21,9 @@ const nextConfig: NextConfig = {
   // et la production ne reçoit qu'un commit déjà passé par la pré-production. En local et dans
   // la CI, le build continue de vérifier les types.
   typescript: { ignoreBuildErrors: Boolean(process.env.CC_DEPLOYMENT_ID) },
+  // Envoi de photos (fiche S11) : une requête d'action peut porter une image de 8 Mo au plus
+  // (MAX_UPLOAD_BYTES), plus le reste du formulaire. Par défaut, Next.js s'arrête à 1 Mo.
+  experimental: { serverActions: { bodySizeLimit: "9mb" } },
 };
 
 export default withNextIntl(nextConfig);

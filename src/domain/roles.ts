@@ -21,3 +21,22 @@ export function hasAnyRole(
 ): boolean {
   return allowed.some((role) => userRoles.includes(role));
 }
+
+/**
+ * Accès réservé au référent d'un producteur ou à un admin de l'AMAP : corriger une commande
+ * (D7), changer la photo du producteur (S11). Le référent qui suit ce producteur passe ; un admin
+ * passe chez tous les producteurs, mais avec la deuxième vérification (story A1) quand son rôle
+ * d'admin est la seule raison d'y avoir accès. Familles et producteurs : refusés.
+ *
+ * @example referentOrAdminAccess({ roles: ["referent"], followsProducer: true, secondFactorVerified: false }) // "allowed"
+ * @example referentOrAdminAccess({ roles: ["referent"], followsProducer: false, secondFactorVerified: true }) // "forbidden"
+ */
+export function referentOrAdminAccess(input: {
+  roles: readonly AmapRoleName[];
+  followsProducer: boolean;
+  secondFactorVerified: boolean;
+}): "allowed" | "forbidden" | "second_factor" {
+  if (input.roles.includes("referent") && input.followsProducer) return "allowed";
+  if (!input.roles.includes("admin")) return "forbidden";
+  return input.secondFactorVerified ? "allowed" : "second_factor";
+}

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Lancé par Clever Cloud avant chaque démarrage de l'application (CC_PRE_RUN_HOOK, voir
-# docs/deploiement.md). Prépare les rôles PostgreSQL puis applique les migrations.
+# docs/deploiement.md). Prépare les rôles PostgreSQL, applique les migrations, puis prépare le
+# bucket des fichiers déposés quand le stockage est configuré (fiche S11 ; sans effet sinon).
 #
 # Seulement sur la première instance (numéro 0) : avec plusieurs instances, elles lanceraient
 # sinon les migrations en même temps. Si ce script échoue, Clever Cloud annule le déploiement et
@@ -13,4 +14,7 @@ set -euo pipefail
 if [ "${INSTANCE_NUMBER:-0}" = "0" ]; then
   pnpm db:setup
   pnpm db:migrate
+  if [ -n "${FILES_BUCKET:-}" ]; then
+    pnpm files:setup
+  fi
 fi

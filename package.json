@@ -26,17 +26,19 @@
     "test:e2e": "playwright test --project=chromium --project=webkit-mobile",
     "test:visual": "playwright test --project=visual",
     "test:visual:update": "playwright test --project=visual --update-snapshots",
-    "db:up": "docker compose up -d --wait postgres mailpit",
+    "db:up": "docker compose up -d --wait postgres mailpit files",
     "db:down": "docker compose down",
     "db:generate": "drizzle-kit generate",
     "db:setup": "tsx --env-file-if-exists=.env src/db/scripts/setup.ts",
     "db:migrate": "tsx --env-file-if-exists=.env src/db/scripts/migrate.ts",
     "db:seed": "tsx --env-file-if-exists=.env src/db/scripts/seed.ts",
-    "db:reset": "docker compose down -v && pnpm db:up && pnpm db:setup && pnpm db:migrate && pnpm db:seed",
+    "db:reset": "docker compose down -v && pnpm db:up && pnpm db:setup && pnpm db:migrate && pnpm db:seed && pnpm files:setup",
     "db:studio": "drizzle-kit studio",
+    "files:setup": "tsx --env-file-if-exists=.env src/server/files/scripts/setup.ts",
     "jobs:hourly": "tsx --env-file-if-exists=.env src/jobs/hourly.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1172.0",
     "@better-auth/passkey": "^1.7.0",
     "@date-fns/tz": "^1.2.0",
     "@emotion/cache": "^11.14.0",
@@ -57,6 +59,7 @@
     "qrcode": "1.5.4",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "sharp": "^0.35.5",
     "zod": "^4.1.0"
   },
   "devDependencies": {

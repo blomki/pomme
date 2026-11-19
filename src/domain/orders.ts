@@ -4,6 +4,8 @@
  * centimes entiers.
  */
 
+import { referentOrAdminAccess } from "./roles";
+
 /** Quantité maximale par produit et par distribution : au-delà, sans doute une faute de frappe. */
 export const MAX_QUANTITY = 99;
 
@@ -76,23 +78,10 @@ export function cellLock(params: {
 }
 
 /**
- * Qui peut corriger la commande d'un foyer chez un producteur (story D7) : le référent qui suit
- * ce producteur, ou un admin de l'AMAP, chez tous les producteurs. L'admin qui n'est pas le
- * référent de ce producteur doit avoir fait la deuxième vérification, comme pour toute action
- * d'admin (story A1). Les familles et les producteurs ne corrigent pas.
- *
- * @example correctionAccess({ roles: ["referent"], followsProducer: true, secondFactorVerified: false }) // "allowed"
- * @example correctionAccess({ roles: ["referent"], followsProducer: false, secondFactorVerified: true }) // "forbidden"
+ * Qui peut corriger la commande d'un foyer chez un producteur (story D7) : la règle commune
+ * « référent du producteur, ou admin avec la deuxième vérification » (domain/roles.ts).
  */
-export function correctionAccess(input: {
-  roles: readonly ("admin" | "referent")[];
-  followsProducer: boolean;
-  secondFactorVerified: boolean;
-}): "allowed" | "forbidden" | "second_factor" {
-  if (input.roles.includes("referent") && input.followsProducer) return "allowed";
-  if (!input.roles.includes("admin")) return "forbidden";
-  return input.secondFactorVerified ? "allowed" : "second_factor";
-}
+export const correctionAccess = referentOrAdminAccess;
 
 /**
  * Faut-il écrire la correction dans le journal ? Seulement si la quantité change : rien à

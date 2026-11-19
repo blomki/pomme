@@ -60,6 +60,9 @@ export type AmapProducerDetail = AmapProducerSummary & {
   email: string | null;
   checkPayee: string;
   distanceKm: number | null;
+  /** Photo (fiche S11) : adresse publique, ou null ; texte alternatif, vide par défaut. */
+  photoUrl: string | null;
+  photoAlt: string;
 };
 
 const columns = {
@@ -74,6 +77,8 @@ const columns = {
   email: producer.email,
   checkPayee: amapProducer.checkPayee,
   distanceKm: amapProducer.distanceKm,
+  photoUrl: producer.photoUrl,
+  photoAlt: producer.photoAlt,
 };
 
 async function referentsOf(tx: Transaction, amapProducerIds: string[]) {

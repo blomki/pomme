@@ -27,5 +27,23 @@ services:
       - "1025:1025" # SMTP, utilisé par l'application
       - "8025:8025" # interface web
 
+  # Stockage des fichiers déposés (photos, logos ; fiche S11), compatible S3 comme Cellar chez
+  # Clever Cloud. SeaweedFS plutôt que MinIO, qui ne publie plus d'image Docker depuis fin 2025.
+  # Identifiants et lecture publique : docker/seaweedfs-s3.json. Préparer le bucket : pnpm files:setup
+  files:
+    image: chrislusf/seaweedfs:3.97
+    command: server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "8333:8333" # API S3, et lecture des images par le navigateur
+    volumes:
+      - ./docker/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+      - files:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://127.0.0.1:8333/ || exit 1"]
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
 volumes:
   pgdata:
+  files:

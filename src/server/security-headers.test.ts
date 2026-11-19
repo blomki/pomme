@@ -39,6 +39,20 @@ describe("contentSecurityPolicy", () => {
     );
   });
 
+  it("autorise le stockage des images déposées quand il est configuré (S11)", () => {
+    expect(directive(contentSecurityPolicy({ nonce: "abc", isDev: false }), "img-src")).toBe(
+      "img-src 'self' data: blob:",
+    );
+    const csp = contentSecurityPolicy({
+      nonce: "abc",
+      isDev: false,
+      imageOrigin: "https://cellar-c2.services.clever-cloud.com",
+    });
+    expect(directive(csp, "img-src")).toBe(
+      "img-src 'self' data: blob: https://cellar-c2.services.clever-cloud.com",
+    );
+  });
+
   it("ne met pas de nonce dans style-src (il ferait ignorer 'unsafe-inline')", () => {
     const csp = contentSecurityPolicy({ nonce: "abc", isDev: false });
     expect(directive(csp, "style-src")).toBe("style-src 'self' 'unsafe-inline'");
