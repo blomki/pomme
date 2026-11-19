@@ -190,31 +190,26 @@
       "noPeriod": "Pas de période de commande pour ce mois : aucun chèque.",
       "notClosed": "Les chèques sont calculés à la clôture des commandes de ce mois.",
       "empty": "Aucun chèque pour ce producteur ce mois-ci.",
-      "progress": "Chèques traités pour {treated} foyers sur {total}",
       "filter": "Filtrer les chèques",
       "filters": {
-        "all": "Tous ({count})",
-        "pending": "Non reçus ({count})",
-        "gaps": "Écarts ({count})"
+        "all": "Tous",
+        "pending": "Non reçus",
+        "gaps": "Écarts"
       },
       "keyboardHelp": "Au clavier : Espace coche « Reçu » (montant attendu prérempli), Entrée passe au foyer suivant.",
       "household": "Foyer",
-      "expected": "Attendu",
+      "expected": "Chèque attendu",
       "received": "Reçu",
-      "amount": "Montant reçu (€)",
+      "amount": "Montant du chèque reçu",
       "number": "N° (facultatif)",
-      "gap": "Écart",
       "credit": "dont avoir − {amount}",
       "receivedOf": "Reçu : {household}",
       "amountOf": "Montant reçu en euros : {household}",
       "numberOf": "Numéro du chèque : {household}",
       "invalidAmount": "Montant non valable",
       "handedOver": "Remis",
-      "noGap": "Aucun",
-      "gapAmount": "{amount}",
       "settle": "Écart traité",
       "settleOf": " : {household}",
-      "settled": "traité",
       "noneInFilter": "Aucun chèque dans ce filtre.",
       "receivedDone": "Chèque reçu : {household} ({amount}).",
       "unmarked": "Chèque remis à « non reçu » : {household}.",
@@ -226,7 +221,14 @@
         "invalid": "Montant ou numéro non valable : rien n'a été enregistré.",
         "no_gap": "Pas d'écart à traiter sur ce chèque.",
         "forbidden": "Vous ne suivez pas ce producteur."
-      }
+      },
+      "noProducersAdmin": "Aucun producteur actif dans cette AMAP.",
+      "summary": "Chèques traités pour {treated} foyers sur {total} · {pending} en attente · {gaps, plural, =0 {aucun écart} one {# écart} other {# écarts}}",
+      "status": "Statut",
+      "statusReceived": "Reçu",
+      "statusExpected": "Attendu",
+      "gapOpen": "Écart : {amount}",
+      "gapSettledChip": "Écart traité : {amount}"
     }
   },
   "Catalog": {
@@ -744,7 +746,8 @@
       "planning": "Planning des permanences",
       "producers": "Producteurs et référents",
       "households": "Foyers et adhésions",
-      "pages": "Pages"
+      "pages": "Pages",
+      "cheques": "Chèques"
     },
     "referent": {
       "label": "Menu du référent",
