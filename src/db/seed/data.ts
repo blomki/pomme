@@ -812,7 +812,7 @@ export function buildSeedData(today: Date = new Date()): SeedData {
 
   // Commandes du mois en cours dans la première AMAP, clôturées le mois dernier, avec leurs
   // chèques attendus : de quoi voir un bon de commande clôturé (E1) et pointer des chèques
-  // (F1). Mêmes 12 foyers, deux producteurs chacun, une quantité à chaque distribution ouverte.
+  // (F1). Deux producteurs par foyer, une quantité à chaque distribution ouverte.
   const cheques: SeedCheque[] = [];
   if (firstAmap) {
     const days = defaultPeriodDays(firstMonth);
@@ -832,7 +832,16 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     const monthDistributions = distributions.filter(
       (d) => d.amapId === firstAmap.id && d.isOpen && d.date.startsWith(firstMonth),
     );
-    const ordering = households.filter((h) => h.amapId === firstAmap.id).slice(0, 12);
+    // Les mêmes 12 foyers, plus celui de amapien.demo : sa famille a des produits reçus ce mois-ci,
+    // à signaler (story F5).
+    const demoFamily = demoUsers.find(({ demoUser: u }) => u.email === "amapien.demo@example.org");
+    const demoFamilyHousehold = householdMembers.find((m) => m.userId === demoFamily?.demoUser.id);
+    const ordering = households
+      .filter((h) => h.amapId === firstAmap.id)
+      .filter(
+        (h, index) =>
+          index < 12 || (h.id === demoFamilyHousehold?.householdId && h.amapId === firstAmap.id),
+      );
     ordering.forEach((h, index) => {
       for (const c of [0, 1].map(
         (k) => currentCatalogs[(index + 2 * k) % currentCatalogs.length],

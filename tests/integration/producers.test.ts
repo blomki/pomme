@@ -201,7 +201,7 @@ describe("Producteurs et référents (C1)", () => {
       expect(entry?.after).toEqual({ checkPayee: "SCEA des Vergers", active: false });
       // Inactif : n'est pas une tâche bloquante, même sans référent.
       const tasks = await inA((tx, ctx) => blockingTasks(tx, ctx));
-      expect(tasks.map((t) => t.name)).not.toContain("Vergers d'essai");
+      expect(tasks.map((t) => ("name" in t ? t.name : t.kind))).not.toContain("Vergers d'essai");
     });
 
     it("n'affecte que des personnes qui ont le rôle référent", async () => {
@@ -259,7 +259,7 @@ describe("Producteurs et référents (C1)", () => {
         .where(eq(referentAssignment.userId, leaving.id));
       expect(left).toEqual([]);
       const tasks = await inA((tx, ctx) => blockingTasks(tx, ctx));
-      expect(tasks.map((t) => t.name)).toContain("Ruches du Bocage");
+      expect(tasks.map((t) => ("name" in t ? t.name : t.kind))).toContain("Ruches du Bocage");
     });
 
     it("empêche, au niveau de la base, d'affecter un référent à un producteur d'une autre AMAP", async () => {

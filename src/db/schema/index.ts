@@ -38,6 +38,7 @@ import {
 
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
+import { REPORT_REASONS, REPORT_STATUSES } from "@/domain/reports";
 import { AMAP_ROLES } from "@/domain/roles";
 
 import { uuidv7 } from "../uuid";
@@ -967,6 +968,89 @@ export const cheque = pgTable(
         or ${trustedAccess} = 'closing_job')`,
       ["select", "insert", "update"],
     ),
+  ],
+);
+
+// --- report : signalement ------------------------------------------------------------------
+// Un produit manquant ou abîmé sur une ligne de commande d'une distribution passée (story F5,
+// ADR 0024). Signalé par la famille, ou par l'admin d'après la feuille d'émargement ; traité par
+// le référent du producteur ou un admin : avoir (F2) ou rejet. Jamais supprimé.
+
+export const reportReason = pgEnum("report_reason", REPORT_REASONS);
+export const reportSource = pgEnum("report_source", ["family", "admin"]);
+export const reportStatus = pgEnum("report_status", REPORT_STATUSES);
+
+/** Le référent du producteur de cette ligne de commande (via sa commande et son catalogue). */
+const isReferentOfLine = (orderLineId: unknown) => sql`exists (
+  select 1 from order_line
+  join "order" on "order".id = order_line.order_id
+  where order_line.id = ${orderLineId}
+    and ${catalogProducerMatches(sql`"order".catalog_id`, isReferentOf)}
+)`;
+
+export const report = pgTable(
+  "report",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    orderLineId: uuid("order_line_id")
+      .notNull()
+      .references(() => orderLine.id),
+    quantity: integer("quantity").notNull(),
+    reason: reportReason("reason").notNull(),
+    comment: text("comment").notNull().default(""),
+    source: reportSource("source").notNull(),
+    status: reportStatus("status").notNull().default("open"),
+    // Décision : qui, quand, et pourquoi en cas de rejet (montré à la famille).
+    decisionNote: text("decision_note").notNull().default(""),
+    decidedAt: timestamp("decided_at", { withTimezone: true }),
+    decidedBy: uuid("decided_by").references(() => user.id),
+    createdBy: uuid("created_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "report_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    index("report_open_idx")
+      .on(t.amapId)
+      .where(sql`${t.status} = 'open'`),
+    index("report_order_line_idx").on(t.orderLineId),
+    check("report_quantity_positive", sql`${t.quantity} > 0`),
+    check(
+      "report_other_needs_comment",
+      sql`${t.reason} <> 'other' or length(trim(${t.comment})) > 0`,
+    ),
+    check("report_decided", sql`(${t.status} = 'open') = (${t.decidedAt} is null)`),
+    // Lecture : le foyer, un admin, le référent du producteur (pas le producteur lui-même).
+    pgPolicy("report_select", {
+      for: "select",
+      using: sql`${t.amapId} = ${currentAmapId} and (${isMemberOf(t.householdId)}
+        or ${isCurrentAmapAdmin} or ${isReferentOfLine(t.orderLineId)})`,
+    }),
+    // Création : la famille pour son foyer (ouvert, en son nom), ou un admin (feuille
+    // d'émargement).
+    pgPolicy("report_insert", {
+      for: "insert",
+      withCheck: sql`${t.amapId} = ${currentAmapId} and (${isCurrentAmapAdmin}
+        or (${isMemberOf(t.householdId)} and ${t.source} = 'family' and ${t.status} = 'open'
+          and ${t.createdBy} = ${currentUserId}))`,
+    }),
+    // Décision : le référent du producteur ou un admin.
+    pgPolicy("report_update", {
+      for: "update",
+      using: sql`${t.amapId} = ${currentAmapId} and (${isCurrentAmapAdmin}
+        or ${isReferentOfLine(t.orderLineId)})`,
+      withCheck: sql`${t.amapId} = ${currentAmapId} and (${isCurrentAmapAdmin}
+        or ${isReferentOfLine(t.orderLineId)})`,
+    }),
   ],
 );
 

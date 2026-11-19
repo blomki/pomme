@@ -174,9 +174,10 @@ describe("buildSeedData", () => {
     // Le mois en cours : commandes clôturées le mois dernier, un chèque par foyer et producteur.
     expect(current).toMatchObject({ month: "2026-11-01", status: "closed" });
     expect(current!.closesAt < today).toBe(true);
-    expect(new Set(data.orders.map((o) => o.householdId)).size).toBe(12);
-    expect(data.orders).toHaveLength(48);
-    expect(data.cheques).toHaveLength(24);
+    // 12 foyers, plus celui de amapien.demo pour le mois en cours (F5).
+    expect(new Set(data.orders.map((o) => o.householdId)).size).toBe(13);
+    expect(data.orders).toHaveLength(50);
+    expect(data.cheques).toHaveLength(26);
     for (const c of data.cheques) expect(c.expectedCents).toBe(c.grossCents);
     for (const line of data.orderLines) {
       const item = data.catalogItems.find((i) => i.id === line.catalogItemId);

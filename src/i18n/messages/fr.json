@@ -436,7 +436,9 @@
       "producerWithoutReferent": "{name} n'a pas de référent : personne ne pointe ses chèques.",
       "assignReferent": "Affecter un référent à {name}",
       "catalogNotPublished": "Catalogue de {month} de {name} pas encore publié : les commandes ouvrent le {opensOn}.",
-      "contactReferent": "Voir {name} et son référent"
+      "contactReferent": "Voir {name} et son référent",
+      "openReports": "{count, plural, one {# signalement attend} other {# signalements attendent}} une décision : avoir ou rejet.",
+      "treatReports": "Voir les signalements"
     },
     "producers": {
       "title": "Producteurs et référents",
@@ -1062,5 +1064,107 @@
     "fallbackAlt": "Photo de {name}",
     "saved": "Photo de {name} enregistrée.",
     "removed": "Photo de {name} retirée."
+  },
+  "Reports": {
+    "status": {
+      "open": "En attente",
+      "credited": "Avoir accordé",
+      "rejected": "Rejeté"
+    },
+    "form": {
+      "quantity": "Quantité concernée",
+      "quantityHelp": "{max, plural, one {Au plus # unité.} other {Au plus # unités.}}",
+      "reason": "Motif",
+      "reasons": {
+        "missing": "Produit manquant",
+        "damaged": "Produit abîmé",
+        "other": "Autre"
+      },
+      "comment": "Précision (facultatif)",
+      "commentRequired": "Précision",
+      "errors": {
+        "summary": "Le signalement n'a pas été envoyé : corrigez les champs signalés.",
+        "quantity": "Entre 1 et {max}.",
+        "comment_required": "Pour « Autre », précisez le problème.",
+        "comment_too_long": "{max} caractères au plus.",
+        "network": "Connexion perdue : le signalement n'a pas été envoyé. Réessayez."
+      }
+    },
+    "family": {
+      "back": "Retour à l'accueil",
+      "title": "Signaler un problème",
+      "intro": "Un produit manquait ou était abîmé ? Signalez-le : le référent du producteur décide d'un avoir, déduit de votre prochain chèque.",
+      "nothingToReport": "Aucun produit à signaler : rien n'a été distribué récemment, ou le délai est passé (jusqu'à la clôture des commandes qui suit la distribution).",
+      "formTitle": "Nouveau signalement",
+      "product": "Produit",
+      "productHelp": "Les produits de vos distributions récentes.",
+      "lineOption": "{day} · {product} (× {quantity}) · {producer}",
+      "send": "Envoyer le signalement",
+      "sent": "Signalement envoyé au référent de {producer}.",
+      "mine": "Mes signalements",
+      "none": "Aucun signalement pour l'instant.",
+      "reportLine": "{product} × {quantity} · {producer}",
+      "reportDetail": "Distribution du {day} · {reason}",
+      "rejectedBecause": "Motif du référent : {note}",
+      "refused": {
+        "not_reportable": "Ce produit ne peut plus être signalé (délai passé, ou déjà signalé en entier).",
+        "no_household": "Votre compte n'est rattaché à aucun foyer de cette AMAP.",
+        "forbidden": "Action non autorisée."
+      }
+    },
+    "treat": {
+      "openTitle": "À traiter ({count})",
+      "noneOpen": "Aucun signalement en attente.",
+      "creditSoon": "Rejetez un signalement avec un motif, montré à la famille. La création des avoirs arrive bientôt.",
+      "decidedTitle": "Traités",
+      "household": "Foyer",
+      "product": "Produit",
+      "distribution": "Distribution",
+      "reason": "Motif",
+      "statusCol": "Statut",
+      "actions": "Décision",
+      "source": {
+        "family": "Signalé par la famille",
+        "admin": "Feuille d'émargement"
+      },
+      "productLine": "{product} × {quantity}",
+      "productDetail": "{producer} · {value}",
+      "reject": "Rejeter",
+      "rejectOf": "Rejeter le signalement de {household} ({product})",
+      "rejectTitle": "Rejeter le signalement de {household} ?",
+      "rejectIntro": "{product} × {quantity}. Aucun avoir ne sera créé ; la famille verra votre motif.",
+      "note": "Motif du rejet",
+      "noteHelp": "Par exemple : produit retrouvé au point de distribution.",
+      "noteRequired": "Indiquez un motif : la famille le verra.",
+      "cancel": "Annuler",
+      "confirmReject": "Rejeter",
+      "rejected": "Signalement de {household} rejeté.",
+      "refused": {
+        "not_found": "Ce signalement n'existe plus. Rechargez la page.",
+        "already_decided": "Ce signalement a déjà été traité.",
+        "invalid": "Indiquez un motif (500 caractères au plus).",
+        "forbidden": "Vous ne suivez pas ce producteur."
+      }
+    },
+    "admin": {
+      "pageTitle": "Signalements",
+      "title": "Reporter un écart de la feuille d'émargement",
+      "intro": "Un produit manquant ou abîmé noté par les bénévoles : il arrive chez le référent du producteur, comme un signalement de famille.",
+      "distribution": "Distribution",
+      "noOrders": "Aucune commande à cette distribution, ou tout est déjà signalé.",
+      "household": "Foyer",
+      "product": "Produit",
+      "lineOption": "{product} (× {quantity}) · {producer}",
+      "submit": "Reporter l'écart",
+      "created": "Écart reporté pour {household}.",
+      "refused": {
+        "not_reportable": "Ce produit ne peut plus être signalé (déjà signalé en entier).",
+        "no_household": "Foyer introuvable.",
+        "forbidden": "Action réservée aux administrateurs."
+      }
+    },
+    "referent": {
+      "title": "Signalements et avoirs"
+    }
   }
 }

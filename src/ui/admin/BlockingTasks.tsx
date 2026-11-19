@@ -38,7 +38,10 @@ export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Bl
       ) : (
         <List>
           {tasks.map((task) => (
-            <ListItem key={`${task.kind}-${task.amapProducerId}`} divider>
+            <ListItem
+              key={`${task.kind}-${task.kind === "open_reports" ? "" : task.amapProducerId}`}
+              divider
+            >
               <ListItemIcon>
                 <ErrorOutlined sx={{ color: "error.main" }} />
               </ListItemIcon>
@@ -51,24 +54,32 @@ export function BlockingTasks({ amapSlug, tasks }: { amapSlug: string; tasks: Bl
                   >
                     <Chip size="small" color="error" label={t("blocking")} />
                     <span>
-                      {task.kind === "producer_without_referent"
-                        ? t("producerWithoutReferent", { name: task.name })
-                        : t("catalogNotPublished", {
-                            name: task.name,
-                            month: day(`${task.month}-01`, "MMMM"),
-                            opensOn: day(task.opensOn, "d MMMM"),
-                          })}
+                      {task.kind === "open_reports"
+                        ? t("openReports", { count: task.count })
+                        : task.kind === "producer_without_referent"
+                          ? t("producerWithoutReferent", { name: task.name })
+                          : t("catalogNotPublished", {
+                              name: task.name,
+                              month: day(`${task.month}-01`, "MMMM"),
+                              opensOn: day(task.opensOn, "d MMMM"),
+                            })}
                     </span>
                   </Stack>
                 }
                 secondary={
                   <MuiLink
                     component={Link}
-                    href={`/${amapSlug}/admin/producteurs/${task.amapProducerId}`}
+                    href={
+                      task.kind === "open_reports"
+                        ? `/${amapSlug}/admin/signalements`
+                        : `/${amapSlug}/admin/producteurs/${task.amapProducerId}`
+                    }
                   >
-                    {task.kind === "producer_without_referent"
-                      ? t("assignReferent", { name: task.name })
-                      : t("contactReferent", { name: task.name })}
+                    {task.kind === "open_reports"
+                      ? t("treatReports")
+                      : task.kind === "producer_without_referent"
+                        ? t("assignReferent", { name: task.name })
+                        : t("contactReferent", { name: task.name })}
                   </MuiLink>
                 }
               />
