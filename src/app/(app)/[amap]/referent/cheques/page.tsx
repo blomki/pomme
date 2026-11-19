@@ -39,6 +39,7 @@ export default async function ChequesPage({ params, searchParams }: Props) {
       // key : repart des données du serveur quand on change de mois ou de producteur.
       key={`${data.view.amapProducerId}-${data.view.month}`}
       amapSlug={slug}
+      basePath={`/${slug}/referent/cheques`}
       producers={data.producers.map((p) => ({ id: p.id, name: p.name }))}
       view={data.view}
     />

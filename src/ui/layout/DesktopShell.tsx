@@ -54,6 +54,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "planning", icon: <CalendarMonthOutlined />, href: `${base}/admin/planning` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/admin/producteurs` },
         { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
+        { key: "cheques", icon: <FactCheckOutlined />, href: `${base}/admin/cheques` },
         { key: "pages", icon: <ArticleOutlined /> },
       ];
     case "referent":

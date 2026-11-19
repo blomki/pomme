@@ -7,7 +7,8 @@ import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import IconButton from "@mui/material/IconButton";
-import LinearProgress from "@mui/material/LinearProgress";
+import InputAdornment from "@mui/material/InputAdornment";
+import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import Tab from "@mui/material/Tab";
 import Table from "@mui/material/Table";
@@ -45,6 +46,7 @@ import {
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 import { m3 } from "../theme/create-theme";
+import type { M3Role } from "../theme/m3-colors";
 import { visuallyHidden } from "../visually-hidden";
 
 /** Copie d'un objet sans une de ses clés (brouillon d'une ligne enregistrée). */
@@ -57,17 +59,21 @@ function without<T>(all: Record<string, T>, key: string): Record<string, T> {
 const numeric = { fontVariantNumeric: "tabular-nums", textAlign: "right" } as const;
 
 /**
- * Écran « Pointage des chèques » du référent (story F1, écran R3) : mois (flèches), un onglet par
- * producteur suivi, avancement, filtres Tous / Non reçus / Écarts, puis une ligne par foyer.
+ * Écran « Pointage des chèques » (story F1, écran R3), pour le référent (ses producteurs) et
+ * pour l'admin (tous) : mois (flèches), avancement, filtres Tous / Non reçus / Écarts, un
+ * onglet par producteur, puis une ligne par foyer avec son statut.
  * Clavier : Espace coche « Reçu » (montant attendu prérempli), Entrée passe au foyer suivant.
  * Chaque changement est enregistré aussitôt ; le serveur le journalise.
  */
 export function ChequePointagePage({
   amapSlug,
+  basePath,
   producers,
   view,
 }: {
   amapSlug: string;
+  /** Adresse de l'écran : espace référent ou espace admin. */
+  basePath: string;
   producers: Array<{ id: string; name: string }>;
   view: ChequePointage;
 }) {
@@ -80,17 +86,15 @@ export function ChequePointagePage({
   const [invalid, setInvalid] = useState<Record<string, boolean>>({});
   const checkboxes = useRef<Map<string, HTMLInputElement>>(new Map());
 
-  const base = `/${amapSlug}/referent/cheques`;
   const href = (month: string, producer = view.amapProducerId) =>
-    `${base}?mois=${month}&producteur=${producer}`;
-  const monthLabel = formatDate(`${view.month}-01T12:00:00Z`, "MMMM yyyy");
+    `${basePath}?mois=${month}&producteur=${producer}`;
+  // « Chèques de novembre » ; l'année seulement pour un autre mois que ceux de cette année.
+  const sameYear = view.month.slice(0, 4) === formatDate(new Date(), "yyyy");
+  const monthLabel = formatDate(`${view.month}-01T12:00:00Z`, sameYear ? "MMMM" : "MMMM yyyy");
   const progress = pointageProgress(rows);
   const shown = rows.filter((r) => matchesFilter(r, filter));
-  const counts = {
-    all: rows.length,
-    pending: rows.filter((r) => matchesFilter(r, "pending")).length,
-    gaps: rows.filter((r) => matchesFilter(r, "gaps")).length,
-  };
+  const pendingCount = rows.filter((r) => matchesFilter(r, "pending")).length;
+  const gapCount = rows.filter((r) => matchesFilter(r, "gaps")).length;
 
   const replace = (row: PointageRow) =>
     setRows((all) => all.map((r) => (r.id === row.id ? row : r)));
@@ -201,26 +205,63 @@ export function ChequePointagePage({
 
   return (
     <>
-      <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", mb: 2 }}>
-        <Typography variant="h1" sx={{ flexGrow: 1 }}>
-          {t("title", { month: monthLabel })}
-        </Typography>
-        <IconButton
-          component={Link}
-          nativeButton={false}
-          href={href(addMonths(view.month, -1))}
-          aria-label={t("previousMonth")}
-        >
-          <ChevronLeft />
-        </IconButton>
-        <IconButton
-          component={Link}
-          nativeButton={false}
-          href={href(addMonths(view.month, 1))}
-          aria-label={t("nextMonth")}
-        >
-          <ChevronRight />
-        </IconButton>
+      <Stack
+        direction="row"
+        sx={{
+          alignItems: "flex-start",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 2,
+          mb: 2,
+        }}
+      >
+        <Box>
+          <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
+            <Typography variant="h1">{t("title", { month: monthLabel })}</Typography>
+            <IconButton
+              component={Link}
+              nativeButton={false}
+              href={href(addMonths(view.month, -1))}
+              aria-label={t("previousMonth")}
+            >
+              <ChevronLeft />
+            </IconButton>
+            <IconButton
+              component={Link}
+              nativeButton={false}
+              href={href(addMonths(view.month, 1))}
+              aria-label={t("nextMonth")}
+            >
+              <ChevronRight />
+            </IconButton>
+          </Stack>
+          {!notYet && rows.length > 0 && (
+            // Zone « status » : l'avancement est annoncé à chaque pointage.
+            <Typography role="status" sx={{ color: "text.secondary" }}>
+              {t("summary", {
+                treated: progress.treated,
+                total: progress.total,
+                pending: pendingCount,
+                gaps: gapCount,
+              })}
+            </Typography>
+          )}
+        </Box>
+        {!notYet && rows.length > 0 && (
+          <ToggleButtonGroup
+            exclusive
+            value={filter}
+            onChange={(_, value: ChequeFilter | null) => value && setFilter(value)}
+            aria-label={t("filter")}
+            sx={{ flexWrap: "wrap" }}
+          >
+            {(["all", "pending", "gaps"] as const).map((f) => (
+              <ToggleButton key={f} value={f} sx={{ textTransform: "none", px: 2.5 }}>
+                {t(`filters.${f}`)}
+              </ToggleButton>
+            ))}
+          </ToggleButtonGroup>
+        )}
       </Stack>
 
       <Tabs
@@ -246,32 +287,6 @@ export function ChequePointagePage({
         <Typography>{t("empty")}</Typography>
       ) : (
         <>
-          <Box sx={{ mb: 3, maxWidth: 480 }}>
-            <Typography id="avancement" role="status" sx={{ mb: 1 }}>
-              {t("progress", { treated: progress.treated, total: progress.total })}
-            </Typography>
-            <LinearProgress
-              variant="determinate"
-              value={(progress.treated / progress.total) * 100}
-              aria-labelledby="avancement"
-            />
-          </Box>
-
-          <ToggleButtonGroup
-            exclusive
-            size="small"
-            value={filter}
-            onChange={(_, value: ChequeFilter | null) => value && setFilter(value)}
-            aria-label={t("filter")}
-            sx={{ mb: 2, flexWrap: "wrap" }}
-          >
-            {(["all", "pending", "gaps"] as const).map((f) => (
-              <ToggleButton key={f} value={f}>
-                {t(`filters.${f}`, { count: counts[f] })}
-              </ToggleButton>
-            ))}
-          </ToggleButtonGroup>
-
           <Typography
             variant="bodyMedium"
             sx={{ color: "text.secondary", mb: 1 }}
@@ -280,7 +295,11 @@ export function ChequePointagePage({
             {t("keyboardHelp")}
           </Typography>
 
-          <TableContainer sx={{ overflowX: "auto" }}>
+          <TableContainer
+            component={Paper}
+            variant="outlined"
+            sx={{ overflowX: "auto", borderRadius: 3 }}
+          >
             <Table size="small" aria-describedby="aide-clavier">
               <TableHead>
                 <TableRow>
@@ -291,7 +310,7 @@ export function ChequePointagePage({
                   <TableCell scope="col">{t("received")}</TableCell>
                   <TableCell scope="col">{t("amount")}</TableCell>
                   <TableCell scope="col">{t("number")}</TableCell>
-                  <TableCell scope="col">{t("gap")}</TableCell>
+                  <TableCell scope="col">{t("status")}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -323,7 +342,15 @@ export function ChequePointagePage({
                       </TableCell>
                       <TableCell padding="checkbox">
                         {handedOver ? (
-                          <Typography variant="bodyMedium">{t("handedOver")}</Typography>
+                          <Checkbox
+                            checked
+                            disabled
+                            slotProps={{
+                              input: {
+                                "aria-label": t("receivedOf", { household: row.householdName }),
+                              },
+                            }}
+                          />
                         ) : (
                           <Checkbox
                             checked={received}
@@ -340,93 +367,92 @@ export function ChequePointagePage({
                           />
                         )}
                       </TableCell>
-                      <TableCell sx={{ minWidth: 120 }}>
-                        <TextField
-                          size="small"
-                          value={
-                            draft.amount ??
-                            (row.receivedCents === null ? "" : priceInput(row.receivedCents))
-                          }
-                          disabled={!received || handedOver}
-                          error={Boolean(invalid[row.id])}
-                          onChange={(e) =>
-                            setDrafts((all) => ({
-                              ...all,
-                              [row.id]: { ...all[row.id], amount: e.target.value },
-                            }))
-                          }
-                          onBlur={() => void commit(row)}
-                          slotProps={{
-                            htmlInput: {
-                              inputMode: "decimal",
-                              "aria-label": t("amountOf", { household: row.householdName }),
-                              "aria-invalid": Boolean(invalid[row.id]),
-                              style: { textAlign: "right" },
-                            },
-                          }}
-                          helperText={invalid[row.id] ? t("invalidAmount") : undefined}
-                        />
-                      </TableCell>
                       <TableCell sx={{ minWidth: 140 }}>
-                        <TextField
-                          size="small"
-                          value={draft.number ?? row.chequeNumber ?? ""}
-                          disabled={!received || handedOver}
-                          onChange={(e) =>
-                            setDrafts((all) => ({
-                              ...all,
-                              [row.id]: { ...all[row.id], number: e.target.value },
-                            }))
-                          }
-                          onBlur={() => void commit(row)}
-                          slotProps={{
-                            htmlInput: {
-                              maxLength: 30,
-                              "aria-label": t("numberOf", { household: row.householdName }),
-                            },
-                          }}
-                        />
-                      </TableCell>
-                      <TableCell>
-                        {gap === null || gap === 0 ? (
-                          <Typography variant="bodyMedium" sx={{ color: "text.secondary" }}>
-                            {gap === 0 ? t("noGap") : "—"}
+                        {!received ? (
+                          <Typography aria-hidden sx={{ color: "text.secondary", pl: 2 }}>
+                            —
                           </Typography>
                         ) : (
-                          <Stack
-                            direction="row"
-                            spacing={1}
-                            sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
-                          >
-                            <Chip
-                              size="small"
-                              label={t("gapAmount", {
-                                amount: `${gap > 0 ? "+" : "−"} ${formatEuros(Math.abs(gap))}`,
-                              })}
-                              sx={
-                                hasOpenGap(row)
-                                  ? { bgcolor: m3("errorContainer"), color: m3("onErrorContainer") }
-                                  : {
-                                      bgcolor: m3("surfaceContainerHigh"),
-                                      color: m3("onSurfaceVariant"),
-                                    }
-                              }
-                            />
-                            {!handedOver &&
-                              (hasOpenGap(row) ? (
-                                <Button size="small" onClick={() => void settle(row, true)}>
-                                  {t("settle")}
-                                  <Box component="span" sx={visuallyHidden}>
-                                    {t("settleOf", { household: row.householdName })}
-                                  </Box>
-                                </Button>
-                              ) : (
-                                <Typography variant="bodySmall" sx={{ color: "text.secondary" }}>
-                                  {t("settled")}
-                                </Typography>
-                              ))}
-                          </Stack>
+                          <TextField
+                            size="small"
+                            value={
+                              draft.amount ??
+                              (row.receivedCents === null ? "" : priceInput(row.receivedCents))
+                            }
+                            disabled={handedOver}
+                            error={Boolean(invalid[row.id])}
+                            onChange={(e) =>
+                              setDrafts((all) => ({
+                                ...all,
+                                [row.id]: { ...all[row.id], amount: e.target.value },
+                              }))
+                            }
+                            onBlur={() => void commit(row)}
+                            sx={
+                              hasOpenGap(row)
+                                ? {
+                                    "& .MuiOutlinedInput-root": {
+                                      bgcolor: m3("tertiaryContainer"),
+                                    },
+                                  }
+                                : undefined
+                            }
+                            slotProps={{
+                              input: {
+                                endAdornment: <InputAdornment position="end">€</InputAdornment>,
+                              },
+                              htmlInput: {
+                                inputMode: "decimal",
+                                "aria-label": t("amountOf", { household: row.householdName }),
+                                "aria-invalid": Boolean(invalid[row.id]),
+                                style: { textAlign: "right" },
+                              },
+                            }}
+                            helperText={invalid[row.id] ? t("invalidAmount") : undefined}
+                          />
                         )}
+                      </TableCell>
+                      <TableCell sx={{ minWidth: 140 }}>
+                        {!received ? (
+                          <Typography aria-hidden sx={{ color: "text.secondary", pl: 2 }}>
+                            —
+                          </Typography>
+                        ) : (
+                          <TextField
+                            size="small"
+                            value={draft.number ?? row.chequeNumber ?? ""}
+                            disabled={handedOver}
+                            onChange={(e) =>
+                              setDrafts((all) => ({
+                                ...all,
+                                [row.id]: { ...all[row.id], number: e.target.value },
+                              }))
+                            }
+                            onBlur={() => void commit(row)}
+                            slotProps={{
+                              htmlInput: {
+                                maxLength: 30,
+                                "aria-label": t("numberOf", { household: row.householdName }),
+                              },
+                            }}
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Stack
+                          direction="row"
+                          sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
+                        >
+                          <StatusChip row={row} gap={gap} />
+                          {hasOpenGap(row) && !handedOver && (
+                            <Button size="small" onClick={() => void settle(row, true)}>
+                              {t("settle")}
+                              <Box component="span" sx={visuallyHidden}>
+                                {t("settleOf", { household: row.householdName })}
+                              </Box>
+                            </Button>
+                          )}
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
@@ -437,5 +463,28 @@ export function ChequePointagePage({
         </>
       )}
     </>
+  );
+}
+
+/** Statut d'un chèque : reçu, attendu, remis, ou écart (à traiter, ou traité). */
+function StatusChip({ row, gap }: { row: PointageRow; gap: number | null }) {
+  const t = useTranslations("Referent.cheques");
+  const signed = gap === null ? "" : `${gap > 0 ? "+" : "−"} ${formatEuros(Math.abs(gap))}`;
+  const [label, background, text]: [string, M3Role, M3Role] =
+    gap !== null && gap !== 0
+      ? hasOpenGap(row)
+        ? [t("gapOpen", { amount: signed }), "tertiaryContainer", "onTertiaryContainer"]
+        : [t("gapSettledChip", { amount: signed }), "surfaceContainerHigh", "onSurfaceVariant"]
+      : row.status === "handed_over"
+        ? [t("handedOver"), "surfaceContainerHigh", "onSurfaceVariant"]
+        : row.status === "received"
+          ? [t("statusReceived"), "secondaryContainer", "onSecondaryContainer"]
+          : [t("statusExpected"), "surfaceContainerHighest", "onSurfaceVariant"];
+  return (
+    <Chip
+      size="small"
+      label={label}
+      sx={{ bgcolor: m3(background), color: m3(text), fontWeight: 500 }}
+    />
   );
 }
