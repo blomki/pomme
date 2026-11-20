@@ -159,6 +159,15 @@ async function loadCredits(
   }));
 }
 
+/**
+ * Avoirs d'un producteur, pour « Mes paiements » (F4). Sans contrôle d'accès : l'appelant a
+ * déjà vérifié le droit (requireCatalogEditor). Le signalement d'origine reste caché au
+ * producteur (la RLS ne le lui montre pas) : source vaut alors null.
+ */
+export function listProducerCredits(tx: Transaction, producerId: string): Promise<CreditView[]> {
+  return loadCredits(tx, eq(credit.producerId, producerId));
+}
+
 /** Avoirs de tous les producteurs de l'AMAP (admin). */
 export async function listAllCredits(tx: Transaction, ctx: AmapContext): Promise<CreditView[]> {
   await requireRole(tx, ctx, ["admin"]);

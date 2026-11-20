@@ -733,6 +733,36 @@
       "baskets": "{count, plural, one {Panier de # foyer} other {Paniers de # foyers}}",
       "basketsHint": "Pour étiqueter : un panier par foyer, par ordre alphabétique.",
       "item": "{product} × {quantity}"
+    },
+    "payments": {
+      "title": "Mes paiements",
+      "subtitle": "{amap} · chèques pointés par votre référent",
+      "nothing": "Aucun chèque pour l'instant : ils apparaîtront à la clôture des commandes.",
+      "progress": "{received} / {total} chèques reçus",
+      "progressLabel": "Chèques reçus par votre référent",
+      "expected": "Montant attendu : {amount}.",
+      "creditsDeducted": "Avoirs déduits : {amount}.",
+      "plannedOn": "Remise prévue à la distribution du {date}.",
+      "handedOn": "Remis le {date}.",
+      "handOverUnknown": "Date de remise pas encore connue.",
+      "toFollow": "À suivre",
+      "toFollowEmpty": "Tous les chèques sont reçus.",
+      "received": "Reçus",
+      "rowsTitle": "{title} ({count})",
+      "rowCredit": "{gross} moins un avoir de {credit}",
+      "rowReceived": "chèque reçu de {amount}",
+      "state": {
+        "pending": "En attente",
+        "gap": "Écart en cours",
+        "received": "Reçu",
+        "handed_over": "Remis"
+      },
+      "credits": "Avoirs accordés",
+      "creditsHint": "Accordés par votre référent pour un produit manquant ou abîmé ; déduits du chèque suivant du foyer.",
+      "creditPending": "À déduire du prochain chèque",
+      "creditDeducted": "Déduit du chèque de {month}",
+      "otherMonths": "Autres mois",
+      "monthLine": "{month} · {count, plural, one {# chèque} other {# chèques}}"
     }
   },
   "Platform": {
