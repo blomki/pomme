@@ -33,3 +33,13 @@ for (const screen of screens) {
     });
   }
 }
+
+// Feuille d'émargement (E3), telle qu'imprimée en A4 : page de démonstration aux données fixes,
+// pour que la capture ne change pas d'un mois à l'autre.
+test("feuille d'émargement (impression)", async ({ page }) => {
+  await page.setViewportSize({ width: 794, height: 1123 }); // A4 à 96 points par pouce
+  await page.emulateMedia({ media: "print", colorScheme: "light", reducedMotion: "reduce" });
+  await page.goto("/plateforme/demo/emargement");
+  await page.evaluate(() => document.fonts.ready);
+  await expect(page).toHaveScreenshot("feuille-emargement-impression.png", { fullPage: true });
+});

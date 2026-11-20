@@ -1254,4 +1254,41 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("un admin ouvre au clavier la feuille d'émargement du mois, prête à imprimer (E3)", async ({
+    page,
+    request,
+  }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/planning");
+    const link = page.getByRole("link", { name: /^Imprimer la feuille d'émargement de / });
+    await link.focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/\/hommesdeterre\/emargement\/\d{4}-\d{2}$/);
+    await expect(
+      page.getByRole("heading", { level: 1, name: /^Feuille d'émargement · / }),
+    ).toBeVisible();
+    // Jeu de données : commandes du mois en cours chez plusieurs producteurs et foyers.
+    const deliveries = page.getByRole("region", { name: "1. Livraisons par producteur" });
+    const pickups = page.getByRole("region", { name: "2. Retraits par foyer" });
+    await expect(deliveries.getByRole("table", { name: /^Livraisons de / }).first()).toBeVisible();
+    await expect(pickups.getByRole("table", { name: /^Retraits du foyer / }).first()).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Bénévoles de permanence" }).getByRole("table").first(),
+    ).toBeVisible();
+    await expect(page.getByRole("navigation")).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
+
+    // Sur papier : plus de bouton.
+    await page.emulateMedia({ media: "print" });
+    await expect(page.getByRole("button", { name: "Imprimer" })).toBeHidden();
+    await page.emulateMedia({ media: "screen" });
+  });
+
+  test("un référent n'a pas accès à la feuille d'émargement (E3)", async ({ page, request }) => {
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/emargement/2026-12");
+    await expect(page.getByRole("heading", { level: 1, name: "Page introuvable" })).toBeVisible();
+    await expect(page.getByRole("table")).toHaveCount(0);
+  });
 });
