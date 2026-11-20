@@ -382,6 +382,44 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("link", { name })).toHaveCount(0);
   });
 
+  test("un admin modifie les réglages de son AMAP au clavier (A4)", async ({ page, request }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Réglages" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Réglages de l'AMAP" })).toBeVisible();
+    // L'adresse ne se change pas ici.
+    await expect(page.getByRole("textbox", { name: "Adresse" })).not.toBeEditable();
+    const preview = page.getByRole("region", { name: "Aperçu du thème" });
+    await expect(preview.getByRole("figure", { name: "Clair" })).toBeVisible();
+    await expect(preview.getByRole("figure", { name: "Sombre" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Un paramètre hors bornes est refusé, puis une valeur correcte est enregistrée.
+    const volunteers = page.getByRole("spinbutton", { name: "Bénévoles par distribution" });
+    const setVolunteers = async (value: string) => {
+      await volunteers.focus();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type(value);
+      await page.getByRole("button", { name: "Enregistrer les réglages" }).focus();
+      await page.keyboard.press("Enter");
+    };
+    await setVolunteers("0");
+    await expect(
+      page.getByText("Rien n'a été enregistré. Corrigez les champs signalés."),
+    ).toBeVisible();
+    await expect(page.getByText("Nombre entier de 1 à 20.")).toBeVisible();
+    await setVolunteers("4");
+    await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+    await page.reload();
+    await expect(volunteers).toHaveValue("4");
+    // Remise à la valeur du jeu de données (d'autres tests s'en servent).
+    await setVolunteers("3");
+    await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+  });
+
   test("un admin crée un producteur au clavier et lui affecte un référent (C1)", async ({
     page,
     request,

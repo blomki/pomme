@@ -42,6 +42,8 @@ export function ImageUpload({
   onSave,
   onRemove,
   onSaved,
+  withAlt = true,
+  fit = "cover",
 }: {
   /** Titre de la section (« Photo »). */
   title: string;
@@ -55,6 +57,13 @@ export function ImageUpload({
   onRemove: () => Promise<{ status: "removed" | "forbidden" }>;
   /** Après un enregistrement ou un retrait (relire la page, afficher un message). */
   onSaved: (message: "saved" | "removed") => void;
+  /**
+   * Champ « texte alternatif ». Sans lui (logo de l'AMAP), l'image se décrit par `fallbackAlt`
+   * (le nom de l'AMAP).
+   */
+  withAlt?: boolean;
+  /** Recadrer l'aperçu (photo) ou l'afficher en entier (logo). */
+  fit?: "cover" | "contain";
 }) {
   const t = useTranslations("ImageUpload");
   const id = useId();
@@ -167,7 +176,7 @@ export function ImageUpload({
               src={shown}
               // Pendant l'aperçu, le texte saisi décrit déjà la nouvelle image.
               alt={alt.trim() || fallbackAlt}
-              sx={{ width: "100%", height: "100%", objectFit: "cover" }}
+              sx={{ width: "100%", height: "100%", objectFit: fit }}
             />
           ) : (
             <Typography variant="bodyMedium" sx={{ color: "text.secondary", p: 2 }}>
@@ -202,16 +211,18 @@ export function ImageUpload({
             />
             <FormHelperText id={`${fileId}-aide`}>{t("help")}</FormHelperText>
           </Box>
-          <TextField
-            id={altId}
-            name="alt"
-            label={t("alt")}
-            value={alt}
-            onChange={(e) => setAlt(e.target.value)}
-            disabled={!enabled || pending}
-            helperText={t("altHelp", { fallback: fallbackAlt })}
-            slotProps={{ htmlInput: { maxLength: MAX_ALT_LENGTH } }}
-          />
+          {withAlt && (
+            <TextField
+              id={altId}
+              name="alt"
+              label={t("alt")}
+              value={alt}
+              onChange={(e) => setAlt(e.target.value)}
+              disabled={!enabled || pending}
+              helperText={t("altHelp", { fallback: fallbackAlt })}
+              slotProps={{ htmlInput: { maxLength: MAX_ALT_LENGTH } }}
+            />
+          )}
           <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 1 }}>
             <Button type="submit" variant="contained" disabled={!enabled || pending}>
               {pending ? t("saving") : t("save")}

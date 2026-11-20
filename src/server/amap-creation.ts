@@ -6,6 +6,7 @@ import type { AmapContext } from "@/db/context";
 import type { AmapSettings, AmapTheme } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { checkNewAmap, type NewAmapProblem } from "@/domain/amap-creation";
+import { DEFAULT_AMAP_PARAMETERS } from "@/domain/amap-settings";
 import { HEADING_FONTS } from "@/ui/theme/key-colors";
 
 import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from "./auth/errors";
@@ -97,9 +98,7 @@ export async function createAmap(
     headingFont: data.headingFont,
   };
   const settings: AmapSettings = {
-    volunteersPerDistribution: 3,
-    experiencedThreshold: 6,
-    membershipExpiryAlertDays: 30,
+    ...DEFAULT_AMAP_PARAMETERS,
     distributionWeekday: data.weekday,
     distributionStartTime: data.startTime,
     distributionEndTime: data.endTime,
