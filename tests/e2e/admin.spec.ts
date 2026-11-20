@@ -5,7 +5,7 @@ import { expect, test } from "@playwright/test";
 import { totpFromBase32 } from "../helpers/totp";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
-import { inboxSnapshot, newMessage } from "./helpers/mailpit";
+import { countMessagesTo, inboxSnapshot, newMessage } from "./helpers/mailpit";
 import {
   ADMIN_DEMO,
   enterDemoTotp,
@@ -115,6 +115,54 @@ test.describe("administration (ordinateur)", () => {
       page.getByRole("heading", { level: 1, name: "Gestion de la plateforme" }),
     ).toBeVisible();
     await expectNoSeriousA11yViolations(page);
+
+    // Créer une AMAP au clavier (J1), dans la même session : l'adresse suit le nom.
+    const token = Date.now().toString(36);
+    const name = `AMAP d'essai ${token}`;
+    const adminEmail = `admin.${token}@example.org`;
+    await page.getByRole("link", { name: "Créer une AMAP" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "Créer une AMAP" })).toBeVisible();
+    const typeIn = async (label: string | RegExp, text: string) => {
+      const field = page.getByRole("textbox", { name: label });
+      await field.focus();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type(text);
+    };
+    await typeIn(/^Nom de l'AMAP/, name);
+    await expect(page.getByRole("textbox", { name: /^Adresse$/ })).toHaveValue(
+      `amap-d-essai-${token}`,
+    );
+    await typeIn(/^Lieu de distribution/, "Salle des fêtes d'essai");
+    await typeIn(/^Adresse email$/, adminEmail);
+    await typeIn(/^Prénom/, "Dominique");
+
+    // Aperçu du thème, en clair et en sombre, recalculé à chaque couleur ; contraste vérifié.
+    const preview = page.getByRole("region", { name: "Aperçu du thème" });
+    await expect(preview.getByRole("figure", { name: "Clair" })).toBeVisible();
+    await expect(preview.getByRole("figure", { name: "Sombre" })).toBeVisible();
+    const button = preview.getByRole("figure", { name: "Clair" }).getByText("Commander");
+    const before = await button.evaluate((el) => getComputedStyle(el).backgroundColor);
+    await typeIn(/^Couleur principale/, "#3f6fb5");
+    await expect
+      .poll(() => button.evaluate((el) => getComputedStyle(el).backgroundColor))
+      .not.toBe(before);
+    await expect(preview.getByRole("status")).toContainText("Contraste vérifié");
+    await expectNoSeriousA11yViolations(page);
+
+    await page.getByRole("button", { name: "Créer l'AMAP et inviter l'administrateur" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText(`AMAP « ${name} » créée. L'invitation est partie à ${adminEmail}.`),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Gestion de la plateforme" }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "AMAP de la plateforme" }).getByText(name),
+    ).toBeVisible();
+    // L'invitation est arrivée.
+    await expect.poll(() => countMessagesTo(request, adminEmail)).toBe(1);
   });
 
   test("un nouvel admin active l'application d'authentification et note ses codes", async ({

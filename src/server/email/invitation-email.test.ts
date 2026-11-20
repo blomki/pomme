@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { invitationEmail, invitationLoginUrl, producerInvitationEmail } from "./invitation-email";
+import {
+  adminInvitationEmail,
+  invitationEmail,
+  invitationLoginUrl,
+  producerInvitationEmail,
+} from "./invitation-email";
 
 describe("invitationEmail", () => {
   const email = invitationEmail({
@@ -39,6 +44,21 @@ describe("producerInvitationEmail", () => {
     expect(email.subject).toContain("Ruches d'essai");
     expect(email.text).toContain("Bonjour Camille");
     expect(email.text).toContain("AMAP des Tests");
+    expect(email.text).not.toMatch(/token=/);
+  });
+});
+
+describe("adminInvitationEmail", () => {
+  it("annonce le rôle d'administrateur et la deuxième vérification, sans jeton", () => {
+    const email = adminInvitationEmail({
+      amap: { name: "AMAP des Vergers", theme: { primary: "#4f7a28" } },
+      firstName: "Dominique",
+      loginUrl: "https://pomme.example.org/connexion?email=d%40example.org",
+    });
+    expect(email.subject).toContain("AMAP des Vergers");
+    expect(email.text).toContain("Bonjour Dominique");
+    expect(email.text).toContain("administrateur");
+    expect(email.text).toContain("deuxième vérification");
     expect(email.text).not.toMatch(/token=/);
   });
 });
