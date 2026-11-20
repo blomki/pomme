@@ -1190,4 +1190,68 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("un admin crée au clavier un avoir à partir d'un signalement, visible dans l'historique (F2)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/signalements");
+
+    // Un écart de la feuille d'émargement : première distribution passée qui a des commandes.
+    const distribution = page.getByRole("combobox", { name: "Distribution" });
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await distribution.focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByRole("option").first()).toBeVisible();
+      for (let i = 0; i <= attempt; i++) await page.keyboard.press("ArrowDown");
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/distribution=/);
+      if (await page.getByRole("combobox", { name: "Foyer" }).isVisible()) break;
+    }
+    const household = (await page.getByRole("combobox", { name: "Foyer" }).textContent())!.trim();
+    await page.getByRole("radio", { name: "Produit abîmé" }).focus();
+    await page.keyboard.press("Space");
+    await press(page.getByRole("button", { name: "Reporter l'écart" }));
+    await expect(page.getByText(`Écart reporté pour ${household}.`)).toBeVisible();
+
+    // « Créer un avoir » : montant proposé, ajusté à 1 €.
+    await press(page.getByRole("button", { name: `Créer un avoir pour ${household} (` }).first());
+    const dialog = page.getByRole("dialog", { name: `Créer un avoir pour ${household}` });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    const amount = dialog.getByRole("textbox", { name: "Montant de l'avoir" });
+    await expect(amount).not.toHaveValue("");
+    await expectNoSeriousA11yViolations(page);
+    await amount.focus();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type("0");
+    await press(dialog.getByRole("button", { name: "Créer l'avoir" }));
+    await expect(dialog.getByText(/^Montant non valable/)).toBeVisible();
+    await amount.focus();
+    await page.keyboard.press("ControlOrMeta+A");
+    await page.keyboard.type("1,00");
+    await press(dialog.getByRole("button", { name: "Créer l'avoir" }));
+    await expect(
+      page.getByText(`Avoir de 1,00 € créé pour ${household} : déduit de son prochain chèque.`),
+    ).toBeVisible();
+
+    // Historique : filtré sur ce foyer, l'avoir attend le prochain chèque.
+    const history = page.getByRole("region", { name: "Historique des avoirs" });
+    const filter = history.getByRole("combobox", { name: "Foyer" });
+    await filter.focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("option", { name: household, exact: true }).click();
+    await expect(
+      history
+        .getByRole("row")
+        .filter({ hasText: "1,00 €" })
+        .getByText("En attente du prochain chèque")
+        .first(),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+  });
 });

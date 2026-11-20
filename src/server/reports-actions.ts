@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import type { ReportReason } from "@/domain/reports";
 
 import { runAmapAction } from "./amap-action";
+import { creditFromReport, type CreditFromReportResult } from "./credits";
 import {
   createAdminReport,
   createFamilyReport,
@@ -50,6 +51,17 @@ export async function rejectReportAction(
 ): Promise<DecideReportResult | Forbidden> {
   const outcome = await runAmapAction(amap, `/${amap}/admin/signalements`, (tx, ctx) =>
     rejectReport(tx, ctx, input),
+  );
+  return "status" in outcome ? outcome : outcome.result;
+}
+
+/** Le référent du producteur, ou un admin, crée l'avoir d'un signalement (story F2). */
+export async function creditFromReportAction(
+  amap: string,
+  input: { reportId: string; amountCents: number; pickedUp: boolean },
+): Promise<CreditFromReportResult | Forbidden> {
+  const outcome = await runAmapAction(amap, `/${amap}/admin/signalements`, (tx, ctx) =>
+    creditFromReport(tx, ctx, input),
   );
   return "status" in outcome ? outcome : outcome.result;
 }

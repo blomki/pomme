@@ -29,12 +29,13 @@ import { rejectReportAction } from "@/server/reports-actions";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
+import { CreditDialog } from "./CreditDialog";
 import { ReportStatusChip } from "./ReportStatusChip";
 
 /**
  * Signalements à traiter puis traités (story F5), pour le référent (ses producteurs) et l'admin
- * (tous) : foyer, produit, distribution, quantité, motif, source. « Rejeter » demande un motif,
- * montré à la famille. L'avoir arrive avec F2.
+ * (tous) : foyer, produit, distribution, quantité, motif, source. « Créer un avoir » (F2) propose
+ * le prix payé, ajustable ; « Rejeter » demande un motif, montré à la famille.
  */
 export function ReportsToTreat({ amapSlug, reports }: { amapSlug: string; reports: ReportView[] }) {
   const t = useTranslations("Reports.treat");
@@ -42,6 +43,7 @@ export function ReportsToTreat({ amapSlug, reports }: { amapSlug: string; report
   const showSnackbar = useSnackbar();
   const router = useRouter();
   const [rejecting, setRejecting] = useState<ReportView | null>(null);
+  const [crediting, setCrediting] = useState<ReportView | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -119,20 +121,33 @@ export function ReportsToTreat({ amapSlug, reports }: { amapSlug: string; report
               </TableCell>
               {withActions && (
                 <TableCell>
-                  <Button
-                    size="small"
-                    onClick={() => {
-                      setRejecting(r);
-                      setNote("");
-                      setError(null);
-                    }}
-                    aria-label={t("rejectOf", {
-                      household: r.householdName,
-                      product: r.productName,
-                    })}
-                  >
-                    {t("reject")}
-                  </Button>
+                  <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1 }}>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      onClick={() => setCrediting(r)}
+                      aria-label={t("creditOf", {
+                        household: r.householdName,
+                        product: r.productName,
+                      })}
+                    >
+                      {t("credit")}
+                    </Button>
+                    <Button
+                      size="small"
+                      onClick={() => {
+                        setRejecting(r);
+                        setNote("");
+                        setError(null);
+                      }}
+                      aria-label={t("rejectOf", {
+                        household: r.householdName,
+                        product: r.productName,
+                      })}
+                    >
+                      {t("reject")}
+                    </Button>
+                  </Stack>
                 </TableCell>
               )}
             </TableRow>
@@ -151,10 +166,7 @@ export function ReportsToTreat({ amapSlug, reports }: { amapSlug: string; report
         {open.length === 0 ? (
           <Typography sx={{ color: "text.secondary" }}>{t("noneOpen")}</Typography>
         ) : (
-          <>
-            <Typography sx={{ color: "text.secondary", mb: 1 }}>{t("creditSoon")}</Typography>
-            {table(open, true, "signalements-a-traiter")}
-          </>
+          <>{table(open, true, "signalements-a-traiter")}</>
         )}
       </Box>
       {decided.length > 0 && (
@@ -204,6 +216,25 @@ export function ReportsToTreat({ amapSlug, reports }: { amapSlug: string; report
           </Button>
         </DialogActions>
       </Dialog>
+
+      {crediting && (
+        <CreditDialog
+          key={crediting.id}
+          amapSlug={amapSlug}
+          report={crediting}
+          onClose={() => setCrediting(null)}
+          onCredited={(amountCents) => {
+            showSnackbar({
+              message: t("credited", {
+                household: crediting.householdName,
+                amount: formatEuros(amountCents),
+              }),
+            });
+            setCrediting(null);
+            router.refresh();
+          }}
+        />
+      )}
     </Stack>
   );
 }

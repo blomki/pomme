@@ -5,8 +5,10 @@ import { getTranslations } from "next-intl/server";
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { requireAmapAdminPage } from "@/server/auth/guards";
+import { listAllCredits } from "@/server/credits";
 import { getAdminReportForm, listAllReports } from "@/server/reports";
 import { AdminReportForm } from "@/ui/reports/AdminReportForm";
+import { CreditsHistory } from "@/ui/reports/CreditsHistory";
 import { ReportsToTreat } from "@/ui/reports/ReportsToTreat";
 
 type Props = {
@@ -23,6 +25,7 @@ export default async function AdminReportsPage({ params, searchParams }: Props) 
   const t = await getTranslations("Reports.admin");
   const data = await withAmapContext(getDatabase(), ctx, async (tx, c) => ({
     reports: await listAllReports(tx, c),
+    credits: await listAllCredits(tx, c),
     form: await getAdminReportForm(tx, c, { distributionId: distribution }),
   }));
   const chosen = data.form.distributions.some((d) => d.id === distribution) ? distribution! : null;
@@ -37,6 +40,7 @@ export default async function AdminReportsPage({ params, searchParams }: Props) 
         form={data.form}
         distributionId={chosen}
       />
+      <CreditsHistory credits={data.credits} />
     </Stack>
   );
 }
