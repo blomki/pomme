@@ -215,7 +215,9 @@ test.describe("espace producteur (téléphone)", () => {
     await nav.getByRole("link", { name: "Paiements" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 1, name: "Mes paiements" })).toBeVisible();
-    await expect(page.getByText(/^\d+ \/ \d+ chèques reçus$/)).toBeVisible();
+    // Le mois affiché (le plus récent) ; d'autres mois peuvent suivre, selon les tests déjà
+    // passés (« Autres mois »).
+    await expect(page.getByText(/^\d+ \/ \d+ chèques reçus$/).first()).toBeVisible();
     await expect(
       page.getByRole("progressbar", { name: "Chèques reçus par votre référent" }),
     ).toBeVisible();
