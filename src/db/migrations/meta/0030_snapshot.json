@@ -1,5 +1,5 @@
 {
-  "id": "4a8952b4-5e04-4806-ad0d-8114663f79cb",
+  "id": "0ba985d4-e831-4350-ad71-b6c0d75be79b",
   "prevId": "54f3ce50-8c5f-4987-98f7-24a9d777c81c",
   "version": "7",
   "dialect": "postgresql",
@@ -101,24 +101,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "account_user_id_user_id_fk": {
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -136,6 +136,160 @@
         }
       },
       "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.admin_task": {
+      "name": "admin_task",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "admin_task_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_id": {
+          "name": "related_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "done_at": {
+          "name": "done_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "done_by": {
+          "name": "done_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "admin_task_amap_id_amap_id_fk": {
+          "name": "admin_task_amap_id_amap_id_fk",
+          "tableFrom": "admin_task",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "admin_task_done_by_user_id_fk": {
+          "name": "admin_task_done_by_user_id_fk",
+          "tableFrom": "admin_task",
+          "tableTo": "user",
+          "columnsFrom": [
+            "done_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "admin_task_subject_unique": {
+          "name": "admin_task_subject_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "kind",
+            "related_id"
+          ]
+        }
+      },
+      "policies": {
+        "admin_task_select": {
+          "name": "admin_task_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "admin_task_insert": {
+          "name": "admin_task_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "admin_task_update": {
+          "name": "admin_task_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "admin_task_done": {
+          "name": "admin_task_done",
+          "value": "(\"admin_task\".\"done_at\" is null) = (\"admin_task\".\"done_by\" is null)"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.amap": {
@@ -231,25 +385,25 @@
         "amap_created_by_user_id_fk": {
           "name": "amap_created_by_user_id_fk",
           "tableFrom": "amap",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "amap_slug_unique": {
           "name": "amap_slug_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "slug"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -362,69 +516,69 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "amap_producer_amap_id_amap_id_fk": {
           "name": "amap_producer_amap_id_amap_id_fk",
           "tableFrom": "amap_producer",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "amap_producer_producer_id_producer_id_fk": {
           "name": "amap_producer_producer_id_producer_id_fk",
           "tableFrom": "amap_producer",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "amap_producer_created_by_user_id_fk": {
           "name": "amap_producer_created_by_user_id_fk",
           "tableFrom": "amap_producer",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "amap_producer_unique": {
           "name": "amap_producer_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_id",
             "producer_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "amap_producer_amap_unique": {
           "name": "amap_producer_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -509,62 +663,62 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "amap_role_amap_id_amap_id_fk": {
           "name": "amap_role_amap_id_amap_id_fk",
           "tableFrom": "amap_role",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "amap_role_user_id_user_id_fk": {
           "name": "amap_role_user_id_user_id_fk",
           "tableFrom": "amap_role",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "amap_role_created_by_user_id_fk": {
           "name": "amap_role_created_by_user_id_fk",
           "tableFrom": "amap_role",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "amap_role_unique": {
           "name": "amap_role_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_id",
             "user_id",
             "role"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -675,37 +829,37 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "audit_log_amap_id_amap_id_fk": {
           "name": "audit_log_amap_id_amap_id_fk",
           "tableFrom": "audit_log",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "audit_log_actor_user_id_user_id_fk": {
           "name": "audit_log_actor_user_id_user_id_fk",
           "tableFrom": "audit_log",
+          "tableTo": "user",
           "columnsFrom": [
             "actor_user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -801,61 +955,61 @@
         "catalog_amap_id_amap_id_fk": {
           "name": "catalog_amap_id_amap_id_fk",
           "tableFrom": "catalog",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "catalog_producer_id_producer_id_fk": {
           "name": "catalog_producer_id_producer_id_fk",
           "tableFrom": "catalog",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "catalog_created_by_user_id_fk": {
           "name": "catalog_created_by_user_id_fk",
           "tableFrom": "catalog",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "catalog_unique": {
           "name": "catalog_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_id",
             "producer_id",
             "month"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "catalog_amap_unique": {
           "name": "catalog_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -969,62 +1123,62 @@
         "catalog_item_amap_id_amap_id_fk": {
           "name": "catalog_item_amap_id_amap_id_fk",
           "tableFrom": "catalog_item",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "catalog_item_product_id_product_id_fk": {
           "name": "catalog_item_product_id_product_id_fk",
           "tableFrom": "catalog_item",
+          "tableTo": "product",
           "columnsFrom": [
             "product_id"
           ],
-          "tableTo": "product",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "catalog_item_catalog_fk": {
           "name": "catalog_item_catalog_fk",
           "tableFrom": "catalog_item",
+          "tableTo": "catalog",
           "columnsFrom": [
             "catalog_id",
             "amap_id"
           ],
-          "tableTo": "catalog",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "catalog_item_unique": {
           "name": "catalog_item_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "catalog_id",
             "product_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "catalog_item_amap_unique": {
           "name": "catalog_item_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1117,56 +1271,56 @@
         "catalog_item_availability_amap_id_amap_id_fk": {
           "name": "catalog_item_availability_amap_id_amap_id_fk",
           "tableFrom": "catalog_item_availability",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "catalog_item_availability_item_fk": {
           "name": "catalog_item_availability_item_fk",
           "tableFrom": "catalog_item_availability",
+          "tableTo": "catalog_item",
           "columnsFrom": [
             "catalog_item_id",
             "amap_id"
           ],
-          "tableTo": "catalog_item",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         },
         "catalog_item_availability_distribution_fk": {
           "name": "catalog_item_availability_distribution_fk",
           "tableFrom": "catalog_item_availability",
+          "tableTo": "distribution",
           "columnsFrom": [
             "distribution_id",
             "amap_id"
           ],
-          "tableTo": "distribution",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "catalog_item_availability_unique": {
           "name": "catalog_item_availability_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "catalog_item_id",
             "distribution_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1343,126 +1497,126 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "cheque_amap_id_amap_id_fk": {
           "name": "cheque_amap_id_amap_id_fk",
           "tableFrom": "cheque",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_producer_id_producer_id_fk": {
           "name": "cheque_producer_id_producer_id_fk",
           "tableFrom": "cheque",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_received_by_user_id_fk": {
           "name": "cheque_received_by_user_id_fk",
           "tableFrom": "cheque",
+          "tableTo": "user",
           "columnsFrom": [
             "received_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_handed_over_by_user_id_fk": {
           "name": "cheque_handed_over_by_user_id_fk",
           "tableFrom": "cheque",
+          "tableTo": "user",
           "columnsFrom": [
             "handed_over_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_gap_settled_by_user_id_fk": {
           "name": "cheque_gap_settled_by_user_id_fk",
           "tableFrom": "cheque",
+          "tableTo": "user",
           "columnsFrom": [
             "gap_settled_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_household_fk": {
           "name": "cheque_household_fk",
           "tableFrom": "cheque",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "cheque_order_period_fk": {
           "name": "cheque_order_period_fk",
           "tableFrom": "cheque",
+          "tableTo": "order_period",
           "columnsFrom": [
             "order_period_id",
             "amap_id"
           ],
-          "tableTo": "order_period",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "cheque_unique": {
           "name": "cheque_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "household_id",
             "producer_id",
             "order_period_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "cheque_amap_unique": {
           "name": "cheque_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1612,10 +1766,10 @@
             }
           ],
           "isUnique": false,
-          "with": {},
-          "method": "btree",
           "where": "\"credit\".\"status\" = 'created'",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "credit_report_unique": {
           "name": "credit_report_unique",
@@ -1628,106 +1782,106 @@
             }
           ],
           "isUnique": true,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "credit_amap_id_amap_id_fk": {
           "name": "credit_amap_id_amap_id_fk",
           "tableFrom": "credit",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_producer_id_producer_id_fk": {
           "name": "credit_producer_id_producer_id_fk",
           "tableFrom": "credit",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_report_id_report_id_fk": {
           "name": "credit_report_id_report_id_fk",
           "tableFrom": "credit",
+          "tableTo": "report",
           "columnsFrom": [
             "report_id"
           ],
-          "tableTo": "report",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_created_by_user_id_fk": {
           "name": "credit_created_by_user_id_fk",
           "tableFrom": "credit",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_household_fk": {
           "name": "credit_household_fk",
           "tableFrom": "credit",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_cheque_fk": {
           "name": "credit_cheque_fk",
           "tableFrom": "credit",
+          "tableTo": "cheque",
           "columnsFrom": [
             "deducted_on_cheque_id",
             "amap_id"
           ],
-          "tableTo": "cheque",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "credit_split_from_fk": {
           "name": "credit_split_from_fk",
           "tableFrom": "credit",
+          "tableTo": "credit",
           "columnsFrom": [
             "split_from_credit_id"
           ],
-          "tableTo": "credit",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -1847,47 +2001,47 @@
         "distribution_amap_id_amap_id_fk": {
           "name": "distribution_amap_id_amap_id_fk",
           "tableFrom": "distribution",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "distribution_created_by_user_id_fk": {
           "name": "distribution_created_by_user_id_fk",
           "tableFrom": "distribution",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "distribution_amap_date_unique": {
           "name": "distribution_amap_date_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_id",
             "date"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "distribution_amap_unique": {
           "name": "distribution_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -1981,55 +2135,55 @@
             },
             {
               "expression": "lower(\"name\")",
-              "isExpression": true,
               "asc": true,
+              "isExpression": true,
               "nulls": "last"
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"household\".\"archived_at\" is null",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
         "household_amap_id_amap_id_fk": {
           "name": "household_amap_id_amap_id_fk",
           "tableFrom": "household",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "household_created_by_user_id_fk": {
           "name": "household_created_by_user_id_fk",
           "tableFrom": "household",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "household_amap_unique": {
           "name": "household_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2132,10 +2286,10 @@
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"household_member\".\"archived_at\" is null",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "household_member_one_primary_idx": {
           "name": "household_member_one_primary_idx",
@@ -2148,10 +2302,10 @@
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"household_member\".\"is_primary\"",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "household_member_user_idx": {
           "name": "household_member_user_idx",
@@ -2164,76 +2318,76 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "household_member_amap_id_amap_id_fk": {
           "name": "household_member_amap_id_amap_id_fk",
           "tableFrom": "household_member",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "household_member_user_id_user_id_fk": {
           "name": "household_member_user_id_user_id_fk",
           "tableFrom": "household_member",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "household_member_created_by_user_id_fk": {
           "name": "household_member_created_by_user_id_fk",
           "tableFrom": "household_member",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "household_member_household_fk": {
           "name": "household_member_household_fk",
           "tableFrom": "household_member",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "household_member_unique": {
           "name": "household_member_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "household_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2337,52 +2491,52 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "membership_amap_id_amap_id_fk": {
           "name": "membership_amap_id_amap_id_fk",
           "tableFrom": "membership",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "membership_created_by_user_id_fk": {
           "name": "membership_created_by_user_id_fk",
           "tableFrom": "membership",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "membership_household_fk": {
           "name": "membership_household_fk",
           "tableFrom": "membership",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2522,10 +2676,10 @@
             }
           ],
           "isUnique": true,
-          "with": {},
-          "method": "btree",
           "where": "\"notification_log\".\"dedupe_key\" is not null and \"notification_log\".\"status\" in ('pending', 'sent')",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "notification_log_user_idx": {
           "name": "notification_log_user_idx",
@@ -2538,37 +2692,37 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "notification_log_amap_id_amap_id_fk": {
           "name": "notification_log_amap_id_amap_id_fk",
           "tableFrom": "notification_log",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "notification_log_user_id_user_id_fk": {
           "name": "notification_log_user_id_user_id_fk",
           "tableFrom": "notification_log",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -2689,99 +2843,99 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "order_amap_id_amap_id_fk": {
           "name": "order_amap_id_amap_id_fk",
           "tableFrom": "order",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_created_by_user_id_fk": {
           "name": "order_created_by_user_id_fk",
           "tableFrom": "order",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_updated_by_user_id_fk": {
           "name": "order_updated_by_user_id_fk",
           "tableFrom": "order",
+          "tableTo": "user",
           "columnsFrom": [
             "updated_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_household_fk": {
           "name": "order_household_fk",
           "tableFrom": "order",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_catalog_fk": {
           "name": "order_catalog_fk",
           "tableFrom": "order",
+          "tableTo": "catalog",
           "columnsFrom": [
             "catalog_id",
             "amap_id"
           ],
-          "tableTo": "catalog",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "order_household_catalog_unique": {
           "name": "order_household_catalog_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "household_id",
             "catalog_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "order_amap_unique": {
           "name": "order_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -2883,72 +3037,72 @@
         "order_line_amap_id_amap_id_fk": {
           "name": "order_line_amap_id_amap_id_fk",
           "tableFrom": "order_line",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_line_order_fk": {
           "name": "order_line_order_fk",
           "tableFrom": "order_line",
+          "tableTo": "order",
           "columnsFrom": [
             "order_id",
             "amap_id"
           ],
-          "tableTo": "order",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_line_catalog_item_fk": {
           "name": "order_line_catalog_item_fk",
           "tableFrom": "order_line",
+          "tableTo": "catalog_item",
           "columnsFrom": [
             "catalog_item_id",
             "amap_id"
           ],
-          "tableTo": "catalog_item",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_line_distribution_fk": {
           "name": "order_line_distribution_fk",
           "tableFrom": "order_line",
+          "tableTo": "distribution",
           "columnsFrom": [
             "distribution_id",
             "amap_id"
           ],
-          "tableTo": "distribution",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "order_line_unique": {
           "name": "order_line_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "order_id",
             "catalog_item_id",
             "distribution_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -3082,47 +3236,47 @@
         "order_period_amap_id_amap_id_fk": {
           "name": "order_period_amap_id_amap_id_fk",
           "tableFrom": "order_period",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "order_period_created_by_user_id_fk": {
           "name": "order_period_created_by_user_id_fk",
           "tableFrom": "order_period",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "order_period_month_unique": {
           "name": "order_period_month_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_id",
             "month"
-          ],
-          "nullsNotDistinct": false
+          ]
         },
         "order_period_amap_unique": {
           "name": "order_period_amap_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "id",
             "amap_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -3250,34 +3404,34 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "passkey_user_id_user_id_fk": {
           "name": "passkey_user_id_user_id_fk",
           "tableFrom": "passkey",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "passkey_credential_id_unique": {
           "name": "passkey_credential_id_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "credential_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -3389,15 +3543,15 @@
         "producer_created_by_user_id_fk": {
           "name": "producer_created_by_user_id_fk",
           "tableFrom": "producer",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3513,61 +3667,61 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "producer_user_producer_id_producer_id_fk": {
           "name": "producer_user_producer_id_producer_id_fk",
           "tableFrom": "producer_user",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "producer_user_user_id_user_id_fk": {
           "name": "producer_user_user_id_user_id_fk",
           "tableFrom": "producer_user",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "producer_user_created_by_user_id_fk": {
           "name": "producer_user_created_by_user_id_fk",
           "tableFrom": "producer_user",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "producer_user_unique": {
           "name": "producer_user_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "producer_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -3667,37 +3821,37 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "product_producer_id_producer_id_fk": {
           "name": "product_producer_id_producer_id_fk",
           "tableFrom": "product",
+          "tableTo": "producer",
           "columnsFrom": [
             "producer_id"
           ],
-          "tableTo": "producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "product_created_by_user_id_fk": {
           "name": "product_created_by_user_id_fk",
           "tableFrom": "product",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -3801,76 +3955,76 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "referent_assignment_amap_id_amap_id_fk": {
           "name": "referent_assignment_amap_id_amap_id_fk",
           "tableFrom": "referent_assignment",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "referent_assignment_user_id_user_id_fk": {
           "name": "referent_assignment_user_id_user_id_fk",
           "tableFrom": "referent_assignment",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "referent_assignment_created_by_user_id_fk": {
           "name": "referent_assignment_created_by_user_id_fk",
           "tableFrom": "referent_assignment",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "referent_assignment_amap_producer_fk": {
           "name": "referent_assignment_amap_producer_fk",
           "tableFrom": "referent_assignment",
+          "tableTo": "amap_producer",
           "columnsFrom": [
             "amap_producer_id",
             "amap_id"
           ],
-          "tableTo": "amap_producer",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "referent_assignment_unique": {
           "name": "referent_assignment_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "amap_producer_id",
             "user_id"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -4009,10 +4163,10 @@
             }
           ],
           "isUnique": false,
-          "with": {},
-          "method": "btree",
           "where": "\"report\".\"status\" = 'open'",
-          "concurrently": false
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         },
         "report_order_line_idx": {
           "name": "report_order_line_idx",
@@ -4025,78 +4179,78 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "report_amap_id_amap_id_fk": {
           "name": "report_amap_id_amap_id_fk",
           "tableFrom": "report",
+          "tableTo": "amap",
           "columnsFrom": [
             "amap_id"
           ],
-          "tableTo": "amap",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "report_order_line_id_order_line_id_fk": {
           "name": "report_order_line_id_order_line_id_fk",
           "tableFrom": "report",
+          "tableTo": "order_line",
           "columnsFrom": [
             "order_line_id"
           ],
-          "tableTo": "order_line",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "report_decided_by_user_id_fk": {
           "name": "report_decided_by_user_id_fk",
           "tableFrom": "report",
+          "tableTo": "user",
           "columnsFrom": [
             "decided_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "report_created_by_user_id_fk": {
           "name": "report_created_by_user_id_fk",
           "tableFrom": "report",
+          "tableTo": "user",
           "columnsFrom": [
             "created_by"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         },
         "report_household_fk": {
           "name": "report_household_fk",
           "tableFrom": "report",
+          "tableTo": "household",
           "columnsFrom": [
             "household_id",
             "amap_id"
           ],
-          "tableTo": "household",
           "columnsTo": [
             "id",
             "amap_id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "no action"
+          "onDelete": "no action",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4220,34 +4374,34 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "session_user_id_user_id_fk": {
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "session_token_unique": {
           "name": "session_token_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "token"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -4326,9 +4480,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         },
         "two_factor_secret_idx": {
           "name": "two_factor_secret_idx",
@@ -4341,24 +4495,24 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {
         "two_factor_user_id_user_id_fk": {
           "name": "two_factor_user_id_user_id_fk",
           "tableFrom": "two_factor",
+          "tableTo": "user",
           "columnsFrom": [
             "user_id"
           ],
-          "tableTo": "user",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "cascade"
+          "onDelete": "cascade",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
@@ -4472,25 +4626,25 @@
         "user_current_amap_producer_id_amap_producer_id_fk": {
           "name": "user_current_amap_producer_id_amap_producer_id_fk",
           "tableFrom": "user",
+          "tableTo": "amap_producer",
           "columnsFrom": [
             "current_amap_producer_id"
           ],
-          "tableTo": "amap_producer",
           "columnsTo": [
             "id"
           ],
-          "onUpdate": "no action",
-          "onDelete": "set null"
+          "onDelete": "set null",
+          "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
         "user_email_unique": {
           "name": "user_email_unique",
+          "nullsNotDistinct": false,
           "columns": [
             "email"
-          ],
-          "nullsNotDistinct": false
+          ]
         }
       },
       "policies": {
@@ -4610,9 +4764,9 @@
             }
           ],
           "isUnique": false,
-          "with": {},
+          "concurrently": false,
           "method": "btree",
-          "concurrently": false
+          "with": {}
         }
       },
       "foreignKeys": {},
@@ -4635,6 +4789,14 @@
     }
   },
   "enums": {
+    "public.admin_task_kind": {
+      "name": "admin_task_kind",
+      "schema": "public",
+      "values": [
+        "distribution_closed",
+        "report_follow_up"
+      ]
+    },
     "public.amap_role_name": {
       "name": "amap_role_name",
       "schema": "public",
@@ -4715,10 +4877,10 @@
     }
   },
   "schemas": {},
-  "views": {},
   "sequences": {},
   "roles": {},
   "policies": {},
+  "views": {},
   "_meta": {
     "columns": {},
     "schemas": {},

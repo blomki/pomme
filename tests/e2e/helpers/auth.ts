@@ -1,4 +1,4 @@
-import { expect, type APIRequestContext, type Page } from "@playwright/test";
+import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
 import { totpCode } from "../../helpers/totp";
 
@@ -20,7 +20,22 @@ export async function signInByEmail(page: Page, request: APIRequestContext, emai
   const before = await inboxSnapshot(request, email);
   await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
   await expect(page.getByText(/un lien de connexion vient d'être envoyé/)).toBeVisible();
-  await page.goto(await newMagicLink(request, email, before));
+  await openMagicLink(page, await newMagicLink(request, email, before));
+}
+
+/**
+ * Ouvre le lien de connexion. Better Auth limite l'ouverture des liens par adresse IP et par
+ * minute (contre les essais de jetons au hasard, src/server/auth/auth.ts) : toute la suite
+ * tourne depuis la même adresse, et les tests rejoués peuvent dépasser la limite. Réponse 429 :
+ * le lien n'a pas été utilisé, on attend la minute suivante et on le rouvre.
+ */
+async function openMagicLink(page: Page, link: string) {
+  for (let attempt = 1; ; attempt++) {
+    const response = await page.goto(link);
+    if (response?.status() !== 429 || attempt === 3) return;
+    test.info().setTimeout(test.info().timeout + 65_000);
+    await page.waitForTimeout(61_000);
+  }
 }
 
 /** Connexion d'un compte de démonstration admin : lien magique, puis code de l'application. */

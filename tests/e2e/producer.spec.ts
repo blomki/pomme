@@ -41,7 +41,7 @@ async function type(page: Page, field: ReturnType<Page["getByRole"]>, text: stri
   await page.keyboard.type(text);
 }
 
-for (const path of ["/producteur", "/producteur/catalogue"]) {
+for (const path of ["/producteur", "/producteur/catalogue", "/producteur/paiements"]) {
   test(`un visiteur est renvoyé vers la connexion depuis ${path}`, async ({ page }) => {
     await page.goto(path);
     await expect(page).toHaveURL(/\/connexion$/);
@@ -175,7 +175,7 @@ test.describe("espace producteur (téléphone)", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
-  test("le producteur voit au clavier ce qu'il doit préparer, semaine par semaine (E5)", async ({
+  test("le producteur voit au clavier ce qu'il doit préparer (E5), puis ses paiements (F4)", async ({
     page,
     request,
   }) => {
@@ -209,5 +209,31 @@ test.describe("espace producteur (téléphone)", () => {
       await expect(page).toHaveURL(/\/producteur\/a-preparer\?semaine=/);
       await expect(other).toHaveAttribute("aria-selected", "true");
     }
+
+    // Puis ses paiements (F4), dans la même session : chaque connexion consomme un lien, et le
+    // compte producteur est limité à 30 liens par quart d'heure (retries compris).
+    await nav.getByRole("link", { name: "Paiements" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "Mes paiements" })).toBeVisible();
+    // Le mois affiché (le plus récent) ; d'autres mois peuvent suivre, selon les tests déjà
+    // passés (« Autres mois »).
+    await expect(page.getByText(/^\d+ \/ \d+ chèques reçus$/).first()).toBeVisible();
+    await expect(
+      page.getByRole("progressbar", { name: "Chèques reçus par votre référent" }),
+    ).toBeVisible();
+    await expect(page.getByText(/^Montant attendu : /)).toBeVisible();
+    // Liste par foyer : les chèques à suivre, chacun avec son état.
+    const toFollow = page.getByRole("region", { name: /^À suivre \(\d+\)$/ });
+    await expect(toFollow.getByRole("listitem").first()).toContainText(/^Foyer .* · .*€/);
+    await expect(toFollow.getByText("En attente").first()).toBeVisible();
+    // Lecture seule : aucun champ ni case à cocher.
+    await expect(page.getByRole("checkbox")).toHaveCount(0);
+    await expect(page.getByRole("textbox")).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
+    // Et en mode sombre.
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.reload();
+    await expect(page.getByRole("heading", { level: 1, name: "Mes paiements" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
   });
 });

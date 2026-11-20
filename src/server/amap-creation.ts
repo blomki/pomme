@@ -13,7 +13,7 @@ import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from 
 import { insufficientPrivilege, uniqueViolation } from "./db-errors";
 
 // Création d'une AMAP par le gestionnaire de la plateforme (story J1, ADR 0031). Tout passe par
-// la fonction de base create_amap (migration 0030), seule à pouvoir créer une AMAP : elle
+// la fonction de base create_amap (migration 0031), seule à pouvoir créer une AMAP : elle
 // vérifie elle-même que la personne connectée est gestionnaire.
 
 const schema = z.object({
