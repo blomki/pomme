@@ -19,6 +19,7 @@ import {
 import { formatDate } from "@/i18n/dates";
 
 import { requireRole } from "./auth/require-role";
+import { addFollowUpTask, dropFollowUpTask } from "./admin-tasks";
 import { writeAuditLog } from "./audit";
 import { uniqueViolation } from "./db-errors";
 
@@ -270,6 +271,14 @@ export async function setDistributionOpen(
     .where(eq(distribution.id, distributionId))
     .returning({ date: distribution.date });
   if (updated.length === 0) return { status: "not_found" };
+  // Tâche « À suivre » du tableau de bord (H3) : prévenir familles et producteurs. Rouverte, la
+  // distribution n'a plus besoin de cette tâche.
+  const task = { kind: "distribution_closed" as const, relatedId: distributionId };
+  if (open) await dropFollowUpTask(tx, ctx, task);
+  else {
+    const date = updated[0]!.date;
+    await addFollowUpTask(tx, ctx, { ...task, details: { date, reason: reason! }, dueDate: date });
+  }
   await writeAuditLog(tx, ctx, {
     entityType: "distribution",
     entityId: distributionId,

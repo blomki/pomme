@@ -21,6 +21,7 @@ describe("Migrations", () => {
     );
     expect(result.rows.map((r) => r.tablename)).toEqual([
       "account",
+      "admin_task",
       "amap",
       "amap_producer",
       "amap_role",
