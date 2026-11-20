@@ -232,4 +232,47 @@ test.describe("commande du mois (téléphone)", () => {
     await expect(mine.getByText("En attente").first()).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("une famille consulte sa liste de chèques, l'ordre à la demande, et l'imprime (E2)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto("/hommesdeterre/famille/cheques");
+    await expect(page.getByRole("heading", { level: 1, name: "Liste des chèques" })).toBeVisible();
+    // Jeu de données : le mois en cours est clôturé (chèques), le suivant est ouvert.
+    await expect(page.getByText(/^Commande de /)).toBeVisible();
+    await expect(page.getByRole("link", { name: "Voir le récapitulatif" })).toBeVisible();
+    const first = page.getByRole("main").getByRole("region").first();
+    const toggle = first.getByRole("button", { name: "Voir l'ordre du chèque" });
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(first.getByText(/^(À l'ordre de |Ordre du chèque : )/)).toBeHidden();
+    await toggle.focus();
+    await page.keyboard.press("Enter");
+    await expect(first.getByRole("button", { name: "Masquer l'ordre du chèque" })).toHaveAttribute(
+      "aria-expanded",
+      "true",
+    );
+    await expect(first.getByText(/^(À l'ordre de |Ordre du chèque : )/)).toBeVisible();
+    await expect(page.getByRole("button", { name: "Imprimer la liste" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Version imprimée : ni menu ni bouton, et l'ordre de chaque chèque.
+    await page.emulateMedia({ media: "print" });
+    await expect(
+      page.getByRole("navigation", { name: "Navigation de l'espace famille" }),
+    ).toBeHidden();
+    await expect(page.getByRole("button", { name: "Imprimer la liste" })).toBeHidden();
+    await expect(
+      page.getByText("Foyer Démo (Sasha) · AMAP de démonstration de Cambremer"),
+    ).toBeVisible();
+    const regions = page.getByRole("main").getByRole("region");
+    const count = await regions.count();
+    for (let i = 0; i < count; i++) {
+      const region = regions.nth(i);
+      if ((await region.getAttribute("aria-labelledby")) === "rien-ce-mois-ci") continue;
+      await expect(region.getByText(/^(À l'ordre de |Ordre du chèque : )/)).toBeVisible();
+    }
+    await page.emulateMedia({ media: "screen" });
+  });
 });
