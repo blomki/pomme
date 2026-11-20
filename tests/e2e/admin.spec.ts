@@ -436,7 +436,10 @@ test.describe("administration (ordinateur)", () => {
 
     // Fermer une distribution crée une tâche « À suivre ».
     await page.goto(`/hommesdeterre/admin/planning?mois=${year}-05`);
+    // Page chargée : soit des distributions, soit le bouton pour les créer.
+    const region = page.getByRole("region", { name: "Distributions" });
     const create = page.getByRole("button", { name: `Créer les distributions de mai ${year}` });
+    await expect(region.getByRole("listitem").first().or(create)).toBeVisible();
     if (await create.isVisible()) {
       await create.click();
       await expect(page.getByText(/distributions créées\./)).toBeVisible();
