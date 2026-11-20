@@ -375,6 +375,8 @@ test.describe("administration (ordinateur)", () => {
     await page.keyboard.press("Enter");
     await expect(page.getByText("Tâche marquée comme faite.")).toBeVisible();
     await expect(row).toHaveCount(0);
+    // Contrôle une fois le message de confirmation entièrement apparu (animation).
+    await expect(page.locator(".MuiSnackbarContent-root")).toHaveCSS("opacity", "1");
     const summary = tasks.getByText(/^Tâches terminées \(\d+\)$/);
     await summary.focus();
     await page.keyboard.press("Enter");
