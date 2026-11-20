@@ -334,6 +334,64 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("link", { name })).toHaveCount(0);
   });
 
+  test("un admin suit sa liste de tâches au clavier : à suivre, fait, rétabli (H3)", async ({
+    page,
+    request,
+  }) => {
+    const token = Date.now().toString(36);
+    const year = 2040 + (Math.floor(Date.now() / 1000) % 50);
+    const reason = `Vacances ${token}`;
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+
+    // Tableau de bord : avancement des adhésions.
+    await page.goto("/hommesdeterre/admin");
+    const memberships = page.getByRole("region", { name: "Adhésions" });
+    await expect(memberships.getByText(/^\d+ foyers adhérents sur \d+$/)).toBeVisible();
+
+    // Fermer une distribution crée une tâche « À suivre ».
+    await page.goto(`/hommesdeterre/admin/planning?mois=${year}-05`);
+    const create = page.getByRole("button", { name: `Créer les distributions de mai ${year}` });
+    if (await create.isVisible()) {
+      await create.click();
+      await expect(page.getByText(/distributions créées\./)).toBeVisible();
+    }
+    const closeButton = page.getByRole("button", { name: /^Fermer la distribution du/ }).first();
+    await closeButton.click();
+    const dialog = page.getByRole("dialog", { name: /^Fermer la distribution du / });
+    await dialog.getByRole("textbox", { name: "Motif" }).fill(reason);
+    await dialog.getByRole("button", { name: "Fermer la distribution" }).click();
+    await expect(page.getByText(/^Distribution du .* fermée\.$/)).toBeVisible();
+
+    await page.goto("/hommesdeterre/admin");
+    const tasks = page.getByRole("region", { name: "Votre liste de tâches" });
+    const text = new RegExp(`fermée \\(${reason}\\) : vérifier que les familles`);
+    const row = tasks.getByRole("listitem").filter({ hasText: text });
+    await expect(row.getByText("À suivre", { exact: true })).toBeVisible();
+    await expect(row.getByRole("link", { name: "Voir le calendrier" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // « Marquer comme fait » au clavier : la tâche passe dans les tâches terminées.
+    await row.getByRole("button", { name: /^Marquer comme fait/ }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Tâche marquée comme faite.")).toBeVisible();
+    await expect(row).toHaveCount(0);
+    const summary = tasks.getByText(/^Tâches terminées \(\d+\)$/);
+    await summary.focus();
+    await page.keyboard.press("Enter");
+    const doneRow = tasks.getByRole("listitem").filter({ hasText: text });
+    await expect(doneRow.getByText(/^Fait par .* le /)).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // « Rétablir » : de nouveau à faire ; puis faite pour de bon.
+    await doneRow.getByRole("button", { name: /^Rétablir/ }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Tâche rétablie.")).toBeVisible();
+    const again = tasks.getByRole("listitem").filter({ hasText: text });
+    await expect(again.getByRole("button", { name: /^Marquer comme fait/ })).toBeVisible();
+    await again.getByRole("button", { name: /^Marquer comme fait/ }).click();
+    await expect(page.getByText("Tâche marquée comme faite.")).toBeVisible();
+  });
+
   test("un admin crée un producteur au clavier et lui affecte un référent (C1)", async ({
     page,
     request,
