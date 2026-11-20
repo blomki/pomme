@@ -593,7 +593,8 @@
       "moveUpcoming": "Déplacer aussi les distributions à venir",
       "moveUpcomingHelp": "Chaque distribution à venir passe au nouveau jour de la même semaine, avec les nouveaux horaires. Une distribution fermée le reste. Les distributions passées ne changent pas.",
       "moved": "{count, plural, =0 {Aucune distribution à venir déplacée.} one {# distribution à venir déplacée.} other {# distributions à venir déplacées.}}",
-      "skipped": "{count, plural, one {Laissée telle quelle : {dates} (le jour visé est déjà pris ou passé).} other {Laissées telles quelles : {dates} (le jour visé est déjà pris ou passé).}}"
+      "skipped": "{count, plural, one {Laissée telle quelle : {dates} (le jour visé est déjà pris ou passé).} other {Laissées telles quelles : {dates} (le jour visé est déjà pris ou passé).}}",
+      "signInSheet": "Imprimer la feuille d'émargement de {month}"
     },
     "orders": {
       "title": "Commandes de {month}",
@@ -1203,5 +1204,31 @@
       "pending": "En attente du prochain chèque",
       "deducted": "Déduit du chèque de {month}"
     }
+  },
+  "SignInSheet": {
+    "title": "Feuille d'émargement · {month}",
+    "print": "Imprimer",
+    "printHint": "Format A4. Pour un PDF, choisissez « Enregistrer au format PDF » dans la fenêtre d'impression.",
+    "instructionsTitle": "Consigne",
+    "instructions": "Case « Cmd » (grisée) : la quantité commandée. Si c'est conforme, entourez le nombre. En cas d'écart, écrivez +1 ou −1 dans la case « ± ».",
+    "cmd": "Cmd",
+    "cmdLong": "Quantité commandée",
+    "deltaLong": "Écart constaté : +1 ou −1",
+    "noDistribution": "Aucune distribution ouverte ce mois-ci.",
+    "noOrder": "Aucune commande ce mois-ci.",
+    "volunteersTitle": "Bénévoles de permanence",
+    "volunteersOf": "Bénévoles du {day}",
+    "volunteer": {
+      "name": "Nom",
+      "phone": "Téléphone",
+      "signature": "Signature"
+    },
+    "comment": "Commentaire :",
+    "byProducer": "1. Livraisons par producteur",
+    "byHousehold": "2. Retraits par foyer",
+    "product": "Produit",
+    "deliveriesOf": "Livraisons de {producer}",
+    "pickupsOf": "Retraits du foyer {household}",
+    "observations": "Observations :"
   }
 }

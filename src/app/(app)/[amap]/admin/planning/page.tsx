@@ -8,6 +8,7 @@ import { formatDate } from "@/i18n/dates";
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { getDistributionSettings, listDistributions } from "@/server/distributions";
 import { DistributionPlanning } from "@/ui/admin/DistributionPlanning";
+import { LinkButton } from "@/ui/navigation/LinkButton";
 
 type Props = {
   params: Promise<{ amap: string }>;
@@ -32,6 +33,10 @@ export default async function PlanningPage({ params, searchParams }: Props) {
       <Typography variant="h1" gutterBottom>
         {t("title")}
       </Typography>
+      {/* Feuille d'émargement du mois affiché, prête à imprimer (story E3). */}
+      <LinkButton href={`/${slug}/emargement/${month}`} variant="outlined" sx={{ mb: 3 }}>
+        {t("signInSheet", { month: formatDate(`${month}-01T12:00:00Z`, "MMMM yyyy") })}
+      </LinkButton>
       <DistributionPlanning
         key={month}
         amapSlug={slug}
