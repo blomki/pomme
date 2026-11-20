@@ -175,7 +175,7 @@ test.describe("espace producteur (téléphone)", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
-  test("le producteur voit au clavier ce qu'il doit préparer, semaine par semaine (E5)", async ({
+  test("le producteur voit au clavier ce qu'il doit préparer (E5), puis ses paiements (F4)", async ({
     page,
     request,
   }) => {
@@ -209,22 +209,12 @@ test.describe("espace producteur (téléphone)", () => {
       await expect(page).toHaveURL(/\/producteur\/a-preparer\?semaine=/);
       await expect(other).toHaveAttribute("aria-selected", "true");
     }
-  });
 
-  test("le producteur consulte au clavier ses paiements, foyer par foyer (F4)", async ({
-    page,
-    request,
-  }) => {
-    await signInByEmail(page, request, PRODUCER_DEMO);
-    await page.goto("/producteur");
-    // Jeu de données : à Cambremer, les commandes du mois en cours sont clôturées, avec leurs
-    // chèques attendus.
-    await chooseAmap(page, "AMAP de démonstration de Cambremer");
-    const nav = page.getByRole("navigation", { name: "Navigation de l'espace producteur" });
+    // Puis ses paiements (F4), dans la même session : chaque connexion consomme un lien, et le
+    // compte producteur est limité à 30 liens par quart d'heure (retries compris).
     await nav.getByRole("link", { name: "Paiements" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByRole("heading", { level: 1, name: "Mes paiements" })).toBeVisible();
-
     await expect(page.getByText(/^\d+ \/ \d+ chèques reçus$/)).toBeVisible();
     await expect(
       page.getByRole("progressbar", { name: "Chèques reçus par votre référent" }),
@@ -234,17 +224,13 @@ test.describe("espace producteur (téléphone)", () => {
     const toFollow = page.getByRole("region", { name: /^À suivre \(\d+\)$/ });
     await expect(toFollow.getByRole("listitem").first()).toContainText(/^Foyer .* · .*€/);
     await expect(toFollow.getByText("En attente").first()).toBeVisible();
-    await expectNoSeriousA11yViolations(page);
-
     // Lecture seule : aucun champ ni case à cocher.
     await expect(page.getByRole("checkbox")).toHaveCount(0);
     await expect(page.getByRole("textbox")).toHaveCount(0);
-  });
-
-  test("les paiements du producteur sont accessibles en mode sombre", async ({ page, request }) => {
+    await expectNoSeriousA11yViolations(page);
+    // Et en mode sombre.
     await page.emulateMedia({ colorScheme: "dark" });
-    await signInByEmail(page, request, PRODUCER_DEMO);
-    await page.goto("/producteur/paiements");
+    await page.reload();
     await expect(page.getByRole("heading", { level: 1, name: "Mes paiements" })).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
