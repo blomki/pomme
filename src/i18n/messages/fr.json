@@ -128,7 +128,15 @@
         "received": "Reçu",
         "handed_over": "Reçu"
       },
-      "total": "Total"
+      "total": "Total",
+      "printFor": "{household} · {amap}",
+      "print": "Imprimer la liste",
+      "printHint": "L'ordre de chaque chèque figure sur la feuille imprimée.",
+      "showPayee": "Voir l'ordre du chèque",
+      "hidePayee": "Masquer l'ordre du chèque",
+      "nothingTitle": "Rien ce mois-ci",
+      "nothingIntro": "Pas de commande ce mois-ci chez ces producteurs, commandés sur les trois derniers mois : aucun chèque à faire.",
+      "alsoOpen": "Les commandes du mois suivant sont ouvertes : leurs chèques se préparent à partir du récapitulatif."
     },
     "report": {
       "title": "Signaler un problème"

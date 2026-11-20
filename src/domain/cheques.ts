@@ -80,3 +80,30 @@ export function cleanChequeNumber(input: string): string | null | undefined {
   if (clean === "") return null;
   return clean.length > MAX_CHEQUE_NUMBER_LENGTH ? undefined : clean;
 }
+
+/**
+ * « Rien ce mois-ci » sur la liste des chèques (story E2) : les producteurs sans commande ce
+ * mois-ci, mais commandés au moins une fois sur les 3 mois précédents (règle du cahier des
+ * charges). Un producteur jamais commandé n'y figure pas : la liste resterait sans fin.
+ *
+ * @param history mois (« 2026-11 ») où le foyer a commandé chez chaque producteur
+ * @param thisMonth producteurs commandés ce mois-ci (ceux qui ont un chèque)
+ */
+export function nothingThisMonth(input: {
+  month: string;
+  history: ReadonlyArray<{ producer: string; month: string }>;
+  thisMonth: readonly string[];
+}): string[] {
+  const recent = new Set([1, 2, 3].map((back) => shiftMonth(input.month, -back)));
+  const producers = input.history
+    .filter((h) => recent.has(h.month) && !input.thisMonth.includes(h.producer))
+    .map((h) => h.producer);
+  return [...new Set(producers)].sort((a, b) => a.localeCompare(b, "fr"));
+}
+
+/** Mois décalé : shiftMonth("2027-01", -2) → « 2026-11 ». */
+function shiftMonth(month: string, delta: number): string {
+  const [year, m] = month.split("-").map(Number) as [number, number];
+  const index = year * 12 + (m - 1) + delta;
+  return `${Math.floor(index / 12)}-${String((index % 12) + 1).padStart(2, "0")}`;
+}

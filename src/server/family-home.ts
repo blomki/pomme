@@ -1,10 +1,11 @@
-import { and, asc, eq, gte, isNull, lt } from "drizzle-orm";
+import { and, asc, eq, gt, gte, isNull, lt } from "drizzle-orm";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
 import {
   amap,
   amapProducer,
+  catalog,
   catalogItem,
   cheque,
   distribution,
@@ -14,6 +15,7 @@ import {
   producer,
   product,
 } from "@/db/schema";
+import { nothingThisMonth } from "@/domain/cheques";
 import { addMonths } from "@/domain/distributions";
 import { homePeriod } from "@/domain/family-home";
 import type { MembershipState } from "@/domain/memberships";
@@ -196,11 +198,23 @@ export type FamilyCheques =
   | { state: "no_household" }
   | { state: "open" } // commandes ouvertes : le récapitulatif de la commande en tient lieu
   | { state: "none" }
-  | { state: "closed"; month: string; handOverOn: string | null; cheques: FamilyCheque[] };
+  | {
+      state: "closed";
+      month: string;
+      handOverOn: string | null;
+      /** Commandes du mois suivant ouvertes : lien vers le récapitulatif en plus de la liste. */
+      ordersOpen: boolean;
+      /** Nom du foyer, en tête de la version imprimée. */
+      householdName: string;
+      cheques: FamilyCheque[];
+      /** « Rien ce mois-ci » : producteurs commandés sur les 3 mois précédents, pas ce mois-ci. */
+      nothingThisMonth: string[];
+    };
 
 /**
- * Chèques du foyer pour la période clôturée de l'accueil (montants calculés à la clôture,
- * avoirs déduits). Pendant les commandes, la liste se lit dans le récapitulatif (D3).
+ * Chèques du foyer pour la dernière période clôturée (montants calculés à la clôture, avoirs
+ * déduits), y compris pendant les commandes du mois suivant (story E2). Sans chèque et pendant
+ * les commandes, la liste se lit dans le récapitulatif (D3).
  */
 export async function getFamilyCheques(
   tx: Transaction,
@@ -209,15 +223,28 @@ export async function getFamilyCheques(
 ): Promise<FamilyCheques> {
   const home = await myHousehold(tx, ctx);
   if (!home) return { state: "no_household" };
-  const summary = await getFamilyHome(tx, ctx, now);
-  if (summary.state !== "ready" || !summary.period) return { state: "none" };
-  if (summary.period.phase === "open") return { state: "open" };
-  if (summary.period.phase !== "closed") return { state: "none" };
-
-  const [found] = await tx
-    .select({ id: orderPeriod.id })
-    .from(orderPeriod)
-    .where(eq(orderPeriod.month, `${summary.period.month}-01`));
+  const periods = (await tx.select().from(orderPeriod)).map((p) => ({
+    id: p.id,
+    month: p.month.slice(0, 7),
+    status: effectiveStatus(p, now),
+  }));
+  const ordersOpen = periods.some((p) => p.status === "open");
+  // Dernière période clôturée, jusqu'au mois prochain : ses chèques restent visibles même quand
+  // les commandes du mois suivant sont ouvertes (on les remet à la première distribution).
+  const latestMonth = addMonths(parisDay(now).slice(0, 7), 1);
+  const found = periods
+    .filter((p) => p.status === "closed" && p.month <= latestMonth)
+    .sort((a, b) => b.month.localeCompare(a.month))[0];
+  if (!found) return { state: ordersOpen ? "open" : "none" };
+  const [from, to] = monthRange(found.month);
+  const [first] = await tx
+    .select({ date: distribution.date })
+    .from(distribution)
+    .where(
+      and(gte(distribution.date, from), lt(distribution.date, to), eq(distribution.isOpen, true)),
+    )
+    .orderBy(asc(distribution.date))
+    .limit(1);
   const cheques = await tx
     .select({
       producer: producer.name,
@@ -236,15 +263,40 @@ export async function getFamilyCheques(
     .where(
       and(
         eq(cheque.householdId, home.id),
-        eq(cheque.orderPeriodId, found!.id),
+        eq(cheque.orderPeriodId, found.id),
         isNull(cheque.archivedAt),
       ),
     )
     .orderBy(asc(producer.name));
+  // Pas de chèque ce mois-là : la liste du récapitulatif tient lieu de liste pendant les
+  // commandes.
+  if (cheques.length === 0 && ordersOpen) return { state: "open" };
+  const month = found.month;
+  const history = await tx
+    .selectDistinct({ producer: producer.name, month: catalog.month })
+    .from(orderLine)
+    .innerJoin(order, eq(order.id, orderLine.orderId))
+    .innerJoin(catalog, eq(catalog.id, order.catalogId))
+    .innerJoin(producer, eq(producer.id, catalog.producerId))
+    .where(
+      and(
+        eq(order.householdId, home.id),
+        gt(orderLine.quantity, 0),
+        gte(catalog.month, `${addMonths(month, -3)}-01`),
+        lt(catalog.month, `${month}-01`),
+      ),
+    );
   return {
     state: "closed",
-    month: summary.period.month,
-    handOverOn: summary.period.handOverOn,
+    month,
+    handOverOn: first?.date ?? null,
+    householdName: home.name,
+    ordersOpen,
     cheques,
+    nothingThisMonth: nothingThisMonth({
+      month,
+      history: history.map((h) => ({ producer: h.producer, month: h.month.slice(0, 7) })),
+      thisMonth: cheques.map((c) => c.producer),
+    }),
   };
 }
