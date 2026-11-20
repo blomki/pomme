@@ -721,6 +721,18 @@
     },
     "catalogue": {
       "amap": "Catalogue pour {name}"
+    },
+    "toPrepare": {
+      "title": "À préparer",
+      "weeks": "Distributions",
+      "notYet": "Les quantités à préparer apparaîtront à la clôture des commandes, le {date} au soir.",
+      "nothing": "Aucune distribution à préparer pour l'instant.",
+      "distributionOf": "Distribution du {date}",
+      "emptyWeek": "Rien à préparer pour cette distribution.",
+      "totals": "Totaux à préparer",
+      "baskets": "{count, plural, one {Panier de # foyer} other {Paniers de # foyers}}",
+      "basketsHint": "Pour étiqueter : un panier par foyer, par ordre alphabétique.",
+      "item": "{product} × {quantity}"
     }
   },
   "Platform": {

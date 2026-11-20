@@ -174,4 +174,40 @@ test.describe("espace producteur (téléphone)", () => {
     await expect(page.getByRole("heading", { level: 1, name: /^Catalogue de / })).toBeVisible();
     await expectNoSeriousA11yViolations(page);
   });
+
+  test("le producteur voit au clavier ce qu'il doit préparer, semaine par semaine (E5)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, PRODUCER_DEMO);
+    await page.goto("/producteur");
+    // Jeu de données : à Cambremer, les commandes du mois en cours sont clôturées.
+    await chooseAmap(page, "AMAP de démonstration de Cambremer");
+    const nav = page.getByRole("navigation", { name: "Navigation de l'espace producteur" });
+    await nav.getByRole("link", { name: "À préparer" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "À préparer" })).toBeVisible();
+
+    const weeks = page.getByRole("tablist", { name: "Distributions" }).getByRole("tab");
+    await expect(weeks.first()).toBeVisible();
+    await expect(page.getByText(/^Distribution du /)).toBeVisible();
+    const totals = page.getByRole("region", { name: "Totaux à préparer" });
+    await expect(totals.getByRole("listitem").first()).toBeVisible();
+    await expect(
+      page
+        .getByRole("region", { name: /^Paniers? de \d+ foyers?$/ })
+        .getByRole("heading", { level: 3 })
+        .first(),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Une autre semaine, au clavier : sa propre adresse.
+    if ((await weeks.count()) > 1) {
+      const other = weeks.nth((await weeks.count()) - 1);
+      await other.focus();
+      await page.keyboard.press("Enter");
+      await expect(page).toHaveURL(/\/producteur\/a-preparer\?semaine=/);
+      await expect(other).toHaveAttribute("aria-selected", "true");
+    }
+  });
 });
