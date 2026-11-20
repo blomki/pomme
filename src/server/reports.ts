@@ -30,6 +30,7 @@ import {
   type ReportStatus,
 } from "@/domain/reports";
 
+import { addFollowUpTask } from "./admin-tasks";
 import { writeAuditLog } from "./audit";
 import { ForbiddenError } from "./auth/errors";
 import { requireReferentOrAdmin } from "./auth/referent-or-admin";
@@ -365,7 +366,21 @@ export async function createAdminReport(
     await linesOfPastDistributions(tx, now, { distributionId: target.distributionId })
   ).find((l) => l.orderLineId === parsed.data.orderLineId);
   if (!line) return { status: "not_reportable" };
-  return insertReport(tx, ctx, line, parsed.data, "admin");
+  const result = await insertReport(tx, ctx, line, parsed.data, "admin");
+  // Tâche « À suivre » du tableau de bord (H3) : en parler au producteur.
+  if (result.status === "created") {
+    await addFollowUpTask(tx, ctx, {
+      kind: "report_follow_up",
+      relatedId: result.id,
+      details: {
+        distributionDate: line.distributionDate,
+        producer: line.producerName,
+        product: line.productName,
+        quantity: parsed.data.quantity,
+      },
+    });
+  }
+  return result;
 }
 
 // --- Traitement : référent du producteur ou admin --------------------------------------------

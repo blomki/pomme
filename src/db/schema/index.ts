@@ -39,6 +39,7 @@ import {
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
 import { REPORT_REASONS, REPORT_STATUSES } from "@/domain/reports";
+import { ADMIN_TASK_KINDS } from "@/domain/admin-tasks";
 import { AMAP_ROLES } from "@/domain/roles";
 
 import { uuidv7 } from "../uuid";
@@ -1233,6 +1234,46 @@ export const referentAssignment = pgTable(
       using: sql`${t.amapId} = ${currentAmapId}`,
       withCheck: sql`${t.amapId} = ${currentAmapId}`,
     }),
+  ],
+);
+
+// --- admin_task : tâche « À suivre » du tableau de bord ----------------------------------------
+// Rappel pour les admins, créé par l'application à un moment précis (distribution fermée,
+// signalement reporté de la feuille d'émargement…) et coché à la main (story H3, ADR 0030). Les
+// tâches « Bloquant », elles, se calculent à l'affichage et ne sont jamais enregistrées. Une seule
+// tâche par sujet (kind, related_id) : pas de doublon. Le texte n'est pas stocké : il se compose
+// à l'affichage, en français, à partir de `details` (fr.json).
+
+export const adminTaskKind = pgEnum("admin_task_kind", ADMIN_TASK_KINDS);
+
+export const adminTask = pgTable(
+  "admin_task",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    kind: adminTaskKind("kind").notNull(),
+    // Ce dont parle la tâche : distribution, signalement… (selon kind).
+    relatedId: uuid("related_id").notNull(),
+    // Valeurs affichées dans le texte de la tâche (date, motif, producteur…).
+    details: jsonb("details").notNull().default({}),
+    dueDate: date("due_date", { mode: "string" }),
+    doneAt: timestamp("done_at", { withTimezone: true }),
+    doneBy: uuid("done_by").references(() => user.id),
+    archivedAt: archivedAt(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("admin_task_subject_unique").on(t.amapId, t.kind, t.relatedId),
+    check("admin_task_done", sql`(${t.doneAt} is null) = (${t.doneBy} is null)`),
+    // Réservé aux admins de l'AMAP courante. Jamais supprimée : archivée.
+    ...orderPolicies("admin_task", t.amapId, isCurrentAmapAdmin, isCurrentAmapAdmin, [
+      "select",
+      "insert",
+      "update",
+    ]),
   ],
 );
 
