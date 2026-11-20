@@ -5,6 +5,7 @@ import {
   cleanChequeNumber,
   hasOpenGap,
   matchesFilter,
+  nothingThisMonth,
   MAX_CHEQUE_NUMBER_LENGTH,
   parseReceivedCents,
   pointageProgress,
@@ -75,5 +76,34 @@ describe("parseReceivedCents et cleanChequeNumber", () => {
     expect(cleanChequeNumber(" 1234  567 ")).toBe("1234 567");
     expect(cleanChequeNumber("  ")).toBeNull();
     expect(cleanChequeNumber("9".repeat(MAX_CHEQUE_NUMBER_LENGTH + 1))).toBeUndefined();
+  });
+});
+
+describe("nothingThisMonth", () => {
+  const history = [
+    { producer: "Ferme du Coteau", month: "2026-11" },
+    { producer: "Laiterie du Pré Vert", month: "2026-10" },
+    { producer: "Cidrerie du Clos", month: "2026-08" }, // il y a plus de 3 mois
+    { producer: "Boulangerie", month: "2026-12" }, // ce mois-ci
+    { producer: "Ferme du Coteau", month: "2026-09" },
+  ];
+
+  it("liste les producteurs commandés sur les 3 mois précédents, sans commande ce mois-ci", () => {
+    expect(nothingThisMonth({ month: "2026-12", history, thisMonth: ["Boulangerie"] })).toEqual([
+      "Ferme du Coteau",
+      "Laiterie du Pré Vert",
+    ]);
+  });
+
+  it("n'y met pas un producteur commandé ce mois-ci, ni un trop ancien", () => {
+    expect(nothingThisMonth({ month: "2026-12", history, thisMonth: ["Ferme du Coteau"] })).toEqual(
+      ["Laiterie du Pré Vert"],
+    );
+    // Changement d'année : décembre, novembre et octobre avant janvier.
+    expect(nothingThisMonth({ month: "2027-01", history, thisMonth: [] })).toEqual([
+      "Boulangerie",
+      "Ferme du Coteau",
+      "Laiterie du Pré Vert",
+    ]);
   });
 });

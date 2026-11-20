@@ -13,6 +13,8 @@ import {
   household,
   householdMember,
   membership,
+  order,
+  orderLine,
   orderPeriod,
   producer,
   product,
@@ -161,10 +163,44 @@ describe("Accueil famille (D6)", () => {
         lines: [{ product: "Œufs, boîte de 6", producer: "Ferme d'essai", quantity: 2 }],
       },
     });
+    // Commandé en octobre au Fournil, pas ce mois-ci : « Rien ce mois-ci » (story E2).
+    const [bakery, octCatalog, bread, octOrder] = [uuidv7(), uuidv7(), uuidv7(), uuidv7()];
+    await db.owner.insert(producer).values({ id: bakery, name: "Fournil d'essai" });
+    await db.owner.insert(amapProducer).values({ amapId: amapA.id, producerId: bakery });
+    const breadProduct = uuidv7();
+    await db.owner.insert(product).values({ id: breadProduct, producerId: bakery, name: "Pain" });
+    await db.owner.insert(catalog).values({
+      id: octCatalog,
+      amapId: amapA.id,
+      producerId: bakery,
+      month: "2026-10-01",
+      status: "published",
+    });
+    await db.owner.insert(catalogItem).values({
+      id: bread,
+      amapId: amapA.id,
+      catalogId: octCatalog,
+      productId: breadProduct,
+      priceCents: 450,
+    });
+    await db.owner
+      .insert(order)
+      .values({ id: octOrder, amapId: amapA.id, householdId: homeId, catalogId: octCatalog });
+    await db.owner.insert(orderLine).values({
+      amapId: amapA.id,
+      orderId: octOrder,
+      catalogItemId: bread,
+      distributionId: dec3,
+      quantity: 1,
+      unitPriceCents: 450,
+    });
     expect(await run(family.id, (tx, ctx) => getFamilyCheques(tx, ctx, CLOSED))).toEqual({
       state: "closed",
       month: "2026-12",
       handOverOn: "2026-12-03",
+      ordersOpen: false,
+      householdName: "Foyer Essai",
+      nothingThisMonth: ["Fournil d'essai"],
       cheques: [
         {
           producer: "Ferme d'essai",
