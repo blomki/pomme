@@ -184,7 +184,7 @@ describe("Isolation des données par AMAP (RLS)", () => {
 
     it("ne peut pas supprimer une politique", async () => {
       await expectDatabaseError(
-        db.app.execute(sql`drop policy amap_role_isolation on amap_role`),
+        db.app.execute(sql`drop policy amap_role_select on amap_role`),
         /must be owner/,
       );
     });

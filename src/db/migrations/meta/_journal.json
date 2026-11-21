@@ -253,6 +253,20 @@
       "when": 1795251092890,
       "tag": "0035_anonymiser-demandes",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1795252646691,
+      "tag": "0036_mes-foyers",
+      "breakpoints": true
+    },
+    {
+      "idx": 37,
+      "version": "7",
+      "when": 1795253187571,
+      "tag": "0037_rls-tables-amap",
+      "breakpoints": true
     }
   ]
 }

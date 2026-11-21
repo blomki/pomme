@@ -1,0 +1,5677 @@
+{
+  "id": "33b192eb-0c51-4f91-a944-b2621b606c4d",
+  "prevId": "5aba6f27-0204-4443-9867-3c6b2671bfb7",
+  "version": "7",
+  "dialect": "postgresql",
+  "tables": {
+    "public.account": {
+      "name": "account",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "account_id": {
+          "name": "account_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "access_token": {
+          "name": "access_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token": {
+          "name": "refresh_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "id_token": {
+          "name": "id_token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "access_token_expires_at": {
+          "name": "access_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "refresh_token_expires_at": {
+          "name": "refresh_token_expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "scope": {
+          "name": "scope",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "password": {
+          "name": "password",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "account_user_idx": {
+          "name": "account_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "account_user_id_user_id_fk": {
+          "name": "account_user_id_user_id_fk",
+          "tableFrom": "account",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "account_auth": {
+          "name": "account_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.admin_task": {
+      "name": "admin_task",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "kind": {
+          "name": "kind",
+          "type": "admin_task_kind",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "related_id": {
+          "name": "related_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "details": {
+          "name": "details",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "due_date": {
+          "name": "due_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "done_at": {
+          "name": "done_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "done_by": {
+          "name": "done_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "admin_task_amap_id_amap_id_fk": {
+          "name": "admin_task_amap_id_amap_id_fk",
+          "tableFrom": "admin_task",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "admin_task_done_by_user_id_fk": {
+          "name": "admin_task_done_by_user_id_fk",
+          "tableFrom": "admin_task",
+          "tableTo": "user",
+          "columnsFrom": [
+            "done_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "admin_task_subject_unique": {
+          "name": "admin_task_subject_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "kind",
+            "related_id"
+          ]
+        }
+      },
+      "policies": {
+        "admin_task_select": {
+          "name": "admin_task_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "admin_task_insert": {
+          "name": "admin_task_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "admin_task_update": {
+          "name": "admin_task_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"admin_task\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "admin_task_done": {
+          "name": "admin_task_done",
+          "value": "(\"admin_task\".\"done_at\" is null) = (\"admin_task\".\"done_by\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.amap": {
+      "name": "amap",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "logo_url": {
+          "name": "logo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "theme": {
+          "name": "theme",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "contact_email": {
+          "name": "contact_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "distribution_place": {
+          "name": "distribution_place",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "timezone": {
+          "name": "timezone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'Europe/Paris'"
+        },
+        "settings": {
+          "name": "settings",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'::jsonb"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "amap_created_by_user_id_fk": {
+          "name": "amap_created_by_user_id_fk",
+          "tableFrom": "amap",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "amap_slug_unique": {
+          "name": "amap_slug_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "slug"
+          ]
+        }
+      },
+      "policies": {
+        "amap_select": {
+          "name": "amap_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "true"
+        },
+        "amap_update": {
+          "name": "amap_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap\".\"id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"amap\".\"id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "amap_slug_format": {
+          "name": "amap_slug_format",
+          "value": "\"amap\".\"slug\" ~ '^[a-z0-9]+(-[a-z0-9]+)*$' and length(\"amap\".\"slug\") between 3 and 40"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.amap_producer": {
+      "name": "amap_producer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "check_payee": {
+          "name": "check_payee",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "distance_km": {
+          "name": "distance_km",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "active": {
+          "name": "active",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "amap_producer_producer_idx": {
+          "name": "amap_producer_producer_idx",
+          "columns": [
+            {
+              "expression": "producer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "amap_producer_amap_id_amap_id_fk": {
+          "name": "amap_producer_amap_id_amap_id_fk",
+          "tableFrom": "amap_producer",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "amap_producer_producer_id_producer_id_fk": {
+          "name": "amap_producer_producer_id_producer_id_fk",
+          "tableFrom": "amap_producer",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "amap_producer_created_by_user_id_fk": {
+          "name": "amap_producer_created_by_user_id_fk",
+          "tableFrom": "amap_producer",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "amap_producer_unique": {
+          "name": "amap_producer_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "producer_id"
+          ]
+        },
+        "amap_producer_amap_unique": {
+          "name": "amap_producer_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "amap_producer_select": {
+          "name": "amap_producer_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap_producer\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "amap_producer_insert": {
+          "name": "amap_producer_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"amap_producer\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "amap_producer_update": {
+          "name": "amap_producer_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap_producer\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n        select 1 from referent_assignment\n        where referent_assignment.amap_producer_id = \"amap_producer\".\"id\"\n          and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n      ))",
+          "withCheck": "\"amap_producer\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n        select 1 from referent_assignment\n        where referent_assignment.amap_producer_id = \"amap_producer\".\"id\"\n          and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n      ))"
+        }
+      },
+      "checkConstraints": {
+        "amap_producer_distance": {
+          "name": "amap_producer_distance",
+          "value": "\"amap_producer\".\"distance_km\" is null or \"amap_producer\".\"distance_km\" between 0 and 1000"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.amap_role": {
+      "name": "amap_role",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "role": {
+          "name": "role",
+          "type": "amap_role_name",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "amap_role_user_idx": {
+          "name": "amap_role_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "amap_role_amap_id_amap_id_fk": {
+          "name": "amap_role_amap_id_amap_id_fk",
+          "tableFrom": "amap_role",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "amap_role_user_id_user_id_fk": {
+          "name": "amap_role_user_id_user_id_fk",
+          "tableFrom": "amap_role",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "amap_role_created_by_user_id_fk": {
+          "name": "amap_role_created_by_user_id_fk",
+          "tableFrom": "amap_role",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "amap_role_unique": {
+          "name": "amap_role_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "user_id",
+            "role"
+          ]
+        }
+      },
+      "policies": {
+        "amap_role_select": {
+          "name": "amap_role_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap_role\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "amap_role_insert": {
+          "name": "amap_role_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"amap_role\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "amap_role_update": {
+          "name": "amap_role_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap_role\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"amap_role\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "amap_role_delete": {
+          "name": "amap_role_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"amap_role\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "amap_role_auth_select": {
+          "name": "amap_role_auth_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.audit_log": {
+      "name": "audit_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "actor_user_id": {
+          "name": "actor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "entity_type": {
+          "name": "entity_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "entity_id": {
+          "name": "entity_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "action": {
+          "name": "action",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "before": {
+          "name": "before",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "after": {
+          "name": "after",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "audit_log_entity_idx": {
+          "name": "audit_log_entity_idx",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_type",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "entity_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "audit_log_amap_id_amap_id_fk": {
+          "name": "audit_log_amap_id_amap_id_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "audit_log_actor_user_id_user_id_fk": {
+          "name": "audit_log_actor_user_id_user_id_fk",
+          "tableFrom": "audit_log",
+          "tableTo": "user",
+          "columnsFrom": [
+            "actor_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "audit_log_select": {
+          "name": "audit_log_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"audit_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "audit_log_insert": {
+          "name": "audit_log_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"audit_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid\n        and \"audit_log\".\"actor_user_id\" is not distinct from nullif(current_setting('app.user_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.catalog": {
+      "name": "catalog",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "catalog_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_at": {
+          "name": "published_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalog_amap_id_amap_id_fk": {
+          "name": "catalog_amap_id_amap_id_fk",
+          "tableFrom": "catalog",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "catalog_producer_id_producer_id_fk": {
+          "name": "catalog_producer_id_producer_id_fk",
+          "tableFrom": "catalog",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "catalog_created_by_user_id_fk": {
+          "name": "catalog_created_by_user_id_fk",
+          "tableFrom": "catalog",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "catalog_unique": {
+          "name": "catalog_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "producer_id",
+            "month"
+          ]
+        },
+        "catalog_amap_unique": {
+          "name": "catalog_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "catalog_select": {
+          "name": "catalog_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "catalog_insert": {
+          "name": "catalog_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"catalog\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"catalog\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"catalog\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))"
+        },
+        "catalog_update": {
+          "name": "catalog_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"catalog\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"catalog\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))",
+          "withCheck": "\"catalog\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"catalog\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"catalog\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))"
+        }
+      },
+      "checkConstraints": {
+        "catalog_month_first_day": {
+          "name": "catalog_month_first_day",
+          "value": "extract(day from \"catalog\".\"month\") = 1"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_item": {
+      "name": "catalog_item",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "product_id": {
+          "name": "product_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "price_cents": {
+          "name": "price_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "min_quantity": {
+          "name": "min_quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "removed_at": {
+          "name": "removed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalog_item_amap_id_amap_id_fk": {
+          "name": "catalog_item_amap_id_amap_id_fk",
+          "tableFrom": "catalog_item",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "catalog_item_product_id_product_id_fk": {
+          "name": "catalog_item_product_id_product_id_fk",
+          "tableFrom": "catalog_item",
+          "tableTo": "product",
+          "columnsFrom": [
+            "product_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "catalog_item_catalog_fk": {
+          "name": "catalog_item_catalog_fk",
+          "tableFrom": "catalog_item",
+          "tableTo": "catalog",
+          "columnsFrom": [
+            "catalog_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "catalog_item_unique": {
+          "name": "catalog_item_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "catalog_id",
+            "product_id"
+          ]
+        },
+        "catalog_item_amap_unique": {
+          "name": "catalog_item_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "catalog_item_select": {
+          "name": "catalog_item_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog_item\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "catalog_item_insert": {
+          "name": "catalog_item_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"catalog_item\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from catalog where catalog.id = \"catalog_item\".\"catalog_id\" and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))\n)"
+        },
+        "catalog_item_update": {
+          "name": "catalog_item_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog_item\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from catalog where catalog.id = \"catalog_item\".\"catalog_id\" and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))\n)",
+          "withCheck": "\"catalog_item\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from catalog where catalog.id = \"catalog_item\".\"catalog_id\" and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))\n)"
+        }
+      },
+      "checkConstraints": {
+        "catalog_item_price_positive": {
+          "name": "catalog_item_price_positive",
+          "value": "\"catalog_item\".\"price_cents\" > 0"
+        },
+        "catalog_item_min_quantity": {
+          "name": "catalog_item_min_quantity",
+          "value": "\"catalog_item\".\"min_quantity\" is null or \"catalog_item\".\"min_quantity\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.catalog_item_availability": {
+      "name": "catalog_item_availability",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_item_id": {
+          "name": "catalog_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "distribution_id": {
+          "name": "distribution_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "catalog_item_availability_amap_id_amap_id_fk": {
+          "name": "catalog_item_availability_amap_id_amap_id_fk",
+          "tableFrom": "catalog_item_availability",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "catalog_item_availability_item_fk": {
+          "name": "catalog_item_availability_item_fk",
+          "tableFrom": "catalog_item_availability",
+          "tableTo": "catalog_item",
+          "columnsFrom": [
+            "catalog_item_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "catalog_item_availability_distribution_fk": {
+          "name": "catalog_item_availability_distribution_fk",
+          "tableFrom": "catalog_item_availability",
+          "tableTo": "distribution",
+          "columnsFrom": [
+            "distribution_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "catalog_item_availability_unique": {
+          "name": "catalog_item_availability_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "catalog_item_id",
+            "distribution_id"
+          ]
+        }
+      },
+      "policies": {
+        "catalog_item_availability_select": {
+          "name": "catalog_item_availability_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog_item_availability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "catalog_item_availability_insert": {
+          "name": "catalog_item_availability_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"catalog_item_availability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from catalog_item where catalog_item.id = \"catalog_item_availability\".\"catalog_item_id\"\n          and exists (\n  select 1 from catalog where catalog.id = catalog_item.catalog_id and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))\n))"
+        },
+        "catalog_item_availability_delete": {
+          "name": "catalog_item_availability_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"catalog_item_availability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from catalog_item where catalog_item.id = \"catalog_item_availability\".\"catalog_item_id\"\n          and exists (\n  select 1 from catalog where catalog.id = catalog_item.catalog_id and (exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))\n))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.cheque": {
+      "name": "cheque",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_period_id": {
+          "name": "order_period_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "gross_cents": {
+          "name": "gross_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credits_cents": {
+          "name": "credits_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "expected_cents": {
+          "name": "expected_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "cheque_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'expected'"
+        },
+        "received_cents": {
+          "name": "received_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "received_at": {
+          "name": "received_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "received_by": {
+          "name": "received_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handed_over_at": {
+          "name": "handed_over_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handed_over_by": {
+          "name": "handed_over_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "cheque_number": {
+          "name": "cheque_number",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gap_settled_at": {
+          "name": "gap_settled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "gap_settled_by": {
+          "name": "gap_settled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "cheque_period_idx": {
+          "name": "cheque_period_idx",
+          "columns": [
+            {
+              "expression": "order_period_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "cheque_amap_id_amap_id_fk": {
+          "name": "cheque_amap_id_amap_id_fk",
+          "tableFrom": "cheque",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_producer_id_producer_id_fk": {
+          "name": "cheque_producer_id_producer_id_fk",
+          "tableFrom": "cheque",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_received_by_user_id_fk": {
+          "name": "cheque_received_by_user_id_fk",
+          "tableFrom": "cheque",
+          "tableTo": "user",
+          "columnsFrom": [
+            "received_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_handed_over_by_user_id_fk": {
+          "name": "cheque_handed_over_by_user_id_fk",
+          "tableFrom": "cheque",
+          "tableTo": "user",
+          "columnsFrom": [
+            "handed_over_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_gap_settled_by_user_id_fk": {
+          "name": "cheque_gap_settled_by_user_id_fk",
+          "tableFrom": "cheque",
+          "tableTo": "user",
+          "columnsFrom": [
+            "gap_settled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_household_fk": {
+          "name": "cheque_household_fk",
+          "tableFrom": "cheque",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "cheque_order_period_fk": {
+          "name": "cheque_order_period_fk",
+          "tableFrom": "cheque",
+          "tableTo": "order_period",
+          "columnsFrom": [
+            "order_period_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "cheque_unique": {
+          "name": "cheque_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "household_id",
+            "producer_id",
+            "order_period_id"
+          ]
+        },
+        "cheque_amap_unique": {
+          "name": "cheque_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "cheque_select": {
+          "name": "cheque_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"cheque\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"cheque\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"cheque\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"cheque\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "cheque_insert": {
+          "name": "cheque_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"cheque\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"cheque\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
+        },
+        "cheque_update": {
+          "name": "cheque_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"cheque\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"cheque\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')",
+          "withCheck": "\"cheque\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"cheque\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
+        }
+      },
+      "checkConstraints": {
+        "cheque_amounts": {
+          "name": "cheque_amounts",
+          "value": "\"cheque\".\"gross_cents\" >= 0 and \"cheque\".\"credits_cents\" >= 0\n        and \"cheque\".\"expected_cents\" = \"cheque\".\"gross_cents\" - \"cheque\".\"credits_cents\" and \"cheque\".\"expected_cents\" >= 0"
+        },
+        "cheque_received_cents": {
+          "name": "cheque_received_cents",
+          "value": "\"cheque\".\"received_cents\" is null or \"cheque\".\"received_cents\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.credit": {
+      "name": "credit",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amount_cents": {
+          "name": "amount_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "credit_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'created'"
+        },
+        "deducted_on_cheque_id": {
+          "name": "deducted_on_cheque_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "split_from_credit_id": {
+          "name": "split_from_credit_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "report_id": {
+          "name": "report_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "credit_pending_idx": {
+          "name": "credit_pending_idx",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "producer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"credit\".\"status\" = 'created'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "credit_report_unique": {
+          "name": "credit_report_unique",
+          "columns": [
+            {
+              "expression": "report_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "credit_amap_id_amap_id_fk": {
+          "name": "credit_amap_id_amap_id_fk",
+          "tableFrom": "credit",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_producer_id_producer_id_fk": {
+          "name": "credit_producer_id_producer_id_fk",
+          "tableFrom": "credit",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_report_id_report_id_fk": {
+          "name": "credit_report_id_report_id_fk",
+          "tableFrom": "credit",
+          "tableTo": "report",
+          "columnsFrom": [
+            "report_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_created_by_user_id_fk": {
+          "name": "credit_created_by_user_id_fk",
+          "tableFrom": "credit",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_household_fk": {
+          "name": "credit_household_fk",
+          "tableFrom": "credit",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_cheque_fk": {
+          "name": "credit_cheque_fk",
+          "tableFrom": "credit",
+          "tableTo": "cheque",
+          "columnsFrom": [
+            "deducted_on_cheque_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "credit_split_from_fk": {
+          "name": "credit_split_from_fk",
+          "tableFrom": "credit",
+          "tableTo": "credit",
+          "columnsFrom": [
+            "split_from_credit_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "credit_select": {
+          "name": "credit_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"credit\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"credit\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"credit\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"credit\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "credit_insert": {
+          "name": "credit_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"credit\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"credit\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
+        },
+        "credit_update": {
+          "name": "credit_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"credit\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"credit\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')",
+          "withCheck": "\"credit\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"credit\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n        or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
+        }
+      },
+      "checkConstraints": {
+        "credit_amount_positive": {
+          "name": "credit_amount_positive",
+          "value": "\"credit\".\"amount_cents\" > 0"
+        },
+        "credit_deducted_on_cheque": {
+          "name": "credit_deducted_on_cheque",
+          "value": "(\"credit\".\"status\" = 'deducted') = (\"credit\".\"deducted_on_cheque_id\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.distribution": {
+      "name": "distribution",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "date": {
+          "name": "date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_time": {
+          "name": "start_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_time": {
+          "name": "end_time",
+          "type": "time",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_open": {
+          "name": "is_open",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "closed_reason": {
+          "name": "closed_reason",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "distribution_amap_id_amap_id_fk": {
+          "name": "distribution_amap_id_amap_id_fk",
+          "tableFrom": "distribution",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "distribution_created_by_user_id_fk": {
+          "name": "distribution_created_by_user_id_fk",
+          "tableFrom": "distribution",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "distribution_amap_date_unique": {
+          "name": "distribution_amap_date_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "date"
+          ]
+        },
+        "distribution_amap_unique": {
+          "name": "distribution_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "distribution_select": {
+          "name": "distribution_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"distribution\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "distribution_insert": {
+          "name": "distribution_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"distribution\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "distribution_update": {
+          "name": "distribution_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"distribution\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"distribution\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "distribution_times": {
+          "name": "distribution_times",
+          "value": "\"distribution\".\"start_time\" < \"distribution\".\"end_time\""
+        },
+        "distribution_closed_reason": {
+          "name": "distribution_closed_reason",
+          "value": "(\"distribution\".\"is_open\" and \"distribution\".\"closed_reason\" is null)\n        or (not \"distribution\".\"is_open\" and coalesce(length(trim(\"distribution\".\"closed_reason\")), 0) > 0)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.household": {
+      "name": "household",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "anonymized_at": {
+          "name": "anonymized_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "household_name_unique": {
+          "name": "household_name_unique",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "lower(\"name\")",
+              "asc": true,
+              "isExpression": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"household\".\"archived_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "household_amap_id_amap_id_fk": {
+          "name": "household_amap_id_amap_id_fk",
+          "tableFrom": "household",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "household_created_by_user_id_fk": {
+          "name": "household_created_by_user_id_fk",
+          "tableFrom": "household",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "household_amap_unique": {
+          "name": "household_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "household_select": {
+          "name": "household_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"household\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"household\".\"id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and amap_role.role in ('admin', 'referent')\n)\n        or exists (select 1 from \"order\" where \"order\".household_id = \"household\".\"id\")\n        or exists (select 1 from cheque where cheque.household_id = \"household\".\"id\")\n        or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "household_insert": {
+          "name": "household_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"household\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "household_update": {
+          "name": "household_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"household\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"household\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "household_name_not_blank": {
+          "name": "household_name_not_blank",
+          "value": "length(trim(\"household\".\"name\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.household_member": {
+      "name": "household_member",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_primary": {
+          "name": "is_primary",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "household_member_one_household_idx": {
+          "name": "household_member_one_household_idx",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"household_member\".\"archived_at\" is null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "household_member_one_primary_idx": {
+          "name": "household_member_one_primary_idx",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"household_member\".\"is_primary\"",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "household_member_user_idx": {
+          "name": "household_member_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "household_member_amap_id_amap_id_fk": {
+          "name": "household_member_amap_id_amap_id_fk",
+          "tableFrom": "household_member",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "household_member_user_id_user_id_fk": {
+          "name": "household_member_user_id_user_id_fk",
+          "tableFrom": "household_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "household_member_created_by_user_id_fk": {
+          "name": "household_member_created_by_user_id_fk",
+          "tableFrom": "household_member",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "household_member_household_fk": {
+          "name": "household_member_household_fk",
+          "tableFrom": "household_member",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "household_member_unique": {
+          "name": "household_member_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "household_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {
+        "household_member_select": {
+          "name": "household_member_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"household_member\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"household_member\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid\n        or \"household_member\".\"household_id\" in (select my_household_ids())\n        or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and amap_role.role in ('admin', 'referent')\n) or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "household_member_insert": {
+          "name": "household_member_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"household_member\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "household_member_update": {
+          "name": "household_member_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"household_member\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"household_member\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "household_member_delete": {
+          "name": "household_member_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"household_member\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.join_request": {
+      "name": "join_request",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "message": {
+          "name": "message",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "status": {
+          "name": "status",
+          "type": "join_request_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'new'"
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handled_by": {
+          "name": "handled_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "handled_at": {
+          "name": "handled_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "join_request_status_idx": {
+          "name": "join_request_status_idx",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "join_request_amap_id_amap_id_fk": {
+          "name": "join_request_amap_id_amap_id_fk",
+          "tableFrom": "join_request",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "join_request_handled_by_user_id_fk": {
+          "name": "join_request_handled_by_user_id_fk",
+          "tableFrom": "join_request",
+          "tableTo": "user",
+          "columnsFrom": [
+            "handled_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "join_request_household_fk": {
+          "name": "join_request_household_fk",
+          "tableFrom": "join_request",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "join_request_insert": {
+          "name": "join_request_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"join_request\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and \"join_request\".\"status\" = 'new'\n        and \"join_request\".\"household_id\" is null and \"join_request\".\"handled_by\" is null"
+        },
+        "join_request_select": {
+          "name": "join_request_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"join_request\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "join_request_update": {
+          "name": "join_request_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"join_request\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"join_request\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "join_request_accepted": {
+          "name": "join_request_accepted",
+          "value": "(\"join_request\".\"status\" = 'accepted') = (\"join_request\".\"household_id\" is not null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.membership": {
+      "name": "membership",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "start_date": {
+          "name": "start_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "end_date": {
+          "name": "end_date",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "fee_cents": {
+          "name": "fee_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "membership_household_idx": {
+          "name": "membership_household_idx",
+          "columns": [
+            {
+              "expression": "household_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "membership_amap_id_amap_id_fk": {
+          "name": "membership_amap_id_amap_id_fk",
+          "tableFrom": "membership",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "membership_created_by_user_id_fk": {
+          "name": "membership_created_by_user_id_fk",
+          "tableFrom": "membership",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "membership_household_fk": {
+          "name": "membership_household_fk",
+          "tableFrom": "membership",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "membership_select": {
+          "name": "membership_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"membership\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"membership\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and amap_role.role in ('admin', 'referent')\n) or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "membership_insert": {
+          "name": "membership_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"membership\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "membership_update": {
+          "name": "membership_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"membership\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"membership\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "membership_dates": {
+          "name": "membership_dates",
+          "value": "\"membership\".\"end_date\" > \"membership\".\"start_date\""
+        },
+        "membership_fee": {
+          "name": "membership_fee",
+          "value": "\"membership\".\"fee_cents\" is null or \"membership\".\"fee_cents\" >= 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.notification_log": {
+      "name": "notification_log",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "template": {
+          "name": "template",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "dedupe_key": {
+          "name": "dedupe_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "status": {
+          "name": "status",
+          "type": "notification_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'pending'"
+        },
+        "provider_id": {
+          "name": "provider_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "error": {
+          "name": "error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "sent_at": {
+          "name": "sent_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "notification_log_dedupe_idx": {
+          "name": "notification_log_dedupe_idx",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "dedupe_key",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"notification_log\".\"dedupe_key\" is not null and \"notification_log\".\"status\" in ('pending', 'sent')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "notification_log_user_idx": {
+          "name": "notification_log_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "notification_log_amap_id_amap_id_fk": {
+          "name": "notification_log_amap_id_amap_id_fk",
+          "tableFrom": "notification_log",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "notification_log_user_id_user_id_fk": {
+          "name": "notification_log_user_id_user_id_fk",
+          "tableFrom": "notification_log",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "notification_log_select": {
+          "name": "notification_log_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"notification_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "notification_log_insert": {
+          "name": "notification_log_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"notification_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "notification_log_update": {
+          "name": "notification_log_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"notification_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid",
+          "withCheck": "\"notification_log\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid"
+        },
+        "notification_log_platform_auth": {
+          "name": "notification_log_platform_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "\"notification_log\".\"amap_id\" is null",
+          "withCheck": "\"notification_log\".\"amap_id\" is null"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.order": {
+      "name": "order",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_id": {
+          "name": "catalog_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "declined_at": {
+          "name": "declined_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "order_catalog_idx": {
+          "name": "order_catalog_idx",
+          "columns": [
+            {
+              "expression": "catalog_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "order_amap_id_amap_id_fk": {
+          "name": "order_amap_id_amap_id_fk",
+          "tableFrom": "order",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_created_by_user_id_fk": {
+          "name": "order_created_by_user_id_fk",
+          "tableFrom": "order",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_updated_by_user_id_fk": {
+          "name": "order_updated_by_user_id_fk",
+          "tableFrom": "order",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_household_fk": {
+          "name": "order_household_fk",
+          "tableFrom": "order",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_catalog_fk": {
+          "name": "order_catalog_fk",
+          "tableFrom": "order",
+          "tableTo": "catalog",
+          "columnsFrom": [
+            "catalog_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "order_household_catalog_unique": {
+          "name": "order_household_catalog_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "household_id",
+            "catalog_id"
+          ]
+        },
+        "order_amap_unique": {
+          "name": "order_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "order_select": {
+          "name": "order_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"order\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and ((exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".\"catalog_id\" and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".\"catalog_id\" and exists (\n  select 1 from producer_user\n  where producer_user.producer_id = catalog.producer_id and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n) or coalesce(current_setting('app.trusted', true), '') <> '')"
+        },
+        "order_insert": {
+          "name": "order_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"order\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".\"catalog_id\" and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))"
+        },
+        "order_update": {
+          "name": "order_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"order\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".\"catalog_id\" and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))",
+          "withCheck": "\"order\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".\"catalog_id\" and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.order_line": {
+      "name": "order_line",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_id": {
+          "name": "order_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "catalog_item_id": {
+          "name": "catalog_item_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "distribution_id": {
+          "name": "distribution_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "unit_price_cents": {
+          "name": "unit_price_cents",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "order_line_amap_id_amap_id_fk": {
+          "name": "order_line_amap_id_amap_id_fk",
+          "tableFrom": "order_line",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_line_order_fk": {
+          "name": "order_line_order_fk",
+          "tableFrom": "order_line",
+          "tableTo": "order",
+          "columnsFrom": [
+            "order_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_line_catalog_item_fk": {
+          "name": "order_line_catalog_item_fk",
+          "tableFrom": "order_line",
+          "tableTo": "catalog_item",
+          "columnsFrom": [
+            "catalog_item_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_line_distribution_fk": {
+          "name": "order_line_distribution_fk",
+          "tableFrom": "order_line",
+          "tableTo": "distribution",
+          "columnsFrom": [
+            "distribution_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "order_line_unique": {
+          "name": "order_line_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "order_id",
+            "catalog_item_id",
+            "distribution_id"
+          ]
+        }
+      },
+      "policies": {
+        "order_line_select": {
+          "name": "order_line_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"order_line\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (select 1 from \"order\" where \"order\".id = \"order_line\".\"order_id\")"
+        },
+        "order_line_insert": {
+          "name": "order_line_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"order_line\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from \"order\" where \"order\".id = \"order_line\".\"order_id\"\n          and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".household_id\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))\n      )"
+        },
+        "order_line_update": {
+          "name": "order_line_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"order_line\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from \"order\" where \"order\".id = \"order_line\".\"order_id\"\n          and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".household_id\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))\n      )",
+          "withCheck": "\"order_line\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from \"order\" where \"order\".id = \"order_line\".\"order_id\"\n          and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".household_id\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))\n      )"
+        },
+        "order_line_delete": {
+          "name": "order_line_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"order_line\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n        select 1 from \"order\" where \"order\".id = \"order_line\".\"order_id\"\n          and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"order\".household_id\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n    or exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n))\n      )"
+        }
+      },
+      "checkConstraints": {
+        "order_line_quantity": {
+          "name": "order_line_quantity",
+          "value": "\"order_line\".\"quantity\" >= 0"
+        },
+        "order_line_price_positive": {
+          "name": "order_line_price_positive",
+          "value": "\"order_line\".\"unit_price_cents\" > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.order_period": {
+      "name": "order_period",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "month": {
+          "name": "month",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "opens_at": {
+          "name": "opens_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "closes_at": {
+          "name": "closes_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "order_period_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'scheduled'"
+        },
+        "closed_at": {
+          "name": "closed_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "reopened_at": {
+          "name": "reopened_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "order_period_amap_id_amap_id_fk": {
+          "name": "order_period_amap_id_amap_id_fk",
+          "tableFrom": "order_period",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "order_period_created_by_user_id_fk": {
+          "name": "order_period_created_by_user_id_fk",
+          "tableFrom": "order_period",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "order_period_month_unique": {
+          "name": "order_period_month_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "month"
+          ]
+        },
+        "order_period_amap_unique": {
+          "name": "order_period_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        }
+      },
+      "policies": {
+        "order_period_select": {
+          "name": "order_period_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"order_period\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "order_period_insert": {
+          "name": "order_period_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"order_period\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "order_period_update": {
+          "name": "order_period_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"order_period\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')",
+          "withCheck": "\"order_period\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
+        }
+      },
+      "checkConstraints": {
+        "order_period_month_first_day": {
+          "name": "order_period_month_first_day",
+          "value": "extract(day from \"order_period\".\"month\") = 1"
+        },
+        "order_period_dates": {
+          "name": "order_period_dates",
+          "value": "\"order_period\".\"opens_at\" < \"order_period\".\"closes_at\""
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.page": {
+      "name": "page",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "parent_id": {
+          "name": "parent_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "role": {
+          "name": "role",
+          "type": "page_role",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "title": {
+          "name": "title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "slug": {
+          "name": "slug",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "summary": {
+          "name": "summary",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "body": {
+          "name": "body",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{\"type\":\"doc\",\"content\":[]}'::jsonb"
+        },
+        "image_url": {
+          "name": "image_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "image_alt": {
+          "name": "image_alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "status": {
+          "name": "status",
+          "type": "page_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'draft'"
+        },
+        "published_on": {
+          "name": "published_on",
+          "type": "date",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "in_menu": {
+          "name": "in_menu",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "menu_position": {
+          "name": "menu_position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "children_order": {
+          "name": "children_order",
+          "type": "page_children_order",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'date_desc'"
+        },
+        "position": {
+          "name": "position",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "og_title": {
+          "name": "og_title",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "og_description": {
+          "name": "og_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "updated_by": {
+          "name": "updated_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "page_role_unique": {
+          "name": "page_role_unique",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "role",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "where": "\"page\".\"role\" is not null",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "page_parent_idx": {
+          "name": "page_parent_idx",
+          "columns": [
+            {
+              "expression": "parent_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "page_amap_id_amap_id_fk": {
+          "name": "page_amap_id_amap_id_fk",
+          "tableFrom": "page",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "page_created_by_user_id_fk": {
+          "name": "page_created_by_user_id_fk",
+          "tableFrom": "page",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "page_updated_by_user_id_fk": {
+          "name": "page_updated_by_user_id_fk",
+          "tableFrom": "page",
+          "tableTo": "user",
+          "columnsFrom": [
+            "updated_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "page_parent_fk": {
+          "name": "page_parent_fk",
+          "tableFrom": "page",
+          "tableTo": "page",
+          "columnsFrom": [
+            "parent_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "page_amap_unique": {
+          "name": "page_amap_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "id",
+            "amap_id"
+          ]
+        },
+        "page_slug_unique": {
+          "name": "page_slug_unique",
+          "nullsNotDistinct": true,
+          "columns": [
+            "amap_id",
+            "parent_id",
+            "slug"
+          ]
+        }
+      },
+      "policies": {
+        "page_select": {
+          "name": "page_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"page\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"page\".\"status\" = 'published' or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n))"
+        },
+        "page_insert": {
+          "name": "page_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"page\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "page_update": {
+          "name": "page_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"page\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"page\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {
+        "page_role_top_level": {
+          "name": "page_role_top_level",
+          "value": "\"page\".\"role\" is null or \"page\".\"parent_id\" is null"
+        },
+        "page_not_own_parent": {
+          "name": "page_not_own_parent",
+          "value": "\"page\".\"parent_id\" is null or \"page\".\"parent_id\" <> \"page\".\"id\""
+        },
+        "page_published_date": {
+          "name": "page_published_date",
+          "value": "\"page\".\"status\" <> 'published' or \"page\".\"published_on\" is not null"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.page_redirect": {
+      "name": "page_redirect",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "page_id": {
+          "name": "page_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "from_path": {
+          "name": "from_path",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "page_redirect_amap_id_amap_id_fk": {
+          "name": "page_redirect_amap_id_amap_id_fk",
+          "tableFrom": "page_redirect",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "page_redirect_page_fk": {
+          "name": "page_redirect_page_fk",
+          "tableFrom": "page_redirect",
+          "tableTo": "page",
+          "columnsFrom": [
+            "page_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "page_redirect_path_unique": {
+          "name": "page_redirect_path_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_id",
+            "from_path"
+          ]
+        }
+      },
+      "policies": {
+        "page_redirect_select": {
+          "name": "page_redirect_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"page_redirect\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "page_redirect_insert": {
+          "name": "page_redirect_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"page_redirect\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "page_redirect_update": {
+          "name": "page_redirect_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"page_redirect\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)",
+          "withCheck": "\"page_redirect\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "page_redirect_delete": {
+          "name": "page_redirect_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"page_redirect\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.passkey": {
+      "name": "passkey",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "public_key": {
+          "name": "public_key",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "credential_id": {
+          "name": "credential_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "counter": {
+          "name": "counter",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_type": {
+          "name": "device_type",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "backed_up": {
+          "name": "backed_up",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "transports": {
+          "name": "transports",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "aaguid": {
+          "name": "aaguid",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "passkey_user_idx": {
+          "name": "passkey_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "passkey_user_id_user_id_fk": {
+          "name": "passkey_user_id_user_id_fk",
+          "tableFrom": "passkey",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "passkey_credential_id_unique": {
+          "name": "passkey_credential_id_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "credential_id"
+          ]
+        }
+      },
+      "policies": {
+        "passkey_auth": {
+          "name": "passkey_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.producer": {
+      "name": "producer",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "short_description": {
+          "name": "short_description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "description": {
+          "name": "description",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_url": {
+          "name": "photo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_alt": {
+          "name": "photo_alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "producer_created_by_user_id_fk": {
+          "name": "producer_created_by_user_id_fk",
+          "tableFrom": "producer",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "producer_select": {
+          "name": "producer_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "exists (select 1 from amap_producer where amap_producer.producer_id = \"producer\".\"id\")\n        or exists (select 1 from producer_user where producer_user.producer_id = \"producer\".\"id\"\n          and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid)"
+        },
+        "producer_insert": {
+          "name": "producer_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "producer_update": {
+          "name": "producer_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        and exists (select 1 from amap_producer where amap_producer.producer_id = \"producer\".\"id\")",
+          "withCheck": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        and exists (select 1 from amap_producer where amap_producer.producer_id = \"producer\".\"id\")"
+        },
+        "producer_update_by_referent": {
+          "name": "producer_update_by_referent",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"producer\".\"id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)",
+          "withCheck": "exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"producer\".\"id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)"
+        }
+      },
+      "checkConstraints": {
+        "producer_name_not_blank": {
+          "name": "producer_name_not_blank",
+          "value": "length(trim(\"producer\".\"name\")) > 0"
+        },
+        "producer_phone_international": {
+          "name": "producer_phone_international",
+          "value": "\"producer\".\"phone\" ~ '^\\+[1-9][0-9]{6,14}$'"
+        },
+        "producer_email_lowercase": {
+          "name": "producer_email_lowercase",
+          "value": "\"producer\".\"email\" = lower(\"producer\".\"email\")"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.producer_user": {
+      "name": "producer_user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "producer_user_user_idx": {
+          "name": "producer_user_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "producer_user_producer_id_producer_id_fk": {
+          "name": "producer_user_producer_id_producer_id_fk",
+          "tableFrom": "producer_user",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "producer_user_user_id_user_id_fk": {
+          "name": "producer_user_user_id_user_id_fk",
+          "tableFrom": "producer_user",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "producer_user_created_by_user_id_fk": {
+          "name": "producer_user_created_by_user_id_fk",
+          "tableFrom": "producer_user",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "producer_user_unique": {
+          "name": "producer_user_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "producer_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {
+        "producer_user_select": {
+          "name": "producer_user_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"producer_user\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid\n        or exists (select 1 from amap_producer where amap_producer.producer_id = \"producer_user\".\"producer_id\")"
+        },
+        "producer_user_insert": {
+          "name": "producer_user_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        and exists (select 1 from amap_producer where amap_producer.producer_id = \"producer_user\".\"producer_id\")"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.product": {
+      "name": "product",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "producer_id": {
+          "name": "producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "photo_url": {
+          "name": "photo_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "photo_alt": {
+          "name": "photo_alt",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "product_producer_idx": {
+          "name": "product_producer_idx",
+          "columns": [
+            {
+              "expression": "producer_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "product_producer_id_producer_id_fk": {
+          "name": "product_producer_id_producer_id_fk",
+          "tableFrom": "product",
+          "tableTo": "producer",
+          "columnsFrom": [
+            "producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "product_created_by_user_id_fk": {
+          "name": "product_created_by_user_id_fk",
+          "tableFrom": "product",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "product_select": {
+          "name": "product_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "exists (select 1 from amap_producer where amap_producer.producer_id = \"product\".\"producer_id\")\n        or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"product\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)"
+        },
+        "product_insert": {
+          "name": "product_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "(exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"product\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"product\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))"
+        },
+        "product_update": {
+          "name": "product_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "(exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"product\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"product\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))",
+          "withCheck": "(exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = \"product\".\"producer_id\"\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n) or exists (\n  select 1 from producer_user\n  where producer_user.producer_id = \"product\".\"producer_id\" and producer_user.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n))"
+        }
+      },
+      "checkConstraints": {
+        "product_name_not_blank": {
+          "name": "product_name_not_blank",
+          "value": "length(trim(\"product\".\"name\")) > 0"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.referent_assignment": {
+      "name": "referent_assignment",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "amap_producer_id": {
+          "name": "amap_producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "referent_assignment_user_idx": {
+          "name": "referent_assignment_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "referent_assignment_amap_id_amap_id_fk": {
+          "name": "referent_assignment_amap_id_amap_id_fk",
+          "tableFrom": "referent_assignment",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "referent_assignment_user_id_user_id_fk": {
+          "name": "referent_assignment_user_id_user_id_fk",
+          "tableFrom": "referent_assignment",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "referent_assignment_created_by_user_id_fk": {
+          "name": "referent_assignment_created_by_user_id_fk",
+          "tableFrom": "referent_assignment",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "referent_assignment_amap_producer_fk": {
+          "name": "referent_assignment_amap_producer_fk",
+          "tableFrom": "referent_assignment",
+          "tableTo": "amap_producer",
+          "columnsFrom": [
+            "amap_producer_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "referent_assignment_unique": {
+          "name": "referent_assignment_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "amap_producer_id",
+            "user_id"
+          ]
+        }
+      },
+      "policies": {
+        "referent_assignment_select": {
+          "name": "referent_assignment_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"referent_assignment\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
+        },
+        "referent_assignment_insert": {
+          "name": "referent_assignment_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"referent_assignment\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        },
+        "referent_assignment_delete": {
+          "name": "referent_assignment_delete",
+          "as": "PERMISSIVE",
+          "for": "DELETE",
+          "to": [
+            "public"
+          ],
+          "using": "\"referent_assignment\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.report": {
+      "name": "report",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "amap_id": {
+          "name": "amap_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "household_id": {
+          "name": "household_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "order_line_id": {
+          "name": "order_line_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "quantity": {
+          "name": "quantity",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "reason": {
+          "name": "reason",
+          "type": "report_reason",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "comment": {
+          "name": "comment",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "source": {
+          "name": "source",
+          "type": "report_source",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "report_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'open'"
+        },
+        "decision_note": {
+          "name": "decision_note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "decided_at": {
+          "name": "decided_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "decided_by": {
+          "name": "decided_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by": {
+          "name": "created_by",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "report_open_idx": {
+          "name": "report_open_idx",
+          "columns": [
+            {
+              "expression": "amap_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "where": "\"report\".\"status\" = 'open'",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "report_order_line_idx": {
+          "name": "report_order_line_idx",
+          "columns": [
+            {
+              "expression": "order_line_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "report_amap_id_amap_id_fk": {
+          "name": "report_amap_id_amap_id_fk",
+          "tableFrom": "report",
+          "tableTo": "amap",
+          "columnsFrom": [
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_order_line_id_order_line_id_fk": {
+          "name": "report_order_line_id_order_line_id_fk",
+          "tableFrom": "report",
+          "tableTo": "order_line",
+          "columnsFrom": [
+            "order_line_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_decided_by_user_id_fk": {
+          "name": "report_decided_by_user_id_fk",
+          "tableFrom": "report",
+          "tableTo": "user",
+          "columnsFrom": [
+            "decided_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_created_by_user_id_fk": {
+          "name": "report_created_by_user_id_fk",
+          "tableFrom": "report",
+          "tableTo": "user",
+          "columnsFrom": [
+            "created_by"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "report_household_fk": {
+          "name": "report_household_fk",
+          "tableFrom": "report",
+          "tableTo": "household",
+          "columnsFrom": [
+            "household_id",
+            "amap_id"
+          ],
+          "columnsTo": [
+            "id",
+            "amap_id"
+          ],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "report_select": {
+          "name": "report_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"report\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from household_member\n  where household_member.household_id = \"report\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n)\n        or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or exists (\n  select 1 from order_line\n  join \"order\" on \"order\".id = order_line.order_id\n  where order_line.id = \"report\".\"order_line_id\"\n    and exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n)\n))"
+        },
+        "report_insert": {
+          "name": "report_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"report\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        or (exists (\n  select 1 from household_member\n  where household_member.household_id = \"report\".\"household_id\"\n    and household_member.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n    and household_member.archived_at is null\n) and \"report\".\"source\" = 'family' and \"report\".\"status\" = 'open'\n          and \"report\".\"created_by\" = nullif(current_setting('app.user_id', true), '')::uuid))"
+        },
+        "report_update": {
+          "name": "report_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"report\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        or exists (\n  select 1 from order_line\n  join \"order\" on \"order\".id = order_line.order_id\n  where order_line.id = \"report\".\"order_line_id\"\n    and exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n)\n))",
+          "withCheck": "\"report\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)\n        or exists (\n  select 1 from order_line\n  join \"order\" on \"order\".id = order_line.order_id\n  where order_line.id = \"report\".\"order_line_id\"\n    and exists (\n  select 1 from catalog where catalog.id = \"order\".catalog_id and exists (\n  select 1 from referent_assignment\n  join amap_producer on amap_producer.id = referent_assignment.amap_producer_id\n  where amap_producer.producer_id = catalog.producer_id\n    and referent_assignment.user_id = nullif(current_setting('app.user_id', true), '')::uuid\n)\n)\n))"
+        }
+      },
+      "checkConstraints": {
+        "report_quantity_positive": {
+          "name": "report_quantity_positive",
+          "value": "\"report\".\"quantity\" > 0"
+        },
+        "report_other_needs_comment": {
+          "name": "report_other_needs_comment",
+          "value": "\"report\".\"reason\" <> 'other' or length(trim(\"report\".\"comment\")) > 0"
+        },
+        "report_decided": {
+          "name": "report_decided",
+          "value": "(\"report\".\"status\" = 'open') = (\"report\".\"decided_at\" is null)"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.session": {
+      "name": "session",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "token": {
+          "name": "token",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "ip_address": {
+          "name": "ip_address",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "user_agent": {
+          "name": "user_agent",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "second_factor_verified_at": {
+          "name": "second_factor_verified_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "session_user_idx": {
+          "name": "session_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "session_user_id_user_id_fk": {
+          "name": "session_user_id_user_id_fk",
+          "tableFrom": "session",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "session_token_unique": {
+          "name": "session_token_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "token"
+          ]
+        }
+      },
+      "policies": {
+        "session_auth": {
+          "name": "session_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.two_factor": {
+      "name": "two_factor",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "secret": {
+          "name": "secret",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "backup_codes": {
+          "name": "backup_codes",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "verified": {
+          "name": "verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": true
+        },
+        "failed_verification_count": {
+          "name": "failed_verification_count",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "locked_until": {
+          "name": "locked_until",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {
+        "two_factor_user_idx": {
+          "name": "two_factor_user_idx",
+          "columns": [
+            {
+              "expression": "user_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "two_factor_secret_idx": {
+          "name": "two_factor_secret_idx",
+          "columns": [
+            {
+              "expression": "secret",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "two_factor_user_id_user_id_fk": {
+          "name": "two_factor_user_id_user_id_fk",
+          "tableFrom": "two_factor",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "two_factor_auth": {
+          "name": "two_factor_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.user": {
+      "name": "user",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "email": {
+          "name": "email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "first_name": {
+          "name": "first_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "last_name": {
+          "name": "last_name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "phone": {
+          "name": "phone",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "email_verified": {
+          "name": "email_verified",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "image": {
+          "name": "image",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "two_factor_enabled": {
+          "name": "two_factor_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "is_platform_admin": {
+          "name": "is_platform_admin",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "current_amap_producer_id": {
+          "name": "current_amap_producer_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "archived_at": {
+          "name": "archived_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "user_current_amap_producer_id_amap_producer_id_fk": {
+          "name": "user_current_amap_producer_id_amap_producer_id_fk",
+          "tableFrom": "user",
+          "tableTo": "amap_producer",
+          "columnsFrom": [
+            "current_amap_producer_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "user_email_unique": {
+          "name": "user_email_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "email"
+          ]
+        }
+      },
+      "policies": {
+        "user_select": {
+          "name": "user_select",
+          "as": "PERMISSIVE",
+          "for": "SELECT",
+          "to": [
+            "public"
+          ],
+          "using": "\"user\".\"id\" = nullif(current_setting('app.user_id', true), '')::uuid or (\n  exists (select 1 from amap_role where amap_role.user_id = \"user\".\"id\")\n  or exists (select 1 from household_member where household_member.user_id = \"user\".\"id\")\n  or exists (select 1 from producer_user where producer_user.user_id = \"user\".\"id\")\n)"
+        },
+        "user_insert": {
+          "name": "user_insert",
+          "as": "PERMISSIVE",
+          "for": "INSERT",
+          "to": [
+            "public"
+          ],
+          "withCheck": "\"user\".\"is_platform_admin\" = false"
+        },
+        "user_update": {
+          "name": "user_update",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "\"user\".\"id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+          "withCheck": "\"user\".\"id\" = nullif(current_setting('app.user_id', true), '')::uuid and \"user\".\"is_platform_admin\" = false"
+        },
+        "user_update_by_amap_admin": {
+          "name": "user_update_by_amap_admin",
+          "as": "PERMISSIVE",
+          "for": "UPDATE",
+          "to": [
+            "public"
+          ],
+          "using": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) and (\n  exists (select 1 from amap_role where amap_role.user_id = \"user\".\"id\")\n  or exists (select 1 from household_member where household_member.user_id = \"user\".\"id\")\n  or exists (select 1 from producer_user where producer_user.user_id = \"user\".\"id\")\n)\n        and \"user\".\"is_platform_admin\" = false",
+          "withCheck": "exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) and (\n  exists (select 1 from amap_role where amap_role.user_id = \"user\".\"id\")\n  or exists (select 1 from household_member where household_member.user_id = \"user\".\"id\")\n  or exists (select 1 from producer_user where producer_user.user_id = \"user\".\"id\")\n)\n        and \"user\".\"is_platform_admin\" = false"
+        },
+        "user_auth": {
+          "name": "user_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {
+        "user_email_lowercase": {
+          "name": "user_email_lowercase",
+          "value": "\"user\".\"email\" = lower(\"user\".\"email\")"
+        },
+        "user_phone_international": {
+          "name": "user_phone_international",
+          "value": "\"user\".\"phone\" ~ '^\\+[1-9][0-9]{6,14}$'"
+        }
+      },
+      "isRLSEnabled": false
+    },
+    "public.verification": {
+      "name": "verification",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "identifier": {
+          "name": "identifier",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "value": {
+          "name": "value",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "verification_identifier_idx": {
+          "name": "verification_identifier_idx",
+          "columns": [
+            {
+              "expression": "identifier",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {
+        "verification_auth": {
+          "name": "verification_auth",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "pomme_auth"
+          ],
+          "using": "true",
+          "withCheck": "true"
+        }
+      },
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    }
+  },
+  "enums": {
+    "public.admin_task_kind": {
+      "name": "admin_task_kind",
+      "schema": "public",
+      "values": [
+        "distribution_closed",
+        "report_follow_up"
+      ]
+    },
+    "public.amap_role_name": {
+      "name": "amap_role_name",
+      "schema": "public",
+      "values": [
+        "admin",
+        "referent"
+      ]
+    },
+    "public.catalog_status": {
+      "name": "catalog_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "published"
+      ]
+    },
+    "public.cheque_status": {
+      "name": "cheque_status",
+      "schema": "public",
+      "values": [
+        "expected",
+        "received",
+        "handed_over"
+      ]
+    },
+    "public.credit_status": {
+      "name": "credit_status",
+      "schema": "public",
+      "values": [
+        "created",
+        "deducted"
+      ]
+    },
+    "public.join_request_status": {
+      "name": "join_request_status",
+      "schema": "public",
+      "values": [
+        "new",
+        "contacted",
+        "accepted",
+        "declined"
+      ]
+    },
+    "public.notification_status": {
+      "name": "notification_status",
+      "schema": "public",
+      "values": [
+        "pending",
+        "sent",
+        "failed",
+        "rate_limited"
+      ]
+    },
+    "public.order_period_status": {
+      "name": "order_period_status",
+      "schema": "public",
+      "values": [
+        "scheduled",
+        "open",
+        "closed"
+      ]
+    },
+    "public.page_children_order": {
+      "name": "page_children_order",
+      "schema": "public",
+      "values": [
+        "date_desc",
+        "manual"
+      ]
+    },
+    "public.page_role": {
+      "name": "page_role",
+      "schema": "public",
+      "values": [
+        "home",
+        "legal"
+      ]
+    },
+    "public.page_status": {
+      "name": "page_status",
+      "schema": "public",
+      "values": [
+        "draft",
+        "published",
+        "unpublished"
+      ]
+    },
+    "public.report_reason": {
+      "name": "report_reason",
+      "schema": "public",
+      "values": [
+        "missing",
+        "damaged",
+        "other"
+      ]
+    },
+    "public.report_source": {
+      "name": "report_source",
+      "schema": "public",
+      "values": [
+        "family",
+        "admin"
+      ]
+    },
+    "public.report_status": {
+      "name": "report_status",
+      "schema": "public",
+      "values": [
+        "open",
+        "credited",
+        "rejected"
+      ]
+    }
+  },
+  "schemas": {},
+  "sequences": {},
+  "roles": {},
+  "policies": {},
+  "views": {},
+  "_meta": {
+    "columns": {},
+    "schemas": {},
+    "tables": {}
+  }
+}
