@@ -557,6 +557,55 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
   });
 
+  test("un admin traite une demande d'adhésion : contactée, puis acceptée (B2)", async ({
+    page,
+    request,
+  }) => {
+    const token = Date.now().toString(36);
+    const email = `famille.${token}@example.org`;
+    // La demande arrive par le site public.
+    await page.goto("/hommesdeterre/adherer");
+    await page.getByRole("textbox", { name: "Nom et prénom" }).fill(`Camille ${token}`);
+    await page.getByRole("textbox", { name: "Adresse email" }).fill(email);
+    await page.getByRole("textbox", { name: "Téléphone (facultatif)" }).fill("06 39 98 99 03");
+    await page.getByRole("button", { name: "Envoyer ma demande" }).click();
+    await expect(page.getByText(/^Merci ! Votre demande est bien arrivée/)).toBeVisible();
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers");
+    await page.getByRole("tab", { name: /^Demandes d'adhésion \(\d+\)$/ }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/onglet=demandes/);
+    const card = page.getByRole("region", { name: `Camille ${token}` });
+    await expect(card.getByText("Nouvelle")).toBeVisible();
+    await expect(card.getByRole("link", { name: `Écrire Camille ${token}` })).toHaveAttribute(
+      "href",
+      `mailto:${email}`,
+    );
+    await expectNoSeriousA11yViolations(page);
+
+    await card.getByRole("button", { name: /^Marquer comme contactée/ }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText(`Demande de Camille ${token} marquée comme contactée.`),
+    ).toBeVisible();
+    await expect(card.getByText("Contactée")).toBeVisible();
+
+    // Accepter : foyer proposé d'après le nom, adhésion d'un an ; puis invitation.
+    await card.getByRole("button", { name: `Accepter Camille ${token}` }).focus();
+    await page.keyboard.press("Enter");
+    const form = page.getByRole("form", { name: `Accepter la demande de Camille ${token}` });
+    await expect(form.getByRole("textbox", { name: "Nom du foyer" })).toHaveValue(`Foyer ${token}`);
+    await expectNoSeriousA11yViolations(page);
+    await form.getByRole("button", { name: "Créer le foyer et inviter" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText(`Foyer « Foyer ${token} » créé. L'invitation est partie à ${email}.`),
+    ).toBeVisible();
+    await expect(page.getByRole("region", { name: `Camille ${token}` })).toHaveCount(0);
+    await expect.poll(() => countMessagesTo(request, email)).toBe(1);
+  });
+
   test("un admin crée un producteur au clavier et lui affecte un référent (C1)", async ({
     page,
     request,

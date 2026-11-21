@@ -137,6 +137,9 @@ export function PublicSiteShell({
         >
           <Typography variant="bodyMedium">{amap.name}</Typography>
           <Stack direction="row" sx={{ gap: 3, flexWrap: "wrap" }}>
+            <MuiLink component={Link} href={`${base}/adherer`}>
+              {t("join")}
+            </MuiLink>
             {legalPath && (
               <MuiLink component={Link} href={`${base}${legalPath}`}>
                 {t("legal")}

@@ -3,15 +3,10 @@
 import { inArray } from "drizzle-orm";
 import { revalidatePath } from "next/cache";
 
-import { getDatabase } from "@/db/client";
-import { withAmapContext, type AmapContext } from "@/db/context";
 import { account, passkey, session, twoFactor } from "@/db/schema";
 
 import { runAmapAction } from "./amap-action";
-import { getAmapBySlug } from "./amap";
 import { getAuthInstance } from "./auth/auth";
-import { invitationEmail, invitationLoginUrl } from "./email/invitation-email";
-import { sendNotification } from "./email/notify";
 import {
   addHouseholdMember,
   anonymizeHousehold,
@@ -24,41 +19,14 @@ import {
   type AddMemberResult,
   type ArchiveResult,
   type CreateHouseholdResult,
-  type Invitation,
   type SetRoleResult,
 } from "./households";
+import { sendInvitations } from "./invitations";
 
 // Actions de l'écran « Foyers et adhésions » (story A2). Chacune : contexte de l'AMAP de
 // l'adresse, puis fonction de households.ts (qui vérifie le rôle admin dans la transaction).
 
 const listPath = (slug: string) => `/${slug}/admin/foyers`;
-
-/**
- * Envoie les invitations, chacune tracée dans le journal des emails (une transaction par
- * email : un échec n'annule pas les autres). Renvoie le nombre d'emails non partis.
- */
-async function sendInvitations(slug: string, ctx: AmapContext, invitations: Invitation[]) {
-  const amap = await getAmapBySlug(slug);
-  const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  let failed = 0;
-  for (const invitation of invitations) {
-    const result = await withAmapContext(getDatabase(), ctx, (tx) =>
-      sendNotification(tx, {
-        amapId: ctx.amapId,
-        userId: invitation.userId,
-        template: "invitation",
-        to: invitation.email,
-        content: invitationEmail({
-          amap: { name: amap?.name ?? "", theme: amap?.theme ?? null },
-          firstName: invitation.firstName,
-          loginUrl: invitationLoginUrl(baseUrl, invitation.email),
-        }),
-      }),
-    );
-    if (result.status !== "sent") failed += 1;
-  }
-  return failed;
-}
 
 /** Lit les membres saisis dans le formulaire : champs « members.0.email », « members.1.firstName »… */
 function membersFromForm(formData: FormData) {

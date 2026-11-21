@@ -63,3 +63,28 @@ test("un visiteur parcourt le site public au clavier : accueil, blog, billet, me
   await page.goto("/hommesdeterre/blog/fete-fin-annee");
   await expect(page.getByRole("heading", { name: "Page introuvable" })).toBeVisible();
 });
+
+test("un visiteur demande à adhérer au clavier (B2)", async ({ page }) => {
+  const token = Date.now().toString(36);
+  await page.goto("/hommesdeterre");
+  await page.getByRole("link", { name: "Demander à adhérer" }).first().focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByRole("heading", { level: 1, name: "Nous rejoindre" })).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+
+  // Envoi incomplet : les champs en erreur sont signalés.
+  await page.getByRole("button", { name: "Envoyer ma demande" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(
+    page.getByText("La demande n'est pas partie. Corrigez les champs signalés."),
+  ).toBeVisible();
+  await expect(page.getByText("Adresse email non valable.")).toBeVisible();
+
+  await page.getByRole("textbox", { name: "Nom et prénom" }).fill(`Visiteur ${token}`);
+  await page.getByRole("textbox", { name: "Adresse email" }).fill(`visiteur.${token}@example.org`);
+  await page.getByRole("textbox", { name: "Message (facultatif)" }).fill("Bonjour !");
+  await page.getByRole("button", { name: "Envoyer ma demande" }).focus();
+  await page.keyboard.press("Enter");
+  await expect(page.getByText(/^Merci ! Votre demande est bien arrivée/)).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+});

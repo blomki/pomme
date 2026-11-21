@@ -867,6 +867,56 @@
           "required_page": "L'accueil et les mentions légales sont obligatoires : ils ne se dépublient pas."
         }
       }
+    },
+    "joinRequests": {
+      "tabs": {
+        "households": "Foyers",
+        "requests": "Demandes d'adhésion",
+        "label": "Foyers et demandes"
+      },
+      "intro": "Demandes envoyées depuis la page « Nous rejoindre » du site. Après échange avec la famille, acceptez pour créer le foyer et lui envoyer l'invitation à créer son compte.",
+      "none": "Aucune demande en attente.",
+      "receivedOn": "Reçue le {date}",
+      "status": {
+        "new": "Nouvelle",
+        "contacted": "Contactée",
+        "accepted": "Acceptée",
+        "declined": "Refusée"
+      },
+      "write": "Écrire",
+      "call": "Appeler",
+      "markContacted": "Marquer comme contactée",
+      "decline": "Refuser",
+      "accept": "Accepter",
+      "markedContacted": "Demande de {name} marquée comme contactée.",
+      "declined": "Demande de {name} refusée.",
+      "declineTitle": "Refuser la demande de {name} ?",
+      "declineText": "La demande sera close. Pensez à prévenir la personne si vous ne l'avez pas encore fait.",
+      "confirmDecline": "Refuser la demande",
+      "cancel": "Annuler",
+      "acceptTitle": "Accepter la demande de {name}",
+      "householdName": "Nom du foyer",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "email": "Adresse email",
+      "startDate": "Adhésion du",
+      "endDate": "au",
+      "createAndInvite": "Créer le foyer et inviter",
+      "accepted": "Foyer « {household} » créé. L'invitation est partie à {email}.",
+      "acceptedNoEmail": "Foyer « {household} » créé, mais l'invitation n'a pas pu partir : renvoyez-la depuis la fiche du foyer.",
+      "membershipError": "Les dates d'adhésion ne sont pas valables : la fin doit suivre le début.",
+      "householdErrors": {
+        "invalid": "Vérifiez le nom du foyer, le prénom et l'adresse email.",
+        "name_taken": "Un foyer porte déjà ce nom : choisissez-en un autre.",
+        "member_taken": "Cette personne fait déjà partie d'un foyer de l'AMAP.",
+        "no_member": "Il faut au moins un membre.",
+        "duplicate_email": "Adresse en double.",
+        "primary_count": "Il faut un contact principal."
+      },
+      "error": "L'opération n'a pas abouti. Rechargez la page.",
+      "closedTitle": "Demandes traitées",
+      "on": "le {date}",
+      "seeHousehold": "voir le foyer"
     }
   },
   "Producer": {
@@ -1553,6 +1603,29 @@
     "distributionOn": "{date}, de {start} à {end}",
     "noDistribution": "La prochaine date sera bientôt annoncée.",
     "producers": "Nos producteurs",
-    "latestPost": "Dernières nouvelles"
+    "latestPost": "Dernières nouvelles",
+    "join": "Demander à adhérer",
+    "joinIntro": "Vous aimeriez rejoindre l'AMAP ?"
+  },
+  "JoinForm": {
+    "title": "Nous rejoindre",
+    "intro": "Envie de rejoindre {amap} ? Laissez-nous vos coordonnées : un membre de l'équipe vous recontacte pour vous présenter l'AMAP et répondre à vos questions.",
+    "name": "Nom et prénom",
+    "nameHelp": "Le nom de la personne ou de la famille.",
+    "nameInvalid": "Indiquez votre nom (80 caractères au plus).",
+    "email": "Adresse email",
+    "emailInvalid": "Adresse email non valable.",
+    "phone": "Téléphone (facultatif)",
+    "phoneHelp": "Pour vous appeler si vous préférez.",
+    "phoneInvalid": "Numéro non valable, par exemple 06 12 34 56 78.",
+    "message": "Message (facultatif)",
+    "messageHelp": "Vos questions, ce qui vous intéresse…",
+    "messageInvalid": "1 000 caractères au plus.",
+    "submit": "Envoyer ma demande",
+    "sent": "Merci ! Votre demande est bien arrivée. Un membre de l'équipe vous recontacte bientôt.",
+    "fixErrors": "La demande n'est pas partie. Corrigez les champs signalés.",
+    "captcha": "La vérification anti-robot n'a pas abouti. Réessayez.",
+    "rateLimited": "Trop de demandes en peu de temps. Réessayez un peu plus tard.",
+    "error": "Cette AMAP n'existe pas ou plus."
   }
 }
