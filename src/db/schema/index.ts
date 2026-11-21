@@ -38,6 +38,7 @@ import {
 
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
+import { CHILDREN_ORDERS, PAGE_ROLES, PAGE_STATUSES, type RichDoc } from "@/domain/pages";
 import { REPORT_REASONS, REPORT_STATUSES } from "@/domain/reports";
 import { ADMIN_TASK_KINDS } from "@/domain/admin-tasks";
 import { AMAP_ROLES } from "@/domain/roles";
@@ -1273,6 +1274,110 @@ export const adminTask = pgTable(
       "select",
       "insert",
       "update",
+    ]),
+  ],
+);
+
+// --- page : page du site public -------------------------------------------------------------
+// Un seul type de contenu (story H2, ADR 0033) : la page, avec un seul niveau de sous-pages (le
+// blog est une page principale dont les sous-pages sont les billets). Brouillon, publiée ou
+// dépubliée : jamais supprimée. Accueil et mentions légales obligatoires (role). Le texte est
+// gardé au format de l'éditeur (JSON), déjà nettoyé par le serveur (domain/pages, cleanRichText).
+
+export const pageStatus = pgEnum("page_status", PAGE_STATUSES);
+export const pageRole = pgEnum("page_role", PAGE_ROLES);
+export const pageChildrenOrder = pgEnum("page_children_order", CHILDREN_ORDERS);
+
+export const page = pgTable(
+  "page",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    // Page principale à laquelle elle appartient ; vide pour une page principale.
+    parentId: uuid("parent_id"),
+    // Accueil ou mentions légales : une de chaque par AMAP, toujours principales.
+    role: pageRole("role"),
+    title: text("title").notNull(),
+    slug: text("slug").notNull(),
+    // Résumé : liste des sous-pages, accueil, description de partage par défaut.
+    summary: text("summary").notNull().default(""),
+    body: jsonb("body").$type<RichDoc>().notNull().default({ type: "doc", content: [] }),
+    imageUrl: text("image_url"),
+    imageAlt: text("image_alt").notNull().default(""),
+    status: pageStatus("status").notNull().default("draft"),
+    publishedOn: date("published_on", { mode: "string" }),
+    // Menu du site : pages principales seulement, dans l'ordre de menu_position.
+    inMenu: boolean("in_menu").notNull().default(false),
+    menuPosition: integer("menu_position").notNull().default(0),
+    // Ordre des sous-pages : par date (blog) ou manuel (position).
+    childrenOrder: pageChildrenOrder("children_order").notNull().default("date_desc"),
+    position: integer("position").notNull().default(0),
+    // Partage (Open Graph) et référencement ; vides, ils reprennent le titre et le résumé.
+    ogTitle: text("og_title").notNull().default(""),
+    ogDescription: text("og_description").notNull().default(""),
+    createdBy: uuid("created_by").references(() => user.id),
+    updatedBy: uuid("updated_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("page_amap_unique").on(t.id, t.amapId),
+    foreignKey({
+      name: "page_parent_fk",
+      columns: [t.parentId, t.amapId],
+      foreignColumns: [t.id, t.amapId],
+    }),
+    // Une adresse par niveau : deux pages principales (parent vide) ne partagent pas une adresse.
+    unique("page_slug_unique").on(t.amapId, t.parentId, t.slug).nullsNotDistinct(),
+    uniqueIndex("page_role_unique").on(t.amapId, t.role).where(sql`${t.role} is not null`),
+    check("page_role_top_level", sql`${t.role} is null or ${t.parentId} is null`),
+    check("page_not_own_parent", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
+    check("page_published_date", sql`${t.status} <> 'published' or ${t.publishedOn} is not null`),
+    index("page_parent_idx").on(t.parentId),
+    // Lecture : les pages publiées, par tout le monde (site public) ; les autres, par les admins
+    // de l'AMAP. Écriture : les admins. Pas de suppression (dépublier).
+    ...orderPolicies(
+      "page",
+      t.amapId,
+      sql`(${t.status} = 'published' or ${isCurrentAmapAdmin})`,
+      isCurrentAmapAdmin,
+      ["select", "insert", "update"],
+    ),
+  ],
+);
+
+// --- page_redirect : ancienne adresse d'une page -------------------------------------------
+// Adresse changée après publication : l'ancienne mène à la page (redirection 301, story H2).
+
+export const pageRedirect = pgTable(
+  "page_redirect",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    pageId: uuid("page_id").notNull(),
+    // Chemin sous l'adresse de l'AMAP : « /blog/ancienne-adresse ».
+    fromPath: text("from_path").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "page_redirect_page_fk",
+      columns: [t.pageId, t.amapId],
+      foreignColumns: [page.id, page.amapId],
+    }),
+    unique("page_redirect_path_unique").on(t.amapId, t.fromPath),
+    // Lecture par tout le monde (site public) ; écriture et suppression par les admins (une page
+    // qui reprend une ancienne adresse retire la redirection).
+    ...orderPolicies("page_redirect", t.amapId, sql`true`, isCurrentAmapAdmin, [
+      "select",
+      "insert",
+      "update",
+      "delete",
     ]),
   ],
 );

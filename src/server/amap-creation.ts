@@ -13,7 +13,8 @@ import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from 
 import { insufficientPrivilege, uniqueViolation } from "./db-errors";
 
 // Création d'une AMAP par le gestionnaire de la plateforme (story J1, ADR 0031). Tout passe par
-// la fonction de base create_amap (migration 0031), seule à pouvoir créer une AMAP : elle
+// la fonction de base create_amap (migrations 0031 et 0033, qui y ajoute les pages obligatoires
+// du site, H2), seule à pouvoir créer une AMAP : elle
 // vérifie elle-même que la personne connectée est gestionnaire.
 
 const schema = z.object({
@@ -112,7 +113,7 @@ export async function createAmap(
           ${amapId}, ${data.slug}, ${data.name}, ${JSON.stringify(theme)}::jsonb,
           ${JSON.stringify(settings)}::jsonb, ${data.place}, ${data.timezone},
           ${data.contactEmail}, ${uuidv7()}, ${data.admin.email}, ${data.admin.firstName},
-          ${data.admin.lastName}, ${uuidv7()}, ${uuidv7()}
+          ${data.admin.lastName}, ${uuidv7()}, ${uuidv7()}, ${uuidv7()}, ${uuidv7()}
         )`),
     );
     const row = rows.rows[0]!;

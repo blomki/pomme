@@ -52,6 +52,8 @@ export const IMAGE_USAGES = {
   product_photo: { folder: "produits", maxWidth: 800, maxHeight: 800 },
   // Logo de l'AMAP : petit, dans l'en-tête et les emails.
   amap_logo: { folder: "logos", maxWidth: 512, maxHeight: 512 },
+  // Image d'une page du site (image principale ou photo dans le texte, story H2).
+  page_image: { folder: "pages", maxWidth: 1600, maxHeight: 1600 },
 } as const;
 
 export type ImageUsage = keyof typeof IMAGE_USAGES;
