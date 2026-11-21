@@ -32,6 +32,7 @@ export const PAGE_LIMITS = {
  * pas s'appeler ainsi (elle masquerait l'espace correspondant).
  */
 export const RESERVED_PAGE_SLUGS: readonly string[] = [
+  "adherer",
   "admin",
   "api",
   "bon-de-commande",

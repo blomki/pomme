@@ -36,6 +36,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
+import { JOIN_REQUEST_STATUSES } from "@/domain/join-requests";
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
 import { CHILDREN_ORDERS, PAGE_ROLES, PAGE_STATUSES, type RichDoc } from "@/domain/pages";
@@ -1381,6 +1382,62 @@ export const pageRedirect = pgTable(
       "update",
       "delete",
     ]),
+  ],
+);
+
+// --- join_request : demande d'adhésion ---------------------------------------------------------
+// Envoyée par un visiteur depuis « Nous rejoindre » (story B2, ADR 0034). Un administrateur
+// écrit ou appelle, puis l'accepte (le foyer est créé : household_id) ou la refuse. Jamais
+// supprimée : une demande close reste dans l'historique.
+
+export const joinRequestStatus = pgEnum("join_request_status", JOIN_REQUEST_STATUSES);
+
+export const joinRequest = pgTable(
+  "join_request",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    name: text("name").notNull(),
+    email: text("email").notNull(),
+    phone: text("phone"),
+    message: text("message").notNull().default(""),
+    status: joinRequestStatus("status").notNull().default("new"),
+    // Foyer créé quand la demande est acceptée.
+    householdId: uuid("household_id"),
+    handledBy: uuid("handled_by").references(() => user.id),
+    handledAt: timestamp("handled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "join_request_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    check(
+      "join_request_accepted",
+      sql`(${t.status} = 'accepted') = (${t.householdId} is not null)`,
+    ),
+    index("join_request_status_idx").on(t.amapId, t.status),
+    // Création : tout visiteur de l'AMAP courante, seulement une demande nouvelle, rattachée à
+    // rien (le captcha et la limite de débit sont dans l'action). Lecture et suite : les admins.
+    pgPolicy("join_request_insert", {
+      for: "insert",
+      withCheck: sql`${t.amapId} = ${currentAmapId} and ${t.status} = 'new'
+        and ${t.householdId} is null and ${t.handledBy} is null`,
+    }),
+    pgPolicy("join_request_select", {
+      for: "select",
+      using: sql`${t.amapId} = ${currentAmapId} and ${isCurrentAmapAdmin}`,
+    }),
+    pgPolicy("join_request_update", {
+      for: "update",
+      using: sql`${t.amapId} = ${currentAmapId} and ${isCurrentAmapAdmin}`,
+      withCheck: sql`${t.amapId} = ${currentAmapId} and ${isCurrentAmapAdmin}`,
+    }),
   ],
 );
 
