@@ -275,4 +275,28 @@ test.describe("commande du mois (téléphone)", () => {
     }
     await page.emulateMedia({ media: "screen" });
   });
+
+  test("une famille trouve les contacts du producteur et de ses référents (H4)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto(ORDER);
+    const link = page
+      .getByRole("navigation", { name: "Producteurs" })
+      .getByRole("link", { name: /^Chèvrerie des Hauts Prés/ });
+    await link.focus();
+    await page.keyboard.press("Enter");
+    const contacts = page.getByRole("region", { name: "Contacts" });
+    await expect(contacts.getByRole("listitem").first()).toContainText("Chèvrerie des Hauts Prés");
+    // Numéros du jeu de données au format international : les deux liens sont là.
+    await expect(contacts.getByRole("link", { name: /^Appeler / }).first()).toHaveAttribute(
+      "href",
+      /^tel:\+\d+$/,
+    );
+    await expect(
+      contacts.getByRole("link", { name: /^Écrire sur Signal / }).first(),
+    ).toHaveAttribute("href", /^https:\/\/signal\.me\/#p\/\+\d+$/);
+    await expectNoSeriousA11yViolations(page);
+  });
 });

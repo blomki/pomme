@@ -137,6 +137,15 @@
     },
     "report": {
       "title": "Signaler un problème"
+    },
+    "contacts": {
+      "title": "Contacts",
+      "producer": "Producteur",
+      "referent": "Référent de ce producteur",
+      "call": "Appeler",
+      "signal": "Écrire sur Signal",
+      "newWindow": "(nouvelle fenêtre)",
+      "noPhone": "Pas de numéro renseigné."
     }
   },
   "Referent": {
