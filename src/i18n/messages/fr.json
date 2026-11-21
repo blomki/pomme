@@ -233,7 +233,17 @@
       "statusReceived": "Reçu",
       "statusExpected": "Attendu",
       "gapOpen": "Écart : {amount}",
-      "gapSettledChip": "Écart traité : {amount}"
+      "gapSettledChip": "Écart traité : {amount}",
+      "handOverButton": "{count, plural, one {Marquer le chèque reçu comme remis à {producer}} other {Marquer les # chèques reçus comme remis à {producer}}}",
+      "handOverTitle": "{count, plural, one {Remettre # chèque à {producer} ?} other {Remettre # chèques à {producer} ?}}",
+      "handOverText": "À faire au moment où vous donnez les chèques au producteur. Un chèque remis ne se modifie plus : vérifiez d'abord les montants. Le producteur voit la remise dans ses paiements.",
+      "handOverConfirm": "Marquer comme remis",
+      "handedOverDone": "{count, plural, one {# chèque remis à {producer}.} other {# chèques remis à {producer}.}}",
+      "handOverHeldBack": "{count, plural, one {# chèque reçu attend que son écart soit traité avant d'être remis.} other {# chèques reçus attendent que leur écart soit traité avant d'être remis.}}",
+      "handOverAllDone": "{count, plural, one {# chèque remis à {producer}.} other {# chèques remis à {producer}.}}",
+      "handOverNothing": "Aucun chèque reçu à remettre : rechargez la page.",
+      "handOverError": "La remise n'a pas pu être enregistrée. Rechargez la page.",
+      "cancel": "Annuler"
     }
   },
   "Catalog": {

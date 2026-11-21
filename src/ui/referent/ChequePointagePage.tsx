@@ -6,6 +6,11 @@ import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import InputAdornment from "@mui/material/InputAdornment";
 import Paper from "@mui/material/Paper";
@@ -28,6 +33,7 @@ import { useRef, useState } from "react";
 
 import { formatEuros, priceInput } from "@/domain/catalog";
 import {
+  canHandOver,
   chequeGap,
   hasOpenGap,
   matchesFilter,
@@ -39,6 +45,7 @@ import { addMonths } from "@/domain/distributions";
 import { formatDate } from "@/i18n/dates";
 import type { ChequePointage, PointageRow } from "@/server/cheques";
 import {
+  handOverChequesAction,
   markChequeReceivedAction,
   settleChequeGapAction,
   unmarkChequeReceivedAction,
@@ -460,9 +467,97 @@ export function ChequePointagePage({
               </TableBody>
             </Table>
           </TableContainer>
+          <HandOver
+            amapSlug={amapSlug}
+            view={view}
+            rows={rows}
+            onHandedOver={(ids) =>
+              setRows((all) =>
+                all.map((r) => (ids.includes(r.id) ? { ...r, status: "handed_over" } : r)),
+              )
+            }
+          />
         </>
       )}
     </>
+  );
+}
+
+/**
+ * Remise au producteur (story F3) : un bouton pour passer tous les chèques reçus (écart
+ * éventuel réglé) à « remis », après confirmation, car un chèque remis ne se modifie plus.
+ */
+function HandOver({
+  amapSlug,
+  view,
+  rows,
+  onHandedOver,
+}: {
+  amapSlug: string;
+  view: ChequePointage;
+  rows: PointageRow[];
+  onHandedOver: (ids: string[]) => void;
+}) {
+  const t = useTranslations("Referent.cheques");
+  const showSnackbar = useSnackbar();
+  const [open, setOpen] = useState(false);
+  const [pending, setPending] = useState(false);
+  const ready = rows.filter((r) => canHandOver(r));
+  const heldBack = rows.filter((r) => r.status === "received" && !canHandOver(r)).length;
+  const handed = rows.filter((r) => r.status === "handed_over").length;
+
+  const confirm = async () => {
+    setPending(true);
+    const result = await handOverChequesAction(amapSlug, {
+      amapProducerId: view.amapProducerId,
+      month: view.month,
+    });
+    setPending(false);
+    setOpen(false);
+    if (result.status !== "handed_over") {
+      showSnackbar({
+        message: t(result.status === "nothing" ? "handOverNothing" : "handOverError"),
+      });
+      return;
+    }
+    onHandedOver(ready.map((r) => r.id));
+    showSnackbar({
+      message: t("handedOverDone", { count: result.count, producer: view.producerName }),
+    });
+  };
+
+  return (
+    <Stack spacing={1} sx={{ mt: 3, alignItems: "flex-start" }}>
+      {ready.length > 0 && (
+        <Button variant="contained" onClick={() => setOpen(true)}>
+          {t("handOverButton", { count: ready.length, producer: view.producerName })}
+        </Button>
+      )}
+      {heldBack > 0 && (
+        <Typography variant="bodySmall" color="text.secondary">
+          {t("handOverHeldBack", { count: heldBack })}
+        </Typography>
+      )}
+      {ready.length === 0 && handed > 0 && (
+        <Typography variant="bodyMedium" color="text.secondary">
+          {t("handOverAllDone", { count: handed, producer: view.producerName })}
+        </Typography>
+      )}
+      <Dialog open={open} onClose={() => setOpen(false)} aria-labelledby="remise-titre">
+        <DialogTitle id="remise-titre">
+          {t("handOverTitle", { count: ready.length, producer: view.producerName })}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText>{t("handOverText")}</DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setOpen(false)}>{t("cancel")}</Button>
+          <Button variant="contained" disabled={pending} onClick={() => void confirm()}>
+            {t("handOverConfirm")}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Stack>
   );
 }
 
