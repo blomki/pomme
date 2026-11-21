@@ -281,8 +281,9 @@ export function moveInMenu(ids: readonly string[], id: string, delta: -1 | 1): s
   const from = ids.indexOf(id);
   const to = from + delta;
   if (from < 0 || to < 0 || to >= ids.length) return [...ids];
-  const next = [...ids];
-  [next[from], next[to]] = [next[to]!, next[from]!];
+  // Retire la page, puis la remet une place plus tôt ou plus tard.
+  const next = ids.filter((x) => x !== id);
+  next.splice(to, 0, id);
   return next;
 }
 
