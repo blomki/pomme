@@ -13,6 +13,8 @@ export const DEFAULT_AMAP_PARAMETERS = {
   volunteersPerDistribution: 3,
   experiencedThreshold: 6,
   membershipExpiryAlertDays: MEMBERSHIP_EXPIRY_ALERT_DAYS,
+  // Rappel automatique aux foyers sans commande, ce nombre de jours avant la clôture (D5).
+  orderReminderDays: 2,
 } as const;
 
 /** Bornes de chaque paramètre : de quoi refuser une faute de frappe (« 300 bénévoles »). */
@@ -20,6 +22,8 @@ export const AMAP_PARAMETER_BOUNDS = {
   volunteersPerDistribution: { min: 1, max: 20 },
   experiencedThreshold: { min: 1, max: 50 },
   membershipExpiryAlertDays: { min: 1, max: 180 },
+  // 0 : pas de rappel automatique.
+  orderReminderDays: { min: 0, max: 14 },
 } as const;
 export type AmapParameter = keyof typeof AMAP_PARAMETER_BOUNDS;
 
@@ -70,5 +74,6 @@ export function effectiveParameters(
       settings?.experiencedThreshold ?? DEFAULT_AMAP_PARAMETERS.experiencedThreshold,
     membershipExpiryAlertDays:
       settings?.membershipExpiryAlertDays ?? DEFAULT_AMAP_PARAMETERS.membershipExpiryAlertDays,
+    orderReminderDays: settings?.orderReminderDays ?? DEFAULT_AMAP_PARAMETERS.orderReminderDays,
   };
 }

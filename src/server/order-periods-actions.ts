@@ -4,12 +4,10 @@ import { revalidatePath } from "next/cache";
 
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
-import { dedupeKey } from "@/domain/notifications";
-import { formatDate } from "@/i18n/dates";
 
 import { getAmapBySlug } from "./amap";
 import { runAmapAction } from "./amap-action";
-import { orderReminderEmail } from "./email/order-reminder-email";
+import { reminderNotification } from "./order-reminders";
 import { sendNotification } from "./email/notify";
 import {
   closeOrderPeriod,
@@ -89,25 +87,25 @@ export async function remindHouseholdsAction(
 
   const amapRow = await getAmapBySlug(amap);
   const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  const month = formatDate(`${plan.month}-01T12:00:00Z`, "MMMM");
-  const closesOn = formatDate(`${plan.closesOn}T12:00:00Z`, "EEEE d MMMM");
   const counts = { sent: 0, skipped: 0, failed: 0 };
   for (const recipient of plan.recipients) {
     const result = await withAmapContext(getDatabase(), ctx, (tx) =>
-      sendNotification(tx, {
-        amapId: ctx.amapId,
-        userId: recipient.userId,
-        template: "order_reminder",
-        dedupeKey: dedupeKey("order_reminder", recipient.userId, plan.periodId),
-        to: recipient.email,
-        content: orderReminderEmail({
-          amap: { name: amapRow?.name ?? "", theme: amapRow?.theme ?? null },
-          firstName: recipient.firstName,
-          month,
-          closesOn,
-          orderUrl: new URL(`/${amap}/famille`, baseUrl).toString(),
+      sendNotification(
+        tx,
+        reminderNotification({
+          amap: {
+            id: ctx.amapId!,
+            slug: amap,
+            name: amapRow?.name ?? "",
+            theme: amapRow?.theme ?? null,
+          },
+          periodId: plan.periodId,
+          month: plan.month,
+          closesOn: plan.closesOn,
+          recipient,
+          baseUrl,
         }),
-      }),
+      ),
     );
     if (result.status === "sent") counts.sent += 1;
     else if (result.status === "duplicate") counts.skipped += 1;

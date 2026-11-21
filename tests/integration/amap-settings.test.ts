@@ -48,6 +48,7 @@ const settingsInput = (over: Record<string, unknown> = {}) => ({
   volunteersPerDistribution: "4",
   experiencedThreshold: 5,
   membershipExpiryAlertDays: 45,
+  orderReminderDays: 3,
   ...over,
 });
 

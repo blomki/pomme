@@ -14,12 +14,15 @@ import {
   householdMember,
   order,
   orderLine,
+  notificationLog,
   orderPeriod,
   producer,
   product,
 } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { ForbiddenError, UnauthenticatedError } from "@/server/auth/errors";
+import { runOrderReminders } from "@/server/order-reminders";
+import { createRateLimiter } from "@/server/rate-limit";
 import {
   closeOrderPeriod,
   getDashboardOrderPeriod,
@@ -287,6 +290,37 @@ describe("Période de commande (D2)", () => {
     await expect(
       inA((tx, ctx) => planReminders(tx, ctx, { periodId }, DURING), referent.id),
     ).rejects.toThrow(ForbiddenError);
+  });
+
+  it("rappel automatique avant la clôture : une seule fois, aux foyers sans commande (D5)", async () => {
+    const sent: string[] = [];
+    const deps = {
+      transport: {
+        async send(to: string) {
+          sent.push(to);
+          return { providerId: `<rappel-${sent.length}@brevo.test>` };
+        },
+      },
+      recipientLimiter: createRateLimiter({ limit: 100, windowMs: 60_000 }),
+      globalLimiter: createRateLimiter({ limit: 100, windowMs: 60_000 }),
+    };
+    // Clôture le 25 ; rappel 2 jours avant par défaut : rien le 20, envoi le 23.
+    expect(await runOrderReminders(db.app, DURING, deps)).toEqual([]);
+    const NEAR = new Date("2026-11-23T10:00:00Z");
+    expect(await runOrderReminders(db.app, NEAR, deps)).toEqual([
+      { amapId: amapA.id, month: "2026-12", sent: 1, skipped: 0, failed: 0 },
+    ]);
+    expect(sent).toEqual([members[2]!.email]);
+    // Passage suivant de la tâche (une heure plus tard) : déjà fait, rien de renvoyé.
+    expect(await runOrderReminders(db.app, new Date("2026-11-23T11:00:00Z"), deps)).toEqual([
+      { amapId: amapA.id, month: "2026-12", sent: 0, skipped: 1, failed: 0 },
+    ]);
+    expect(sent).toHaveLength(1);
+    const logged = await db.owner
+      .select({ template: notificationLog.template, status: notificationLog.status })
+      .from(notificationLog)
+      .where(eq(notificationLog.template, "order_reminder"));
+    expect(logged).toEqual([{ template: "order_reminder", status: "sent" }]);
   });
 
   it("clôture par la tâche planifiée : un chèque par foyer et producteur, avoirs déduits", async () => {

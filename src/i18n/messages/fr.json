@@ -737,12 +737,14 @@
       "parameter": {
         "volunteersPerDistribution": "Bénévoles par distribution",
         "experiencedThreshold": "Seuil « expérimenté » (permanences)",
-        "membershipExpiryAlertDays": "Alerte de fin d'adhésion (jours avant)"
+        "membershipExpiryAlertDays": "Alerte de fin d'adhésion (jours avant)",
+        "orderReminderDays": "Rappel avant la clôture (jours)"
       },
       "parameterHelp": {
         "volunteersPerDistribution": "Nombre de bénévoles nécessaires à chaque distribution (3 par défaut).",
         "experiencedThreshold": "Nombre de permanences à partir duquel un bénévole est « expérimenté » (6 par défaut).",
-        "membershipExpiryAlertDays": "Une adhésion apparaît « expire bientôt » ce nombre de jours avant sa fin (30 par défaut)."
+        "membershipExpiryAlertDays": "Une adhésion apparaît « expire bientôt » ce nombre de jours avant sa fin (30 par défaut).",
+        "orderReminderDays": "Email automatique aux foyers qui n'ont pas encore commandé, ce nombre de jours avant la clôture (2 par défaut, 0 : aucun rappel)."
       },
       "range": "Nombre entier de {min} à {max}.",
       "save": "Enregistrer les réglages",

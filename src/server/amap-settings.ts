@@ -80,6 +80,7 @@ const schema = z.object({
   volunteersPerDistribution: z.coerce.number(),
   experiencedThreshold: z.coerce.number(),
   membershipExpiryAlertDays: z.coerce.number(),
+  orderReminderDays: z.coerce.number(),
 });
 
 export type SaveSettingsProblem =
@@ -110,6 +111,7 @@ export async function saveAmapSettings(
     volunteersPerDistribution: data.volunteersPerDistribution,
     experiencedThreshold: data.experiencedThreshold,
     membershipExpiryAlertDays: data.membershipExpiryAlertDays,
+    orderReminderDays: data.orderReminderDays,
   };
   const problems = checkAmapSettings({
     name: data.name,
