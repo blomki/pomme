@@ -1,0 +1,37 @@
+# Alerte des sauvegardes (fiche S8) : ouvre une issue « Sauvegarde » en cas d'échec (GitHub
+# l'envoie par email au responsable du dépôt), ou ferme celle qui est ouverte quand le passage
+# réussit de nouveau. Une seule issue ouverte par titre : pas d'email à chaque nuit d'échec.
+name: Alerte des sauvegardes
+description: Ouvre ou ferme l'issue d'alerte des sauvegardes
+inputs:
+  title:
+    description: Titre de l'issue
+    required: true
+  failed:
+    description: « true » si le job a échoué
+    required: true
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+        GH_REPO: ${{ github.repository }}
+        TITLE: ${{ inputs.title }}
+        FAILED: ${{ inputs.failed }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: |
+        gh label create sauvegarde --color B60205 \
+          --description "Ouverte par le workflow des sauvegardes" --force >/dev/null
+        issue=$(gh issue list --label sauvegarde --state open --search "in:title \"$TITLE\"" \
+          --json number,title --jq ".[] | select(.title == \"$TITLE\") | .number" | head -n 1)
+        if [ "$FAILED" = "true" ]; then
+          if [ -z "$issue" ]; then
+            gh issue create --title "$TITLE" --label sauvegarde --body \
+              "Le passage a échoué : $RUN_URL. Voir docs/reprise.md (« Que faire si une sauvegarde échoue »)."
+          else
+            gh issue comment "$issue" --body "Toujours en échec : $RUN_URL"
+          fi
+        elif [ -n "$issue" ]; then
+          gh issue close "$issue" --comment "Réussi de nouveau : $RUN_URL"
+        fi
