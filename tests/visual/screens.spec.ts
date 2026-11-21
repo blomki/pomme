@@ -13,6 +13,9 @@ const screens = [
     path: "/hommesdeterre",
     viewport: "mobile",
     mask: ["Prochaine distribution", "Dernières nouvelles"],
+    // Haut de page seulement : les tests de bout en bout, lancés avant dans la même base,
+    // ajoutent des producteurs à cette AMAP (la liste s'allonge).
+    fullPage: false,
   },
   { name: "referent", path: "/hommesdeterre/referent", viewport: "desktop" },
   { name: "theme-cambremer", path: "/plateforme/theme/hommesdeterre", viewport: "desktop" },
@@ -22,6 +25,7 @@ const screens = [
   path: string;
   viewport: "mobile" | "desktop";
   mask?: readonly string[];
+  fullPage?: boolean;
 }>;
 
 const viewports = {
@@ -45,7 +49,7 @@ for (const screen of screens) {
         page.getByRole("region", { name }),
       );
       await expect(page).toHaveScreenshot(`${screen.name}-${scheme.name}.png`, {
-        fullPage: true,
+        fullPage: !("fullPage" in screen) || screen.fullPage,
         mask,
       });
     });
