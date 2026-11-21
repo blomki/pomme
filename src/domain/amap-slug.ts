@@ -44,21 +44,32 @@ export function validateAmapSlug(slug: string): AmapSlugError | null {
 }
 
 /**
+ * Transforme un texte en adresse : sans accent, en minuscules, chaque suite d'autres caractères
+ * devient un tiret, coupée à `maxLength`. Sert aux AMAP et aux pages du site (H2).
+ *
+ * @example slugify("AMAP d'Éterville", 40) // « amap-d-eterville »
+ */
+export function slugify(text: string, maxLength: number): string {
+  return (
+    text
+      // Sépare chaque lettre de son accent (« é » → « e » + accent), puis retire les accents.
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      // Tout ce qui n'est ni lettre ni chiffre devient un tiret (espaces, apostrophes…).
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+/, "")
+      .slice(0, maxLength)
+      .replace(/-+$/, "")
+  );
+}
+
+/**
  * Propose une adresse à partir du nom de l'AMAP, à corriger ensuite si besoin.
  *
  * @example suggestAmapSlug("Les Hommes de Terre") // « les-hommes-de-terre »
  * @example suggestAmapSlug("AMAP d'Éterville") // « amap-d-eterville »
  */
 export function suggestAmapSlug(name: string): string {
-  return (
-    name
-      // Sépare chaque lettre de son accent (« é » → « e » + accent), puis retire les accents.
-      .normalize("NFD")
-      .replace(/[̀-ͯ]/g, "")
-      .toLowerCase()
-      // Tout ce qui n'est ni lettre ni chiffre devient un tiret (espaces, apostrophes…).
-      .replace(/[^a-z0-9]+/g, "-")
-      .slice(0, AMAP_SLUG_MAX_LENGTH)
-      .replace(/^-+|-+$/g, "")
-  );
+  return slugify(name, AMAP_SLUG_MAX_LENGTH);
 }

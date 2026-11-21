@@ -453,7 +453,7 @@ test.describe("administration (ordinateur)", () => {
 
     await page.goto("/hommesdeterre/admin");
     const tasks = page.getByRole("region", { name: "Votre liste de tâches" });
-    const text = new RegExp(`fermée \\(${reason}\\) : vérifier que les familles`);
+    const text = `fermée (${reason}) : vérifier que les familles`;
     const row = tasks.getByRole("listitem").filter({ hasText: text });
     await expect(row.getByText("À suivre", { exact: true })).toBeVisible();
     await expect(row.getByRole("link", { name: "Voir le calendrier" })).toBeVisible();
@@ -481,6 +481,80 @@ test.describe("administration (ordinateur)", () => {
     await expect(again.getByRole("button", { name: /^Marquer comme fait/ })).toBeVisible();
     await again.getByRole("button", { name: /^Marquer comme fait/ }).click();
     await expect(page.getByText("Tâche marquée comme faite.")).toBeVisible();
+  });
+
+  test("un admin crée, publie, renomme puis dépublie une page du site au clavier (H2)", async ({
+    page,
+    request,
+  }) => {
+    const token = Date.now().toString(36);
+    const title = `Recettes d'essai ${token}`;
+    const slug = `recettes-d-essai-${token}`;
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    await page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Pages" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Pages" })).toBeVisible();
+    const menu = page.getByRole("region", { name: "Menu du site" });
+    await expect(menu.getByRole("listitem").first()).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Nouvelle page : l'adresse suit le titre ; le texte se met en forme au clavier.
+    await page.getByRole("link", { name: "Nouvelle page" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("heading", { level: 1, name: "Nouvelle page" })).toBeVisible();
+    await page.getByRole("textbox", { name: "Titre", exact: true }).focus();
+    await page.keyboard.type(title);
+    await expect(page.getByRole("textbox", { name: "Adresse" })).toHaveValue(slug);
+    const body = page.getByRole("textbox", { name: "Texte" });
+    await body.focus();
+    await page.keyboard.type("Soupe de potiron : ");
+    const toolbar = page.getByRole("toolbar", { name: "Mise en forme" });
+    await toolbar.getByRole("button", { name: "Gras" }).click();
+    await expect(toolbar.getByRole("button", { name: "Gras" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    await body.focus();
+    await page.keyboard.press("End");
+    await page.keyboard.type("la recette de saison");
+    await page.getByRole("checkbox", { name: "Afficher dans le menu du site" }).check();
+    await expectNoSeriousA11yViolations(page);
+    await page.getByRole("button", { name: "Publier" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Page publiée.")).toBeVisible();
+    await expect(page.getByRole("heading", { level: 1, name: "Modifier la page" })).toBeVisible();
+
+    // Sur le site public : dans le menu, texte en gras.
+    await page.goto(`/hommesdeterre/${slug}`);
+    await expect(page.getByRole("heading", { level: 1, name: title })).toBeVisible();
+    await expect(page.locator("strong", { hasText: "la recette de saison" })).toBeVisible();
+    await expect(
+      page.getByRole("navigation", { name: "Menu du site" }).getByRole("link", { name: title }),
+    ).toBeVisible();
+
+    // Adresse changée après publication : l'ancienne redirige vers la nouvelle.
+    await page.goBack();
+    await expect(page.getByRole("heading", { level: 1, name: "Modifier la page" })).toBeVisible();
+    const address = page.getByRole("textbox", { name: "Adresse" });
+    await address.fill(`${slug}-v2`);
+    await page.getByRole("button", { name: "Enregistrer les modifications" }).click();
+    await expect(page.getByText("Page enregistrée.")).toBeVisible();
+    await page.goto(`/hommesdeterre/${slug}`);
+    await expect(page).toHaveURL(new URL(`/hommesdeterre/${slug}-v2`, page.url()).toString());
+
+    // Dépubliée : introuvable sur le site, toujours dans la liste.
+    await page.goBack();
+    await page.getByRole("button", { name: "Dépublier" }).click();
+    await expect(page.getByText(/^Page dépubliée/)).toBeVisible();
+    await page.goto(`/hommesdeterre/${slug}-v2`);
+    await expect(page.getByRole("heading", { name: "Page introuvable" })).toBeVisible();
+    await page.goto("/hommesdeterre/admin/pages");
+    await expect(
+      page.getByRole("row").filter({ hasText: title }).getByText("Dépubliée"),
+    ).toBeVisible();
   });
 
   test("un admin crée un producteur au clavier et lui affecte un référent (C1)", async ({

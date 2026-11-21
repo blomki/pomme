@@ -23,6 +23,7 @@
 import { validateAmapSlug } from "@/domain/amap-slug";
 import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
 import { addDays, defaultPeriodDays, parisDay, periodInstants } from "@/domain/order-periods";
+import type { RichDoc } from "@/domain/pages";
 import type { AmapRoleName } from "@/domain/roles";
 
 import type { AmapSettings, AmapTheme } from "../schema";
@@ -164,7 +165,24 @@ export type SeedMembership = {
   note: string;
 };
 
+/** Page du site public (story H2). */
+export type SeedPage = {
+  id: string;
+  amapId: string;
+  parentId: string | null;
+  role: "home" | "legal" | null;
+  title: string;
+  slug: string;
+  summary: string;
+  body: RichDoc;
+  status: "draft" | "published";
+  publishedOn: string | null;
+  inMenu: boolean;
+  menuPosition: number;
+};
+
 export type SeedData = {
+  pages: SeedPage[];
   users: SeedUser[];
   amaps: SeedAmap[];
   roles: SeedRole[];
@@ -932,7 +950,89 @@ export function buildSeedData(today: Date = new Date()): SeedData {
       });
   }
 
+  // Site public (story H2) : accueil, blog avec un billet publié et un brouillon, mentions
+  // légales, dans chaque AMAP. Textes fictifs.
+  const paragraphs = (...texts: string[]): RichDoc => ({
+    type: "doc",
+    content: texts.map((text) => ({ type: "paragraph", content: [{ type: "text", text }] })),
+  });
+  const pages: SeedPage[] = [];
+  for (const a of amaps) {
+    const blogId = nextId();
+    const base = { amapId: a.id, summary: "", status: "published" as const, menuPosition: 0 };
+    pages.push(
+      {
+        ...base,
+        id: nextId(),
+        parentId: null,
+        role: "home",
+        title: "Accueil",
+        slug: "accueil",
+        body: paragraphs(
+          `Bienvenue à ${a.name}, une AMAP fictive qui sert à essayer Pomme.`,
+          "Chaque semaine, des familles retrouvent leurs producteurs pour une distribution de légumes, de pain, d'œufs et de miel.",
+        ),
+        publishedOn: addDays(parisDay(today), -60),
+        inMenu: true,
+        menuPosition: 1,
+      },
+      {
+        ...base,
+        id: blogId,
+        parentId: null,
+        role: null,
+        title: "Le blog",
+        slug: "blog",
+        body: paragraphs("Les nouvelles de l'AMAP : visites de ferme, fêtes et recettes."),
+        publishedOn: addDays(parisDay(today), -60),
+        inMenu: true,
+        menuPosition: 2,
+      },
+      {
+        ...base,
+        id: nextId(),
+        parentId: blogId,
+        role: null,
+        title: "Visite à la ferme d'essai",
+        slug: "visite-ferme-essai",
+        summary: "Une matinée au champ avec nos producteurs de légumes.",
+        body: paragraphs(
+          "Samedi dernier, une dizaine de familles ont visité la ferme d'essai.",
+          "Merci à tous pour ce beau moment !",
+        ),
+        publishedOn: addDays(parisDay(today), -10),
+        inMenu: false,
+      },
+      {
+        ...base,
+        id: nextId(),
+        parentId: blogId,
+        role: null,
+        title: "Fête de fin d'année",
+        slug: "fete-fin-annee",
+        status: "draft",
+        body: paragraphs("Texte à compléter."),
+        publishedOn: null,
+        inMenu: false,
+      },
+      {
+        ...base,
+        id: nextId(),
+        parentId: null,
+        role: "legal",
+        title: "Mentions légales",
+        slug: "mentions-legales",
+        body: paragraphs(
+          `Site de ${a.name}, association fictive du jeu de données de démonstration de Pomme.`,
+        ),
+        publishedOn: addDays(parisDay(today), -60),
+        inMenu: false,
+      },
+    );
+  }
+
   return {
+    pages,
     users,
     amaps,
     roles,

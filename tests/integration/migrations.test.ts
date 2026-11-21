@@ -39,6 +39,8 @@ describe("Migrations", () => {
       "order",
       "order_line",
       "order_period",
+      "page",
+      "page_redirect",
       "passkey",
       "producer",
       "producer_user",

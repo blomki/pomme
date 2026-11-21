@@ -2,7 +2,7 @@ import { eq, sql } from "drizzle-orm";
 import { beforeAll, describe, expect, it } from "vitest";
 
 import { withAmapContext, type AmapContext } from "@/db/context";
-import { amap, amapRole, auditLog, user } from "@/db/schema";
+import { amap, amapRole, auditLog, page, user } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { createAmap } from "@/server/amap-creation";
 import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors";
@@ -97,6 +97,12 @@ describe("Créer une AMAP (J1)", () => {
         createdBy: platformAdmin.id,
       }),
     ]);
+    // Pages obligatoires du site (H2), en brouillon.
+    const pages = await db.owner.select().from(page).where(eq(page.amapId, result.amapId));
+    expect(pages.map((p) => [p.role, p.slug, p.status]).sort()).toEqual([
+      ["home", "accueil", "draft"],
+      ["legal", "mentions-legales", "draft"],
+    ]);
     const journal = await db.owner
       .select()
       .from(auditLog)
@@ -175,7 +181,7 @@ describe("Créer une AMAP (J1)", () => {
       withAmapContext(db.app, as(amapAdmin.id), (tx) =>
         tx.execute(sql`select * from create_amap(${uuidv7()}, 'amap-w', 'W', '{}'::jsonb,
           '{}'::jsonb, 'Lieu', 'Europe/Paris', '', ${uuidv7()}, 'w@example.org', 'W', '',
-          ${uuidv7()}, ${uuidv7()})`),
+          ${uuidv7()}, ${uuidv7()}, ${uuidv7()}, ${uuidv7()})`),
       ),
     ).rejects.toMatchObject({ cause: { code: "42501" } });
   });

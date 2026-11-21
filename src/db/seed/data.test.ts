@@ -186,6 +186,24 @@ describe("buildSeedData", () => {
     }
   });
 
+  it("donne à chaque AMAP son site : accueil et mentions publiés, un blog et ses billets", () => {
+    for (const amap of data.amaps) {
+      const pages = data.pages.filter((p) => p.amapId === amap.id);
+      expect(pages.filter((p) => p.role === "home" && p.status === "published")).toHaveLength(1);
+      expect(pages.filter((p) => p.role === "legal" && p.status === "published")).toHaveLength(1);
+      const blog = pages.find((p) => p.slug === "blog");
+      expect(
+        pages
+          .filter((p) => p.parentId === blog?.id)
+          .map((p) => p.status)
+          .sort(),
+      ).toEqual(["draft", "published"]);
+      // Une page publiée a toujours une date (contrainte de la base).
+      for (const p of pages.filter((x) => x.status === "published"))
+        expect(p.publishedOn).not.toBeNull();
+    }
+  });
+
   it("donne au moins un administrateur à chaque AMAP", () => {
     for (const amap of data.amaps) {
       expect(data.roles.some((r) => r.amapId === amap.id && r.role === "admin")).toBe(true);

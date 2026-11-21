@@ -225,6 +225,20 @@
       "when": 1795216539822,
       "tag": "0031_creer-une-amap",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795246344434,
+      "tag": "0032_pages-du-site",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795246363837,
+      "tag": "0033_pages-obligatoires",
+      "breakpoints": true
     }
   ]
 }
