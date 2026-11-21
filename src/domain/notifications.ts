@@ -21,6 +21,7 @@ export const NOTIFICATION_TEMPLATES = [
   "magic_link",
   "invitation",
   "producer_invitation",
+  "admin_invitation",
   "order_reminder",
   "order_confirmation",
   "order_form",

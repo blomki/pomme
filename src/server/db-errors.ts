@@ -2,6 +2,7 @@
 const UNIQUE_VIOLATION = "23505";
 const FOREIGN_KEY_VIOLATION = "23503";
 const EXCLUSION_VIOLATION = "23P01";
+const INSUFFICIENT_PRIVILEGE = "42501";
 
 type PgError = { code?: string; constraint?: string };
 
@@ -32,4 +33,9 @@ export function foreignKeyViolation(error: unknown): boolean {
 export function exclusionViolation(error: unknown): string | null {
   const pg = pgError(error);
   return pg.code === EXCLUSION_VIOLATION ? (pg.constraint ?? "") : null;
+}
+
+/** Vrai si une fonction de base a refusé l'appel (droit manquant, RAISE … insufficient_privilege). */
+export function insufficientPrivilege(error: unknown): boolean {
+  return pgError(error).code === INSUFFICIENT_PRIVILEGE;
 }

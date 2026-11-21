@@ -218,6 +218,13 @@
       "when": 1795213042245,
       "tag": "0030_taches-admin",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795216539822,
+      "tag": "0031_creer-une-amap",
+      "breakpoints": true
     }
   ]
 }

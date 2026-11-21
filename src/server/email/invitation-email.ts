@@ -68,3 +68,28 @@ export function producerInvitationEmail(params: {
     },
   );
 }
+
+/**
+ * Email d'invitation du premier administrateur d'une AMAP (story J1), envoyé à la création de
+ * l'AMAP par le gestionnaire. Même principe : pas de lien de connexion, aux couleurs de l'AMAP.
+ */
+export function adminInvitationEmail(params: {
+  amap: { name: string; theme: AmapTheme | null };
+  firstName: string;
+  loginUrl: string;
+}): EmailContent {
+  const t = createTranslator({ locale: "fr", messages, namespace: "Email.adminInvitation" });
+  const values = { amap: params.amap.name };
+  return renderEmail(
+    { name: params.amap.name, theme: params.amap.theme },
+    {
+      subject: t("subject", values),
+      preview: t("preview", values),
+      greeting: t("greeting", { firstName: params.firstName }),
+      paragraphs: [t("intro", values), t("secondFactor"), t("how")],
+      action: { label: t("button"), url: params.loginUrl },
+      notes: [t("noPassword")],
+      footer: t("footer", values),
+    },
+  );
+}
