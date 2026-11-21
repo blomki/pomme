@@ -78,7 +78,14 @@ export type OrderCell = {
   lock: LockReason | null;
 };
 
-export type OrderItem = { itemId: string; name: string; priceCents: number; cells: OrderCell[] };
+export type OrderItem = {
+  itemId: string;
+  /** Produit (commun aux mois) : pour retrouver le même produit d'un mois à l'autre (D4). */
+  productId: string;
+  name: string;
+  priceCents: number;
+  cells: OrderCell[];
+};
 
 export type OrderProducer = {
   amapProducerId: string;
@@ -189,6 +196,7 @@ export async function loadHouseholdOrder(
         .select({
           itemId: catalogItem.id,
           catalogId: catalogItem.catalogId,
+          productId: catalogItem.productId,
           name: product.name,
           priceCents: catalogItem.priceCents,
           removedAt: catalogItem.removedAt,
@@ -248,6 +256,7 @@ export async function loadHouseholdOrder(
       .filter((i) => i.removedAt === null || i.lines.length > 0)
       .map((i): OrderItem => ({
         itemId: i.itemId,
+        productId: i.productId,
         name: i.name,
         priceCents: i.priceCents,
         cells: distributions.map((d) => {
