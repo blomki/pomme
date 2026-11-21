@@ -1,0 +1,122 @@
+# Sauvegardes externes (fiche S8, ADR 0036, docs/reprise.md).
+# - Chaque nuit : sauvegarde de la base de production (pg_dump chiffré avec age) et copie des
+#   fichiers déposés (Cellar), vers Scaleway Object Storage (Paris).
+# - Chaque mois : test de restauration de la dernière sauvegarde dans une base jetable.
+# Un échec ouvre une issue « Sauvegarde » (GitHub l'envoie par email) ; le passage suivant
+# réussi la ferme.
+#
+# Rien ne tourne tant que la variable de dépôt BACKUP_ENABLED ne vaut pas « true » : elle
+# s'active une fois le compte Scaleway et les clés prêts (docs/reprise.md, « Mise en place »).
+#
+# Les scripts (scripts/backup/) tournent dans l'image postgres:17-alpine, la même version
+# majeure que la base de production : pg_dump doit être au moins aussi récent que le serveur.
+name: Sauvegardes
+
+on:
+  schedule:
+    - cron: "30 1 * * *" # chaque nuit, 2 h 30 ou 3 h 30 à Paris
+    - cron: "0 6 3 * *" # le 3 de chaque mois : test de restauration
+  workflow_dispatch:
+    inputs:
+      task:
+        description: "Que lancer ?"
+        type: choice
+        options: [sauvegarde, restauration]
+        default: sauvegarde
+
+concurrency:
+  group: sauvegardes
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  issues: write
+
+env:
+  IMAGE: postgres:17-alpine
+  TOOLS: age aws-cli bash coreutils
+  S3_ENDPOINT: ${{ vars.BACKUP_S3_ENDPOINT || 'https://s3.fr-par.scw.cloud' }}
+  S3_REGION: ${{ vars.BACKUP_S3_REGION || 'fr-par' }}
+  S3_BUCKET: ${{ vars.BACKUP_BUCKET }}
+
+jobs:
+  backup:
+    name: Sauvegarde de la nuit
+    if: >-
+      vars.BACKUP_ENABLED == 'true' &&
+      ((github.event_name == 'schedule' && github.event.schedule == '30 1 * * *') ||
+       (github.event_name == 'workflow_dispatch' && inputs.task == 'sauvegarde'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - name: Base de données
+        env:
+          DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
+          AGE_RECIPIENTS: ${{ vars.BACKUP_AGE_RECIPIENTS }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_ACCESS_KEY }}
+        run: |
+          docker run --rm -v "$PWD/scripts/backup:/scripts:ro" \
+            -e DATABASE_URL -e AGE_RECIPIENTS -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            -e S3_ENDPOINT -e S3_REGION -e S3_BUCKET -e OBJECT_LOCK=1 \
+            "$IMAGE" sh -c "apk add --quiet --no-progress $TOOLS >/dev/null && bash /scripts/backup-db.sh"
+      - name: Fichiers déposés
+        env:
+          SOURCE_ENDPOINT: ${{ vars.CELLAR_ENDPOINT || 'https://cellar-c2.services.clever-cloud.com' }}
+          SOURCE_BUCKET: ${{ vars.CELLAR_BUCKET }}
+          SOURCE_ACCESS_KEY_ID: ${{ secrets.CELLAR_ACCESS_KEY_ID }}
+          SOURCE_SECRET_ACCESS_KEY: ${{ secrets.CELLAR_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_ACCESS_KEY }}
+        run: |
+          docker run --rm -v "$PWD/scripts/backup:/scripts:ro" \
+            -e SOURCE_ENDPOINT -e SOURCE_BUCKET -e SOURCE_ACCESS_KEY_ID -e SOURCE_SECRET_ACCESS_KEY \
+            -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY -e S3_ENDPOINT -e S3_REGION -e S3_BUCKET \
+            "$IMAGE" sh -c "apk add --quiet --no-progress $TOOLS >/dev/null && bash /scripts/backup-files.sh"
+      - name: Alerte
+        if: always()
+        uses: ./.github/actions/backup-alert
+        with:
+          title: "Sauvegarde : la sauvegarde de la nuit a échoué"
+          failed: ${{ job.status != 'success' }}
+
+  restore:
+    name: Test de restauration du mois
+    if: >-
+      vars.BACKUP_ENABLED == 'true' &&
+      ((github.event_name == 'schedule' && github.event.schedule == '0 6 3 * *') ||
+       (github.event_name == 'workflow_dispatch' && inputs.task == 'restauration'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # Base jetable, détruite à la fin du job.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: restauration
+          POSTGRES_PASSWORD: restauration
+          POSTGRES_DB: restauration
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U restauration" --health-interval 5s --health-timeout 5s
+          --health-retries 10
+    steps:
+      - uses: actions/checkout@v5
+      - name: Restaurer la dernière sauvegarde et compter
+        env:
+          AGE_IDENTITY: ${{ secrets.RESTORE_AGE_IDENTITY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.SCW_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.SCW_SECRET_ACCESS_KEY }}
+        run: |
+          docker run --rm --network host -v "$PWD/scripts/backup:/scripts:ro" \
+            -e AGE_IDENTITY -e AWS_ACCESS_KEY_ID -e AWS_SECRET_ACCESS_KEY \
+            -e S3_ENDPOINT -e S3_REGION -e S3_BUCKET \
+            -e RESTORE_DATABASE_URL=postgres://restauration:restauration@localhost:5432/restauration \
+            "$IMAGE" sh -c "apk add --quiet --no-progress $TOOLS >/dev/null && bash /scripts/restore-check.sh"
+      - name: Alerte
+        if: always()
+        uses: ./.github/actions/backup-alert
+        with:
+          title: "Sauvegarde : le test de restauration du mois a échoué"
+          failed: ${{ job.status != 'success' }}
