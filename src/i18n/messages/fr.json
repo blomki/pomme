@@ -720,6 +720,42 @@
         "not_found": "Cette adhésion ou ce foyer n'existe plus. Rechargez la page.",
         "forbidden": "Action réservée aux administrateurs de l'AMAP."
       }
+    },
+    "settings": {
+      "title": "Réglages de l'AMAP",
+      "intro": "Ce que voient les familles, les producteurs et les visiteurs : nom, logo, couleurs. Chaque modification est enregistrée dans le journal.",
+      "logo": "Logo",
+      "logoAlt": "Logo de {name}",
+      "logoSaved": "Logo enregistré.",
+      "logoRemoved": "Logo retiré.",
+      "identity": "L'AMAP",
+      "name": "Nom affiché",
+      "slug": "Adresse",
+      "slugHelp": "L'adresse ne se change pas ici : demandez-le au gestionnaire de la plateforme.",
+      "contactEmail": "Email de contact (facultatif)",
+      "contactEmailHelp": "Affiché sur le site public pour vous écrire.",
+      "emailInvalid": "Adresse email non valable.",
+      "theme": "Couleurs et police",
+      "parameters": "Paramètres",
+      "parameter": {
+        "volunteersPerDistribution": "Bénévoles par distribution",
+        "experiencedThreshold": "Seuil « expérimenté » (permanences)",
+        "membershipExpiryAlertDays": "Alerte de fin d'adhésion (jours avant)"
+      },
+      "parameterHelp": {
+        "volunteersPerDistribution": "Nombre de bénévoles nécessaires à chaque distribution (3 par défaut).",
+        "experiencedThreshold": "Nombre de permanences à partir duquel un bénévole est « expérimenté » (6 par défaut).",
+        "membershipExpiryAlertDays": "Une adhésion apparaît « expire bientôt » ce nombre de jours avant sa fin (30 par défaut)."
+      },
+      "range": "Nombre entier de {min} à {max}.",
+      "save": "Enregistrer les réglages",
+      "saved": "Réglages enregistrés.",
+      "fixErrors": "Rien n'a été enregistré. Corrigez les champs signalés.",
+      "forbidden": "Action réservée aux administrateurs de l'AMAP.",
+      "distribution": "Distribution habituelle",
+      "noPlace": "Lieu pas encore renseigné",
+      "schedule": "chaque {day}, de {start} à {end}",
+      "distributionLink": "Modifier le lieu, le jour et les horaires dans le planning"
     }
   },
   "Producer": {
@@ -901,7 +937,8 @@
       "producers": "Producteurs et référents",
       "households": "Foyers et adhésions",
       "pages": "Pages",
-      "cheques": "Chèques"
+      "cheques": "Chèques",
+      "settings": "Réglages"
     },
     "referent": {
       "label": "Menu du référent",

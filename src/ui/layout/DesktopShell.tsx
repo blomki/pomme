@@ -10,6 +10,7 @@ import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import PaletteOutlined from "@mui/icons-material/PaletteOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import ReportProblemOutlined from "@mui/icons-material/ReportProblemOutlined";
+import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import UndoOutlined from "@mui/icons-material/UndoOutlined";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
@@ -56,6 +57,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
         { key: "cheques", icon: <FactCheckOutlined />, href: `${base}/admin/cheques` },
         { key: "pages", icon: <ArticleOutlined /> },
+        { key: "settings", icon: <SettingsOutlined />, href: `${base}/admin/reglages` },
       ];
     case "referent":
       return [
