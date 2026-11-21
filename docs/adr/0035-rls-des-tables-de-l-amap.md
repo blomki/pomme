@@ -15,25 +15,24 @@ ces lignes :
 - une famille ;
 - un producteur.
 
-Seuls les contrôles de l'application (`requireRole`) l'empêchaient. Relevé pendant S12 (ADR
-0021) pour les foyers ; étendu ici à toutes les tables concernées (story S13).
+Seuls les contrôles de l'application (`requireRole`) l'empêchaient. Relevé pendant S12 (ADR 0021) pour les foyers ; étendu ici à toutes les tables concernées (story S13).
 
 ## Décision
 
 Une condition par opération (fonction `scopedPolicies`), toujours en plus de « dans l'AMAP
 courante » ; une opération sans politique est refusée.
 
-| Table | Lecture | Écriture |
-| --- | --- | --- |
-| `household` | ses membres ; l'équipe (admins, référents) ; le producteur, pour les foyers qui lui ont commandé ou dont il attend un chèque ; les accès de confiance (S12) | admins |
-| `household_member` | soi-même ; les membres de son foyer ; l'équipe ; les accès de confiance | admins |
-| `membership` | le foyer ; l'équipe ; les accès de confiance | admins |
-| `amap_role` | toute l'AMAP (qui est admin, qui est référent) | admins |
-| `amap` | tout le monde (site public) | admins de cette AMAP ; création par `create_amap` |
-| `distribution` | toute l'AMAP, visiteurs compris | admins |
-| `order_period` | toute l'AMAP | admins ; tâche horaire (`closing_job`) |
-| `amap_producer` | toute l'AMAP, visiteurs compris | admins ; le référent du producteur (ordre des chèques, C1) |
-| `referent_assignment` | toute l'AMAP (les autres politiques s'en servent) | admins |
+| Table                 | Lecture                                                                                                                                                     | Écriture                                                   |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| `household`           | ses membres ; l'équipe (admins, référents) ; le producteur, pour les foyers qui lui ont commandé ou dont il attend un chèque ; les accès de confiance (S12) | admins                                                     |
+| `household_member`    | soi-même ; les membres de son foyer ; l'équipe ; les accès de confiance                                                                                     | admins                                                     |
+| `membership`          | le foyer ; l'équipe ; les accès de confiance                                                                                                                | admins                                                     |
+| `amap_role`           | toute l'AMAP (qui est admin, qui est référent)                                                                                                              | admins                                                     |
+| `amap`                | tout le monde (site public)                                                                                                                                 | admins de cette AMAP ; création par `create_amap`          |
+| `distribution`        | toute l'AMAP, visiteurs compris                                                                                                                             | admins                                                     |
+| `order_period`        | toute l'AMAP                                                                                                                                                | admins ; tâche horaire (`closing_job`)                     |
+| `amap_producer`       | toute l'AMAP, visiteurs compris                                                                                                                             | admins ; le référent du producteur (ordre des chèques, C1) |
+| `referent_assignment` | toute l'AMAP (les autres politiques s'en servent)                                                                                                           | admins                                                     |
 
 Jamais de lecture des foyers, membres ou adhésions par un visiteur anonyme.
 
