@@ -68,6 +68,26 @@ const isCurrentAmapAdmin = sql`exists (
 )`;
 
 /**
+ * L'utilisateur connecté est admin ou référent de l'AMAP courante : l'équipe, qui voit les
+ * foyers (story S13, ADR 0035).
+ */
+const isCurrentAmapStaff = sql`exists (
+  select 1 from amap_role where amap_role.user_id = ${currentUserId}
+    and amap_role.role in ('admin', 'referent')
+)`;
+
+/** Accès sans compte posé par le code serveur : « closing_job » ou « order_form_link ». */
+const trustedAccess = sql`coalesce(current_setting('app.trusted', true), '')`;
+
+/** L'utilisateur connecté est membre (non archivé) de ce foyer. */
+const isMemberOf = (householdId: unknown) => sql`exists (
+  select 1 from household_member
+  where household_member.household_id = ${householdId}
+    and household_member.user_id = ${currentUserId}
+    and household_member.archived_at is null
+)`;
+
+/**
  * La personne (ligne de la table user) appartient à l'AMAP courante : elle y a un rôle, elle est
  * membre d'un foyer, ou elle a le compte d'un producteur qui livre l'AMAP. Les trois tables sont
  * filtrées par leur propre RLS.
@@ -253,13 +273,13 @@ export const amap = pgTable(
     ),
     // Lecture : tout le monde. Nom, adresse et thème d'une AMAP sont publics (page publique).
     pgPolicy("amap_select", { for: "select", using: sql`true` }),
-    // Modification : seulement l'AMAP courante (le rôle admin est vérifié par requireRole).
-    // Création : aucune politique, donc interdite au rôle applicatif ; elle passera par une
-    // fonction dédiée réservée au gestionnaire de la plateforme (story J1).
+    // Modification : l'AMAP courante, par ses admins (S13). Création : aucune politique, donc
+    // interdite au rôle applicatif ; elle passe par la fonction dédiée create_amap, réservée au
+    // gestionnaire de la plateforme (story J1).
     pgPolicy("amap_update", {
       for: "update",
-      using: sql`${t.id} = ${currentAmapId}`,
-      withCheck: sql`${t.id} = ${currentAmapId}`,
+      using: sql`${t.id} = ${currentAmapId} and ${isCurrentAmapAdmin}`,
+      withCheck: sql`${t.id} = ${currentAmapId} and ${isCurrentAmapAdmin}`,
     }),
   ],
 );
@@ -286,11 +306,13 @@ export const amapRole = pgTable(
   (t) => [
     unique("amap_role_unique").on(t.amapId, t.userId, t.role),
     index("amap_role_user_idx").on(t.userId),
-    // Toutes les opérations : seulement dans l'AMAP courante.
-    pgPolicy("amap_role_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture : toute l'AMAP courante (savoir qui est admin, qui est référent). Écriture
+    // (S13) : les admins seulement ; la création d'une AMAP passe par create_amap.
+    ...scopedPolicies("amap_role", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
+      delete: isCurrentAmapAdmin,
     }),
     // Lecture seule pour la connexion : savoir si un compte est admin d'au moins une AMAP,
     // donc soumis à la deuxième vérification.
@@ -326,11 +348,17 @@ export const household = pgTable(
     // Cible de la clé étrangère composée de household_member (même AMAP garantie par la base).
     unique("household_amap_unique").on(t.id, t.amapId),
     check("household_name_not_blank", sql`length(trim(${t.name})) > 0`),
-    // Toutes les opérations : seulement dans l'AMAP courante (le rôle est vérifié par requireRole).
-    pgPolicy("household_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture (S13) : ses membres, l'équipe (admins, référents), le producteur pour les foyers
+    // qui lui ont commandé ou dont il attend un chèque (les tables order et cheque sont filtrées
+    // par leur propre RLS), les accès de
+    // confiance (S12). Jamais un visiteur anonyme. Écriture : les admins.
+    ...scopedPolicies("household", t.amapId, {
+      select: sql`(${isMemberOf(t.id)} or ${isCurrentAmapStaff}
+        or exists (select 1 from "order" where "order".household_id = ${t.id})
+        or exists (select 1 from cheque where cheque.household_id = ${t.id})
+        or ${trustedAccess} <> '')`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
     }),
   ],
 );
@@ -375,10 +403,16 @@ export const householdMember = pgTable(
       .on(t.householdId)
       .where(sql`${t.isPrimary}`),
     index("household_member_user_idx").on(t.userId),
-    pgPolicy("household_member_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture (S13) : soi-même, les autres membres de son foyer (fonction my_household_ids,
+    // migration 0036, pour éviter que la politique ne s'interroge elle-même), l'équipe, les
+    // accès de confiance. Écriture : les admins.
+    ...scopedPolicies("household_member", t.amapId, {
+      select: sql`(${t.userId} = ${currentUserId}
+        or ${t.householdId} in (select my_household_ids())
+        or ${isCurrentAmapStaff} or ${trustedAccess} <> '')`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
+      delete: isCurrentAmapAdmin,
     }),
   ],
 );
@@ -417,7 +451,12 @@ export const membership = pgTable(
     check("membership_dates", sql`${t.endDate} > ${t.startDate}`),
     check("membership_fee", sql`${t.feeCents} is null or ${t.feeCents} >= 0`),
     index("membership_household_idx").on(t.householdId),
-    ...amapPolicies("membership", t.amapId, ["select", "insert", "update"]),
+    // Lecture (S13) : le foyer, l'équipe, les accès de confiance. Écriture : les admins.
+    ...scopedPolicies("membership", t.amapId, {
+      select: sql`(${isMemberOf(t.householdId)} or ${isCurrentAmapStaff} or ${trustedAccess} <> '')`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
+    }),
   ],
 );
 
@@ -455,12 +494,12 @@ export const distribution = pgTable(
       sql`(${t.isOpen} and ${t.closedReason} is null)
         or (not ${t.isOpen} and coalesce(length(trim(${t.closedReason})), 0) > 0)`,
     ),
-    // Lecture et écriture dans l'AMAP courante (l'écriture est réservée aux admins par
-    // requireRole) ; toutes les personnes de l'AMAP liront le calendrier (commandes, planning).
-    pgPolicy("distribution_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture : toute l'AMAP, visiteurs compris (calendrier, site public). Écriture (S13) : les
+    // admins.
+    ...scopedPolicies("distribution", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
     }),
   ],
 );
@@ -696,20 +735,27 @@ export const catalogItemAvailability = pgTable(
   ],
 );
 
-/** Lecture et écriture limitées à l'AMAP courante, pour les opérations indiquées. */
-function amapPolicies(
+/**
+ * Politiques d'une table de l'AMAP, une condition par opération (story S13, ADR 0035), toujours
+ * en plus de « dans l'AMAP courante ». Une opération absente est interdite au rôle de
+ * l'application (pas de politique = refus).
+ */
+function scopedPolicies(
   table: string,
   amapId: unknown,
-  operations: ReadonlyArray<"select" | "insert" | "update" | "delete">,
+  conditions: Partial<Record<"select" | "insert" | "update" | "delete", SQL>>,
 ) {
-  const condition = sql`${amapId} = ${currentAmapId}`;
-  return operations.map((operation) =>
-    pgPolicy(`${table}_${operation}`, {
+  const inAmap = sql`${amapId} = ${currentAmapId}`;
+  return (
+    Object.entries(conditions) as Array<["select" | "insert" | "update" | "delete", SQL]>
+  ).map(([operation, condition]) => {
+    const full = sql`${inAmap} and ${condition}`;
+    return pgPolicy(`${table}_${operation}`, {
       for: operation,
-      ...(operation === "insert" ? {} : { using: condition }),
-      ...(operation === "select" || operation === "delete" ? {} : { withCheck: condition }),
-    }),
-  );
+      ...(operation === "insert" ? {} : { using: full }),
+      ...(operation === "select" || operation === "delete" ? {} : { withCheck: full }),
+    });
+  });
 }
 
 // --- order_period : période de commande -----------------------------------------------------
@@ -745,7 +791,13 @@ export const orderPeriod = pgTable(
     check("order_period_dates", sql`${t.opensAt} < ${t.closesAt}`),
     // Lecture par toute l'AMAP (accueil des familles) ; écriture réservée aux admins par
     // requireRole, ou faite par la tâche planifiée. Jamais supprimée.
-    ...amapPolicies("order_period", t.amapId, ["select", "insert", "update"]),
+    // Lecture : toute l'AMAP. Écriture (S13) : les admins, et la tâche horaire qui ouvre et
+    // clôture les périodes (accès de confiance « closing_job »).
+    ...scopedPolicies("order_period", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      update: sql`(${isCurrentAmapAdmin} or ${trustedAccess} = 'closing_job')`,
+    }),
   ],
 );
 
@@ -757,17 +809,6 @@ export const orderPeriod = pgTable(
 // - d'un accès « de confiance » sans compte connecté, posé explicitement par le code serveur :
 //   la tâche horaire de clôture et le lien signé du bon de commande (app.trusted, voir
 //   src/db/context.ts). Un visiteur anonyme des pages publiques n'a rien de tout cela.
-
-/** Accès sans compte posé par le code serveur : « closing_job » ou « order_form_link ». */
-const trustedAccess = sql`coalesce(current_setting('app.trusted', true), '')`;
-
-/** L'utilisateur connecté est membre (non archivé) de ce foyer. */
-const isMemberOf = (householdId: unknown) => sql`exists (
-  select 1 from household_member
-  where household_member.household_id = ${householdId}
-    and household_member.user_id = ${currentUserId}
-    and household_member.archived_at is null
-)`;
 
 /** Producteur du catalogue de la commande, via la table catalog (filtrée par sa RLS). */
 const catalogProducerMatches = (catalogId: unknown, test: (producerId: SQL) => SQL) => sql`exists (
@@ -1195,10 +1236,18 @@ export const amapProducer = pgTable(
       sql`${t.distanceKm} is null or ${t.distanceKm} between 0 and 1000`,
     ),
     index("amap_producer_producer_idx").on(t.producerId),
-    pgPolicy("amap_producer_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture : toute l'AMAP, visiteurs compris (producteurs du site public). Écriture (S13) :
+    // les admins ; le référent du producteur change aussi l'ordre de ses chèques (C1).
+    ...scopedPolicies("amap_producer", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      // Pas isReferentOf : sa sous-requête joint amap_producer, et ce nom y désignerait la table
+      // de la sous-requête, pas la ligne vérifiée. On compare directement à son identifiant.
+      update: sql`(${isCurrentAmapAdmin} or exists (
+        select 1 from referent_assignment
+        where referent_assignment.amap_producer_id = ${t.id}
+          and referent_assignment.user_id = ${currentUserId}
+      ))`,
     }),
   ],
 );
@@ -1231,10 +1280,12 @@ export const referentAssignment = pgTable(
     }),
     unique("referent_assignment_unique").on(t.amapProducerId, t.userId),
     index("referent_assignment_user_idx").on(t.userId),
-    pgPolicy("referent_assignment_isolation", {
-      for: "all",
-      using: sql`${t.amapId} = ${currentAmapId}`,
-      withCheck: sql`${t.amapId} = ${currentAmapId}`,
+    // Lecture : toute l'AMAP (les politiques des commandes et des chèques s'en servent).
+    // Écriture (S13) : les admins.
+    ...scopedPolicies("referent_assignment", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      delete: isCurrentAmapAdmin,
     }),
   ],
 );
