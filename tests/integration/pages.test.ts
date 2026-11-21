@@ -250,6 +250,16 @@ describe("Pages du site (H2)", () => {
     expect(await visitor((tx) => findPublicPage(tx, ["recettes"]))).toEqual({
       status: "not_found",
     });
+    // L'accueil, obligatoire, ne se dépublie pas.
+    expect(
+      await save({
+        pageId: homeId,
+        title: "Accueil",
+        slug: "accueil",
+        body: paragraph("x"),
+        intent: "unpublish",
+      }),
+    ).toEqual({ status: "invalid", problems: [{ field: "status", problem: "required_page" }] });
     // Dépubliée, jamais supprimée : toujours dans la liste de l'admin.
     list = await run(as(admin.id), (tx, c) => listPagesForAdmin(tx, c));
     expect(list.pages.find((p) => p.title === "Recettes")?.status).toBe("unpublished");

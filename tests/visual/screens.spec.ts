@@ -6,11 +6,23 @@ import { expect, test } from "@playwright/test";
 // met à jour les références (étiquette « captures » sur la PR, voir README).
 const screens = [
   { name: "accueil", path: "/", viewport: "mobile" },
-  { name: "amap-page-publique", path: "/hommesdeterre", viewport: "mobile" },
+  // Blocs datés de l'accueil (prochaine distribution, dernier billet) masqués : ils changent
+  // chaque jour.
+  {
+    name: "amap-page-publique",
+    path: "/hommesdeterre",
+    viewport: "mobile",
+    mask: ["Prochaine distribution", "Dernières nouvelles"],
+  },
   { name: "referent", path: "/hommesdeterre/referent", viewport: "desktop" },
   { name: "theme-cambremer", path: "/plateforme/theme/hommesdeterre", viewport: "desktop" },
   { name: "theme-pays-d-auge", path: "/plateforme/theme/pays-d-auge-demo", viewport: "desktop" },
-] as const;
+] as const satisfies ReadonlyArray<{
+  name: string;
+  path: string;
+  viewport: "mobile" | "desktop";
+  mask?: readonly string[];
+}>;
 
 const viewports = {
   mobile: { width: 390, height: 844 },
@@ -29,7 +41,13 @@ for (const screen of screens) {
       await page.emulateMedia({ colorScheme: scheme.value, reducedMotion: "reduce" });
       await page.goto(screen.path);
       await page.evaluate(() => document.fonts.ready);
-      await expect(page).toHaveScreenshot(`${screen.name}-${scheme.name}.png`, { fullPage: true });
+      const mask = ("mask" in screen ? screen.mask : []).map((name) =>
+        page.getByRole("region", { name }),
+      );
+      await expect(page).toHaveScreenshot(`${screen.name}-${scheme.name}.png`, {
+        fullPage: true,
+        mask,
+      });
     });
   }
 }

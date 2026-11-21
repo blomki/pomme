@@ -1,21 +1,35 @@
-import Typography from "@mui/material/Typography";
-import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
+
+import { getDatabase } from "@/db/client";
+import { withAmapContext } from "@/db/context";
+import { getPublicHome } from "@/server/pages";
+import { PublicHomeView } from "@/ui/pages/PublicPageView";
 
 import { requireAmap } from "../../_components/AmapThemeBoundary";
+import { loadPublicPage, pageMetadata } from "../../_components/public-pages";
 
 type Props = { params: Promise<{ amap: string }> };
 
-// Page publique d'une AMAP, par exemple [domaine]/hommesdeterre (contenu : story B2 et pages A6).
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const amap = await requireAmap((await params).amap);
+  const found = await loadPublicPage(amap.id, []);
+  return found.status === "found" ? pageMetadata(amap, found.page) : { title: amap.name };
+}
+
+// Accueil du site public d'une AMAP ([domaine]/<amap>, story H2) : la page d'accueil si elle
+// est publiée, puis les blocs remplis automatiquement (distribution, producteurs, billet).
 export default async function AmapPublicPage({ params }: Props) {
   const { amap: slug } = await params;
   const amap = await requireAmap(slug);
-  const t = await getTranslations("Amap");
+  const found = await loadPublicPage(amap.id, []);
+  const home = await withAmapContext(getDatabase(), { amapId: amap.id, userId: null }, (tx) =>
+    getPublicHome(tx, amap.id),
+  );
   return (
-    <>
-      <Typography variant="h1" gutterBottom>
-        {amap.name}
-      </Typography>
-      <Typography>{t("intro")}</Typography>
-    </>
+    <PublicHomeView
+      amap={{ slug: amap.slug, name: amap.name }}
+      page={found.status === "found" ? found.page : null}
+      home={home}
+    />
   );
 }

@@ -55,7 +55,14 @@ export function suggestPageSlug(title: string): string {
 export function validatePageSlug(slug: string, isTopLevel: boolean): PageSlugError | null {
   if (slug === "") return "required";
   if (slug.length > PAGE_LIMITS.slug) return "too_long";
-  if (!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(slug)) return "invalid_characters";
+  if (
+    !/^[a-z0-9-]+$/.test(slug) ||
+    slug.startsWith("-") ||
+    slug.endsWith("-") ||
+    slug.includes("--")
+  ) {
+    return "invalid_characters";
+  }
   if (isTopLevel && RESERVED_PAGE_SLUGS.includes(slug)) return "reserved";
   return null;
 }
@@ -277,4 +284,45 @@ export function moveInMenu(ids: readonly string[], id: string, delta: -1 | 1): s
   const next = [...ids];
   [next[from], next[to]] = [next[to]!, next[from]!];
   return next;
+}
+
+/**
+ * Document au format de l'éditeur (Tiptap), à partir du document enregistré : l'inverse de
+ * cleanRichText (cleanRichText(toEditorJson(doc)) redonne doc).
+ */
+export function toEditorJson(doc: RichDoc): Record<string, unknown> {
+  const inline = (item: RichInline) =>
+    item.type === "hardBreak"
+      ? { type: "hardBreak" }
+      : {
+          type: "text",
+          text: item.text,
+          ...(item.marks
+            ? {
+                marks: item.marks.map((m) =>
+                  m.type === "link" ? { type: "link", attrs: { href: m.href } } : { type: m.type },
+                ),
+              }
+            : {}),
+        };
+  const block = (b: RichBlock): Record<string, unknown> => {
+    switch (b.type) {
+      case "paragraph":
+        return { type: "paragraph", content: b.content.map(inline) };
+      case "heading":
+        return { type: "heading", attrs: { level: b.level }, content: b.content.map(inline) };
+      case "bulletList":
+      case "orderedList":
+        return {
+          type: b.type,
+          content: b.content.map((item) => ({
+            type: "listItem",
+            content: item.content.map(block),
+          })),
+        };
+      case "image":
+        return { type: "image", attrs: { src: b.src, alt: b.alt } };
+    }
+  };
+  return { type: "doc", content: doc.content.map(block) };
 }

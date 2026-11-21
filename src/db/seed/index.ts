@@ -3,6 +3,7 @@ import { inArray } from "drizzle-orm";
 
 import type { Database } from "../client";
 import {
+  adminTask,
   amap,
   amapProducer,
   amapRole,
@@ -20,10 +21,13 @@ import {
   order,
   orderLine,
   orderPeriod,
+  page,
+  pageRedirect,
   producer,
   producerUser,
   product,
   referentAssignment,
+  report,
   twoFactor,
   user,
 } from "../schema";
@@ -68,8 +72,12 @@ export async function seedDatabase(db: Database, authSecret: string) {
     // Ordre inverse des dépendances (clés étrangères). Effacer les comptes efface aussi leurs
     // sessions, passkeys et applications d'authentification (ON DELETE CASCADE).
     await tx.delete(auditLog);
+    await tx.delete(adminTask);
+    await tx.delete(pageRedirect);
+    await tx.delete(page);
     await tx.delete(notificationLog);
     await tx.delete(credit);
+    await tx.delete(report);
     await tx.delete(cheque);
     await tx.delete(orderLine);
     await tx.delete(order);
@@ -109,6 +117,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(orderLine).values(data.orderLines);
     await tx.insert(cheque).values(data.cheques);
     await tx.insert(membership).values(data.memberships);
+    await tx.insert(page).values(data.pages);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

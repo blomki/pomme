@@ -13,9 +13,6 @@
     "intro": "Application de création et de gestion d'AMAP.",
     "signIn": "Se connecter"
   },
-  "Amap": {
-    "intro": "Page publique de l'AMAP : présentation, producteurs, blog et demande d'adhésion."
-  },
   "Family": {
     "title": "Espace famille",
     "order": {
@@ -756,6 +753,120 @@
       "noPlace": "Lieu pas encore renseigné",
       "schedule": "chaque {day}, de {start} à {end}",
       "distributionLink": "Modifier le lieu, le jour et les horaires dans le planning"
+    },
+    "pages": {
+      "title": "Pages",
+      "site": "Site public : {address}",
+      "viewSite": "Voir le site",
+      "newPage": "Nouvelle page",
+      "menuTitle": "Menu du site",
+      "menuHint": "Pages principales cochées dans la liste ci-dessous, dans cet ordre. Utilisez les flèches pour réordonner.",
+      "menuEmpty": "Aucune page dans le menu : cochez « Dans le menu » dans la liste.",
+      "moveUp": "Avancer {title} dans le menu",
+      "moveDown": "Reculer {title} dans le menu",
+      "tableLabel": "Pages du site",
+      "columns": {
+        "page": "Page",
+        "menu": "Dans le menu",
+        "date": "Date",
+        "status": "Statut",
+        "actions": "Actions"
+      },
+      "inMenuOf": "Afficher {title} dans le menu",
+      "menuPosition": "Position {position}",
+      "notInMenu": "Non",
+      "addChild": "+ Sous-page",
+      "addChildOf": " : ajouter une sous-page à {title}",
+      "edit": "Modifier",
+      "status": {
+        "published": "Publiée",
+        "draft": "Brouillon",
+        "unpublished": "Dépubliée"
+      },
+      "note": "Une page principale sert aux contenus fixes ; ses sous-pages sont listées sur elle. Le blog est une page principale comme les autres : ses sous-pages sont les billets, triés par date. Une page n'est jamais supprimée : on la dépublie. L'accueil et les mentions légales sont obligatoires. Les blocs Producteurs, Prochaine distribution et Dernières nouvelles de l'accueil sont remplis automatiquement.",
+      "error": "L'opération n'a pas abouti. Rechargez la page.",
+      "saved": "Page enregistrée.",
+      "published": "Page publiée.",
+      "unpublished": "Page dépubliée : elle n'est plus visible sur le site.",
+      "editor": {
+        "newTitle": "Nouvelle page",
+        "editTitle": "Modifier la page",
+        "title": "Titre",
+        "summary": "Résumé (facultatif)",
+        "summaryHelp": "160 caractères au plus : affiché dans la liste de la page parente et sur l'accueil.",
+        "mainImage": "Image principale (facultative)",
+        "noImage": "Aucune image",
+        "chooseImage": "Choisir une image",
+        "replaceImage": "Remplacer l'image",
+        "imageAlt": "Description de la photo",
+        "imageAltHelp": "Lue par les lecteurs d'écran : décrivez ce qu'on voit.",
+        "removeImage": "Retirer l'image",
+        "imagesUnavailable": "L'envoi d'images n'est pas encore configuré sur ce site.",
+        "body": "Texte",
+        "bodyInvalid": "Le texte est trop long ou n'a pas pu être lu.",
+        "loading": "Chargement de l'éditeur…",
+        "toolbar": "Mise en forme",
+        "bold": "Gras",
+        "italic": "Italique",
+        "heading": "Intertitre",
+        "bulletList": "Liste à puces",
+        "orderedList": "Liste numérotée",
+        "link": "Lien",
+        "image": "Insérer une photo",
+        "linkTitle": "Lien",
+        "linkUrl": "Adresse du lien",
+        "linkHelp": "Une page web (https://…), une adresse email (mailto:…) ou une page du site (/…). Laissez vide pour retirer le lien.",
+        "linkInvalid": "Cette adresse n'est pas permise.",
+        "imageTitle": "Insérer une photo",
+        "imageFile": "Photo (JPEG, PNG ou WebP, 8 Mo au plus)",
+        "imageMissing": "Choisissez une photo.",
+        "imageSending": "Envoi…",
+        "imageInsert": "Insérer",
+        "imageErrors": {
+          "empty": "Le fichier est vide.",
+          "too_large": "Image trop lourde : 8 Mo au plus.",
+          "not_image": "Ce fichier n'est pas une image JPEG, PNG ou WebP.",
+          "no_file": "Choisissez une photo.",
+          "unavailable": "L'envoi d'images n'est pas configuré sur ce site.",
+          "forbidden": "Action réservée aux administrateurs de l'AMAP."
+        },
+        "cancel": "Annuler",
+        "apply": "Appliquer",
+        "share": "Partage et référencement",
+        "shareHint": "Ce qui s'affiche quand le lien est partagé (Facebook, WhatsApp, Signal…) et dans les moteurs de recherche. Laissés vides, les champs reprennent le titre, le résumé (ou le début du texte) et l'image principale (ou le logo de l'AMAP).",
+        "ogTitle": "Titre de partage (60 caractères au plus)",
+        "ogDescription": "Description (160 caractères au plus)",
+        "sharePreview": "Aperçu du lien partagé",
+        "publication": "Publication",
+        "parent": "Page parente",
+        "parentHelp": "Une sous-page est listée sur sa page parente (un billet sur le blog, par exemple).",
+        "noParent": "Aucune : page principale",
+        "slug": "Adresse",
+        "slugHelp": "{prefix}… Proposée d'après le titre. Changée après publication, l'ancienne adresse redirige vers la nouvelle.",
+        "slugTaken": "Cette adresse est déjà prise à ce niveau du site. Choisissez-en une autre.",
+        "inMenu": "Afficher dans le menu du site",
+        "childrenOrder": "Ordre de ses sous-pages",
+        "orders": {
+          "date_desc": "Par date, la plus récente d'abord",
+          "manual": "Ordre manuel"
+        },
+        "publishedOn": "Date de publication",
+        "publishedOnHelp": "Laissée vide : le jour de la publication.",
+        "publish": "Publier",
+        "saveDraft": "Enregistrer le brouillon",
+        "saveChanges": "Enregistrer les modifications",
+        "viewPage": "Voir la page",
+        "unpublish": "Dépublier",
+        "fixErrors": "Rien n'a été enregistré. Corrigez les champs signalés.",
+        "problems": {
+          "required": "Champ obligatoire.",
+          "too_long": "Trop long.",
+          "invalid_characters": "Seulement des minuscules sans accent, des chiffres et des tirets simples.",
+          "reserved": "Adresse réservée à l'application : choisissez-en une autre.",
+          "invalid": "Choix non valable : une sous-page ne peut pas avoir de sous-pages.",
+          "required_page": "L'accueil et les mentions légales sont obligatoires : ils ne se dépublient pas."
+        }
+      }
     }
   },
   "Producer": {
@@ -1429,5 +1540,19 @@
     "deliveriesOf": "Livraisons de {producer}",
     "pickupsOf": "Retraits du foyer {household}",
     "observations": "Observations :"
+  },
+  "PublicSite": {
+    "menu": "Menu du site",
+    "legal": "Mentions légales",
+    "members": "Espace des membres",
+    "backTo": "← {title}",
+    "publishedOn": "Publié le {date}",
+    "children": "À lire aussi",
+    "welcome": "Bienvenue sur le site de notre AMAP. Retrouvez ci-dessous nos producteurs et la prochaine distribution.",
+    "nextDistribution": "Prochaine distribution",
+    "distributionOn": "{date}, de {start} à {end}",
+    "noDistribution": "La prochaine date sera bientôt annoncée.",
+    "producers": "Nos producteurs",
+    "latestPost": "Dernières nouvelles"
   }
 }

@@ -1331,7 +1331,9 @@ export const page = pgTable(
     }),
     // Une adresse par niveau : deux pages principales (parent vide) ne partagent pas une adresse.
     unique("page_slug_unique").on(t.amapId, t.parentId, t.slug).nullsNotDistinct(),
-    uniqueIndex("page_role_unique").on(t.amapId, t.role).where(sql`${t.role} is not null`),
+    uniqueIndex("page_role_unique")
+      .on(t.amapId, t.role)
+      .where(sql`${t.role} is not null`),
     check("page_role_top_level", sql`${t.role} is null or ${t.parentId} is null`),
     check("page_not_own_parent", sql`${t.parentId} is null or ${t.parentId} <> ${t.id}`),
     check("page_published_date", sql`${t.status} <> 'published' or ${t.publishedOn} is not null`),

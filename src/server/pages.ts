@@ -1,9 +1,9 @@
-import { and, asc, desc, eq, inArray, isNull, ne } from "drizzle-orm";
+import { and, asc, desc, eq, gte, inArray, isNull, ne } from "drizzle-orm";
 import { z } from "zod";
 
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
-import { page, pageRedirect } from "@/db/schema";
+import { amap, amapProducer, distribution, page, pageRedirect, producer } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { checkUpload, IMAGE_USAGES, MAX_UPLOAD_BYTES, type UploadProblem } from "@/domain/images";
 import { parisDay } from "@/domain/order-periods";
@@ -213,7 +213,10 @@ const saveSchema = z.object({
 });
 
 export type SavePageProblem =
-  PageFieldsProblem | { field: "body" | "parent" | "imageUrl"; problem: "invalid" };
+  | PageFieldsProblem
+  | { field: "body" | "parent" | "imageUrl"; problem: "invalid" }
+  // Accueil et mentions légales : obligatoires, ils ne se dépublient pas.
+  | { field: "status"; problem: "required_page" };
 
 export type SavePageResult =
   | { status: "saved"; pageId: string; pageStatus: PageStatus; path: string }
@@ -272,6 +275,9 @@ export async function savePage(
     if (!parent || parent.parentId !== null || parent.role !== null || child) {
       problems.push({ field: "parent", problem: "invalid" });
     }
+  }
+  if (data.intent === "unpublish" && before?.role) {
+    problems.push({ field: "status", problem: "required_page" });
   }
   if (problems.length > 0) return { status: "invalid", problems };
 
@@ -650,5 +656,72 @@ export async function latestPublishedPost(tx: Transaction): Promise<{
     summary: post.summary,
     path: `/${parentSlug}/${post.slug}`,
     publishedOn: post.publishedOn,
+  };
+}
+
+export type PublicHome = {
+  /** Producteurs qui livrent l'AMAP en ce moment, par nom. */
+  producers: Array<{
+    name: string;
+    category: string;
+    shortDescription: string;
+    photoUrl: string | null;
+    photoAlt: string;
+  }>;
+  nextDistribution: {
+    date: string;
+    startTime: string;
+    endTime: string;
+    place: string | null;
+  } | null;
+  latestPost: Awaited<ReturnType<typeof latestPublishedPost>>;
+};
+
+/**
+ * Blocs remplis automatiquement sur l'accueil : cartes des producteurs, prochaine distribution
+ * (aujourd'hui compris), dernier billet publié. Informations publiques de l'AMAP.
+ */
+export async function getPublicHome(
+  tx: Transaction,
+  amapId: string,
+  now = new Date(),
+): Promise<PublicHome> {
+  const producers = await tx
+    .select({
+      name: producer.name,
+      category: producer.category,
+      shortDescription: producer.shortDescription,
+      photoUrl: producer.photoUrl,
+      photoAlt: producer.photoAlt,
+    })
+    .from(amapProducer)
+    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
+    .where(and(eq(amapProducer.active, true), isNull(amapProducer.archivedAt)))
+    .orderBy(asc(producer.name));
+  const [next] = await tx
+    .select({
+      date: distribution.date,
+      startTime: distribution.startTime,
+      endTime: distribution.endTime,
+    })
+    .from(distribution)
+    .where(and(eq(distribution.isOpen, true), gte(distribution.date, parisDay(now))))
+    .orderBy(asc(distribution.date))
+    .limit(1);
+  const [place] = await tx
+    .select({ place: amap.distributionPlace })
+    .from(amap)
+    .where(eq(amap.id, amapId));
+  return {
+    producers,
+    nextDistribution: next
+      ? {
+          date: next.date,
+          startTime: next.startTime.slice(0, 5),
+          endTime: next.endTime.slice(0, 5),
+          place: place?.place ?? null,
+        }
+      : null,
+    latestPost: await latestPublishedPost(tx),
   };
 }

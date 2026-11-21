@@ -10,6 +10,7 @@ import {
   shareTexts,
   sortChildren,
   suggestPageSlug,
+  toEditorJson,
   validatePageSlug,
   type RichDoc,
 } from "./pages";
@@ -238,5 +239,33 @@ describe("ordre des pages", () => {
     expect(moveInMenu(["a", "b", "c"], "b", 1)).toEqual(["a", "c", "b"]);
     expect(moveInMenu(["a", "b", "c"], "a", -1)).toEqual(["a", "b", "c"]);
     expect(moveInMenu(["a", "b"], "z", 1)).toEqual(["a", "b"]);
+  });
+});
+
+describe("toEditorJson", () => {
+  it("redonne le document au format de l'éditeur, sans rien perdre", () => {
+    const doc: RichDoc = {
+      type: "doc",
+      content: [
+        { type: "heading", level: 3, content: [{ type: "text", text: "Titre" }] },
+        {
+          type: "paragraph",
+          content: [
+            {
+              type: "text",
+              text: "lien",
+              marks: [{ type: "link", href: "/blog" }, { type: "bold" }],
+            },
+            { type: "hardBreak" },
+          ],
+        },
+        {
+          type: "orderedList",
+          content: [{ type: "listItem", content: [{ type: "paragraph", content: [] }] }],
+        },
+        { type: "image", src: `${STORAGE}a.webp`, alt: "Panier" },
+      ],
+    };
+    expect(cleanRichText(toEditorJson(doc), STORAGE)).toEqual(doc);
   });
 });
