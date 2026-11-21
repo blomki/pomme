@@ -70,12 +70,12 @@ export function PublicPageView({ amapSlug, page }: { amapSlug: string; page: Pub
                       {child.title}
                     </Typography>
                     {child.publishedOn && (
-                      <Typography variant="bodySmall" color="text.secondary">
+                      <Typography variant="bodySmall" component="p" color="text.secondary">
                         {longDay(child.publishedOn)}
                       </Typography>
                     )}
                     {child.summary && (
-                      <Typography variant="bodyMedium" sx={{ mt: 1 }}>
+                      <Typography variant="bodyMedium" component="p" sx={{ mt: 1 }}>
                         {child.summary}
                       </Typography>
                     )}
@@ -171,12 +171,12 @@ export function PublicHomeView({
                     {p.name}
                   </Typography>
                   {p.category && (
-                    <Typography variant="bodySmall" color="text.secondary">
+                    <Typography variant="bodySmall" component="p" color="text.secondary">
                       {p.category}
                     </Typography>
                   )}
                   {p.shortDescription && (
-                    <Typography variant="bodyMedium" sx={{ mt: 1 }}>
+                    <Typography variant="bodyMedium" component="p" sx={{ mt: 1 }}>
                       {p.shortDescription}
                     </Typography>
                   )}
@@ -199,12 +199,12 @@ export function PublicHomeView({
                   {home.latestPost.title}
                 </Typography>
                 {home.latestPost.publishedOn && (
-                  <Typography variant="bodySmall" color="text.secondary">
+                  <Typography variant="bodySmall" component="p" color="text.secondary">
                     {longDay(home.latestPost.publishedOn)}
                   </Typography>
                 )}
                 {home.latestPost.summary && (
-                  <Typography variant="bodyMedium" sx={{ mt: 1 }}>
+                  <Typography variant="bodyMedium" component="p" sx={{ mt: 1 }}>
                     {home.latestPost.summary}
                   </Typography>
                 )}

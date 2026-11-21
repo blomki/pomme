@@ -89,10 +89,10 @@ export function PagesList({
             <SubdirectoryArrowRight fontSize="small" aria-hidden sx={{ color: "text.secondary" }} />
           )}
           <Box>
-            <Typography variant="bodyMedium" sx={{ fontWeight: child ? 400 : 500 }}>
+            <Typography variant="bodyMedium" component="p" sx={{ fontWeight: child ? 400 : 500 }}>
               {p.title}
             </Typography>
-            <Typography variant="bodySmall" color="text.secondary">
+            <Typography variant="bodySmall" component="p" color="text.secondary">
               /{amapSlug}
               {p.path}
             </Typography>

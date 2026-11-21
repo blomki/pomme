@@ -370,11 +370,13 @@ export function PageEditor({
                   )}
                 </Box>
                 <Box sx={{ p: 1.5 }}>
-                  <Typography variant="bodySmall" color="text.secondary">
+                  <Typography variant="bodySmall" component="p" color="text.secondary">
                     {siteAddress.split("/")[0]}
                   </Typography>
-                  <Typography variant="titleSmall">{share.title || "…"}</Typography>
-                  <Typography variant="bodySmall" color="text.secondary">
+                  <Typography variant="titleSmall" component="p">
+                    {share.title || "…"}
+                  </Typography>
+                  <Typography variant="bodySmall" component="p" color="text.secondary">
                     {share.description}
                   </Typography>
                 </Box>
