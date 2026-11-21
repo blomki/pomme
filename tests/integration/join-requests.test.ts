@@ -11,6 +11,7 @@ import {
   listJoinRequests,
   submitJoinRequest,
 } from "@/server/join-requests";
+import { anonymizeHousehold } from "@/server/households";
 
 import { startDatabase, type TestDatabase } from "./helpers/database";
 import { fixtures } from "./helpers/fixtures";
@@ -180,6 +181,23 @@ describe("Demandes d'adhésion (B2)", () => {
       handledBy: admin.id,
     });
     expect(await accept()).toEqual({ status: "closed" });
+
+    // Foyer anonymisé (droit à l'effacement) : la demande ne garde rien de la personne.
+    const anonymized = await run(as(admin.id), (tx, c) =>
+      anonymizeHousehold(tx, c, {
+        householdId: accepted.householdId,
+        confirmName: "Foyer Le Goff",
+      }),
+    );
+    expect(anonymized).toMatchObject({ status: "anonymized" });
+    const [after] = await db.owner.select().from(joinRequest).where(eq(joinRequest.id, requestId!));
+    expect(after).toMatchObject({
+      name: "Demande anonymisée",
+      phone: null,
+      message: "",
+      status: "accepted",
+    });
+    expect(after?.email).toMatch(/@anonyme\.invalid$/);
   });
 
   it("refuse le référent et l'admin sans deuxième vérification (accès refusé)", async () => {

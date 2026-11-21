@@ -16,6 +16,7 @@ import {
   distribution,
   household,
   householdMember,
+  joinRequest,
   membership,
   notificationLog,
   order,
@@ -75,6 +76,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.delete(adminTask);
     await tx.delete(pageRedirect);
     await tx.delete(page);
+    await tx.delete(joinRequest);
     await tx.delete(notificationLog);
     await tx.delete(credit);
     await tx.delete(report);
@@ -118,6 +120,7 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(cheque).values(data.cheques);
     await tx.insert(membership).values(data.memberships);
     await tx.insert(page).values(data.pages);
+    if (data.joinRequests.length > 0) await tx.insert(joinRequest).values(data.joinRequests);
     if (data.totpUserIds.length > 0) {
       await tx
         .insert(twoFactor)

@@ -1,6 +1,7 @@
 "use client";
 
 import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
 import Card from "@mui/material/Card";
 import CardActionArea from "@mui/material/CardActionArea";
 import CardContent from "@mui/material/CardContent";
@@ -138,6 +139,24 @@ export function PublicHomeView({
             : t("noDistribution")}
         </Typography>
         {next?.place && <Typography>{next.place}</Typography>}
+      </Box>
+
+      <Box
+        component="section"
+        aria-labelledby="adherer"
+        sx={{
+          p: 2.5,
+          borderRadius: 4,
+          bgcolor: m3("secondaryContainer"),
+          color: m3("onSecondaryContainer"),
+        }}
+      >
+        <Typography id="adherer" variant="titleLarge" component="h2" sx={{ mb: 1.5 }}>
+          {t("joinIntro")}
+        </Typography>
+        <Button component={Link} nativeButton={false} href={`${base}/adherer`} variant="contained">
+          {t("join")}
+        </Button>
       </Box>
 
       {home.producers.length > 0 && (

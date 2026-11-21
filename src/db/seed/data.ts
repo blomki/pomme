@@ -181,8 +181,19 @@ export type SeedPage = {
   menuPosition: number;
 };
 
+/** Demande d'adhésion (story B2). */
+export type SeedJoinRequest = {
+  id: string;
+  amapId: string;
+  name: string;
+  email: string;
+  phone: string | null;
+  message: string;
+};
+
 export type SeedData = {
   pages: SeedPage[];
+  joinRequests: SeedJoinRequest[];
   users: SeedUser[];
   amaps: SeedAmap[];
   roles: SeedRole[];
@@ -1019,6 +1030,37 @@ export function buildSeedData(today: Date = new Date()): SeedData {
         ...base,
         id: nextId(),
         parentId: null,
+        role: null,
+        title: "Nous rejoindre",
+        slug: "nous-rejoindre",
+        body: {
+          type: "doc",
+          content: [
+            {
+              type: "paragraph",
+              content: [
+                {
+                  type: "text",
+                  text: "Une distribution par semaine, un engagement pour la saison avec nos producteurs. ",
+                },
+                {
+                  type: "text",
+                  text: "Envoyez-nous une demande d'adhésion",
+                  marks: [{ type: "link", href: `/${a.slug}/adherer` }],
+                },
+                { type: "text", text: " : nous vous recontactons." },
+              ],
+            },
+          ],
+        },
+        publishedOn: addDays(parisDay(today), -60),
+        inMenu: true,
+        menuPosition: 3,
+      },
+      {
+        ...base,
+        id: nextId(),
+        parentId: null,
         role: "legal",
         title: "Mentions légales",
         slug: "mentions-legales",
@@ -1031,8 +1073,23 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     );
   }
 
+  // Une demande d'adhésion à traiter dans la première AMAP (story B2). Personne fictive.
+  const joinRequests: SeedJoinRequest[] = firstAmap
+    ? [
+        {
+          id: nextId(),
+          amapId: firstAmap.id,
+          name: "Alix Exemple",
+          email: "alix.exemple@example.org",
+          phone: "+33639989001",
+          message: "Bonjour, nous venons d'emménager et aimerions rejoindre l'AMAP.",
+        },
+      ]
+    : [];
+
   return {
     pages,
+    joinRequests,
     users,
     amaps,
     roles,
