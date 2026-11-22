@@ -13,6 +13,8 @@ const pages = [
   { path: "/hommesdeterre", title: "AMAP de démonstration de Cambremer" },
   { path: "/pays-d-auge-demo", title: "AMAP fictive du Pays d'Auge" },
   { path: "/hommesdeterre/referent", title: "Espace référent" },
+  // Lien de l'email d'alerte (S10) ; un jeton faux ou périmé donne l'explication.
+  { path: "/connexion/deconnecter?jeton=perime", title: "Déconnecter tous mes appareils" },
   { path: "/plateforme/theme/hommesdeterre", title: "Thème de AMAP de démonstration de Cambremer" },
   { path: "/plateforme/theme/pays-d-auge-demo", title: "Thème de AMAP fictive du Pays d'Auge" },
 ];

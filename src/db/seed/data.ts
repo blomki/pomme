@@ -356,7 +356,10 @@ export const DEMO_ACCOUNTS: ReadonlyArray<{
     totp: true,
   },
   { email: "admin2.demo@example.org", firstName: "Dominique", role: "admin" },
-  { email: "referent.demo@example.org", firstName: "Robin", role: "referent" },
+  // Référents : deuxième vérification obligatoire depuis S10 (application de démonstration).
+  { email: "referent.demo@example.org", firstName: "Robin", role: "referent", totp: true },
+  // Sans moyen de vérification : invité à en enregistrer un (test de bout en bout S10).
+  { email: "referent2.demo@example.org", firstName: "Lou", role: "referent" },
   { email: "amapien.demo@example.org", firstName: "Sasha", role: null },
   { email: "amapien2.demo@example.org", firstName: "Charlie", role: null },
   {

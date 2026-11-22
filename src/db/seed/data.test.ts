@@ -28,12 +28,16 @@ describe("buildSeedData", () => {
     for (const demo of DEMO_ACCOUNTS) expect(emails).toContain(demo.email);
   });
 
-  it("active l'application d'authentification des comptes de démonstration admin et gestionnaire", () => {
+  it("active l'application d'authentification des comptes de démonstration admin, gestionnaire et référent", () => {
     const emails = data.users
       .filter((u) => data.totpUserIds.includes(u.id))
       .map((u) => u.email)
       .sort();
-    expect(emails).toEqual(["admin.demo@example.org", "gestionnaire.demo@example.org"]);
+    expect(emails).toEqual([
+      "admin.demo@example.org",
+      "gestionnaire.demo@example.org",
+      "referent.demo@example.org",
+    ]);
   });
 
   it("est reproductible", () => {

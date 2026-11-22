@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 
 import { getAuth } from "@/server/auth/auth";
 import { getSecondFactorState, verificationUrl } from "@/server/auth/second-factor";
+import { noteSignInDevice } from "@/server/auth/sign-in-alert";
 import { PasskeyOffer } from "@/ui/auth/PasskeyOffer";
 
 // Arrivée après un lien magique : deuxième vérification d'abord pour un admin ou un
@@ -12,6 +13,8 @@ import { PasskeyOffer } from "@/ui/auth/PasskeyOffer";
 export default async function WelcomePage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
+  // Appareil nouveau : alerte par email, même avant la deuxième vérification (S10).
+  await noteSignInDevice(state.user);
   if (state.status === "challenge" || state.status === "enroll") {
     redirect(verificationUrl("/connexion/suite"));
   }

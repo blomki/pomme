@@ -37,6 +37,7 @@ describe("Migrations", () => {
       "household",
       "household_member",
       "join_request",
+      "known_device",
       "membership",
       "notification_log",
       "order",

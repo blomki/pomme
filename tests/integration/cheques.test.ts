@@ -57,7 +57,7 @@ describe("Pointage des chèques (F1)", () => {
   let bread: string;
   let dec10: string;
 
-  const as = (userId: string, secondFactorVerified = false): AmapContext => ({
+  const as = (userId: string, secondFactorVerified = true): AmapContext => ({
     amapId: amapA.id,
     userId,
     secondFactorVerified,

@@ -25,8 +25,8 @@ test("un visiteur est renvoyé vers la connexion", async ({ page }) => {
 });
 
 test("un référent arrive sur son tableau de bord, avec le menu", async ({ page, request }) => {
-  await signInByEmail(page, request, "referent.demo@example.org");
-  await page.getByRole("link", { name: "Plus tard" }).click();
+  await signInWithSecondFactor(page, request, "referent.demo@example.org");
+  await page.goto("/hommesdeterre/referent");
   await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
   const menu = page.getByRole("navigation", { name: "Menu du référent" });
   await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
@@ -40,8 +40,25 @@ test("un référent arrive sur son tableau de bord, avec le menu", async ({ page
   await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();
 });
 
+test("un référent sans deuxième vérification est invité à l'activer avant son espace (S10)", async ({
+  page,
+  request,
+}) => {
+  await signInByEmail(page, request, "referent2.demo@example.org");
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Sécurisez votre compte" }),
+  ).toBeVisible();
+  await expectNoSeriousA11yViolations(page);
+  // Pas d'espace référent tant qu'aucun moyen n'est enregistré.
+  await page.goto("/hommesdeterre/referent/cheques");
+  await expect(page).toHaveURL(/\/connexion\/verification\?retour=/);
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Sécurisez votre compte" }),
+  ).toBeVisible();
+});
+
 test("un référent n'a pas accès à l'administration", async ({ page, request }) => {
-  await signInByEmail(page, request, "referent.demo@example.org");
+  await signInWithSecondFactor(page, request, "referent.demo@example.org");
   await page.goto("/hommesdeterre/admin");
   await expect(page.getByRole("heading", { level: 1, name: "Page introuvable" })).toBeVisible();
 });
@@ -232,6 +249,30 @@ test.describe("administration (ordinateur)", () => {
     await correct("admin2.demo@example.org", "dominique.nouvelle@example.org");
     // Ménage : on remet l'adresse de démonstration.
     await correct("dominique.nouvelle@example.org", "admin2.demo@example.org");
+  });
+
+  test("un admin réinitialise la deuxième vérification d'un référent, avec confirmation (S10)", async ({
+    page,
+    request,
+  }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers");
+    await page.getByRole("link", { name: "Foyer Démo (Lou)" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "Foyer Démo (Lou)" })).toBeVisible();
+
+    // referent2.demo : sans deuxième vérification ; la réinitialiser ne change rien d'autre.
+    await page
+      .getByRole("button", { name: "Réinitialiser la deuxième vérification de Lou Démo" })
+      .click();
+    const dialog = page.getByRole("dialog", {
+      name: "Réinitialiser la deuxième vérification de Lou Démo ?",
+    });
+    await expect(dialog).toContainText("inscrite au journal");
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await dialog.getByRole("button", { name: "Réinitialiser" }).click();
+    await expect(page.getByText("Deuxième vérification de Lou Démo réinitialisée.")).toBeVisible();
+    await expect(dialog).toBeHidden();
   });
 
   test("un admin invite un foyer au clavier, lui donne un rôle, puis l'archive (A2)", async ({
@@ -752,7 +793,7 @@ test.describe("administration (ordinateur)", () => {
     await page.goto("/hommesdeterre/referent/producteurs");
     await expect(page).toHaveURL(/\/connexion$/);
 
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await page
       .getByRole("navigation", { name: "Menu du référent" })
@@ -877,7 +918,7 @@ test.describe("administration (ordinateur)", () => {
     request,
   }) => {
     const extra = `Brioche ${Date.now().toString(36)}`;
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await page
       .getByRole("navigation", { name: "Menu du référent" })
@@ -1041,7 +1082,7 @@ test.describe("administration (ordinateur)", () => {
       await locator.focus();
       await page.keyboard.press("Enter");
     };
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent/catalogue");
     await page.getByRole("tab", { name: "Les Ruches du Vallon" }).click();
     await expect(page).toHaveURL(/producteur=/);
@@ -1148,7 +1189,7 @@ test.describe("administration (ordinateur)", () => {
       await locator.focus();
       await page.keyboard.press("Enter");
     };
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await press(
       page
@@ -1235,7 +1276,7 @@ test.describe("administration (ordinateur)", () => {
       await locator.focus();
       await page.keyboard.press("Enter");
     };
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     // Le catalogue du mois prochain des Ruches est un brouillon dans le jeu de données : on le
     // publie s'il ne l'est pas encore (le test C3 a pu le faire).
     await page.goto("/hommesdeterre/referent/catalogue");
@@ -1325,7 +1366,7 @@ test.describe("administration (ordinateur)", () => {
     page,
     request,
   }) => {
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent/cheques");
     await expect(page.getByRole("heading", { level: 1, name: /^Chèques de / })).toBeVisible();
     // Un autre producteur que celui du test F1 : les deux tests ne touchent pas les mêmes chèques.
@@ -1371,7 +1412,7 @@ test.describe("administration (ordinateur)", () => {
       await locator.focus();
       await page.keyboard.press("Enter");
     };
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await press(
       page
@@ -1624,7 +1665,7 @@ test.describe("administration (ordinateur)", () => {
   });
 
   test("un référent n'a pas accès à la feuille d'émargement (E3)", async ({ page, request }) => {
-    await signInByEmail(page, request, "referent.demo@example.org");
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/emargement/2026-12");
     await expect(page.getByRole("heading", { level: 1, name: "Page introuvable" })).toBeVisible();
     await expect(page.getByRole("table")).toHaveCount(0);

@@ -1,5 +1,5 @@
 {
-  "id": "144064a7-44de-47a1-b7ba-8f4befd5a7a7",
+  "id": "bb907dad-b3a5-4d33-b6ed-7d3169c2a596",
   "prevId": "33b192eb-0c51-4f91-a944-b2621b606c4d",
   "version": "7",
   "dialect": "postgresql",
@@ -2131,327 +2131,6 @@
       },
       "isRLSEnabled": false
     },
-    "public.duty_plan": {
-      "name": "duty_plan",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "amap_id": {
-          "name": "amap_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "quarter_start": {
-          "name": "quarter_start",
-          "type": "date",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "opens_at": {
-          "name": "opens_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "unavailability_deadline": {
-          "name": "unavailability_deadline",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "auto_reminder": {
-          "name": "auto_reminder",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": true
-        },
-        "status": {
-          "name": "status",
-          "type": "duty_plan_status",
-          "typeSchema": "public",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'collecting'"
-        },
-        "opening_notice_at": {
-          "name": "opening_notice_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_reminder_at": {
-          "name": "last_reminder_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "sent_at": {
-          "name": "sent_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_by": {
-          "name": "created_by",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "duty_plan_amap_id_amap_id_fk": {
-          "name": "duty_plan_amap_id_amap_id_fk",
-          "tableFrom": "duty_plan",
-          "tableTo": "amap",
-          "columnsFrom": [
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "duty_plan_created_by_user_id_fk": {
-          "name": "duty_plan_created_by_user_id_fk",
-          "tableFrom": "duty_plan",
-          "tableTo": "user",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "duty_plan_quarter_unique": {
-          "name": "duty_plan_quarter_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "amap_id",
-            "quarter_start"
-          ]
-        },
-        "duty_plan_amap_unique": {
-          "name": "duty_plan_amap_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "id",
-            "amap_id"
-          ]
-        }
-      },
-      "policies": {
-        "duty_plan_select": {
-          "name": "duty_plan_select",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "public"
-          ],
-          "using": "\"duty_plan\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and true"
-        },
-        "duty_plan_insert": {
-          "name": "duty_plan_insert",
-          "as": "PERMISSIVE",
-          "for": "INSERT",
-          "to": [
-            "public"
-          ],
-          "withCheck": "\"duty_plan\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n)"
-        },
-        "duty_plan_update": {
-          "name": "duty_plan_update",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "public"
-          ],
-          "using": "\"duty_plan\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')",
-          "withCheck": "\"duty_plan\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
-        }
-      },
-      "checkConstraints": {
-        "duty_plan_quarter_first_day": {
-          "name": "duty_plan_quarter_first_day",
-          "value": "extract(day from \"duty_plan\".\"quarter_start\") = 1 and extract(month from \"duty_plan\".\"quarter_start\") in (1, 4, 7, 10)"
-        },
-        "duty_plan_dates": {
-          "name": "duty_plan_dates",
-          "value": "\"duty_plan\".\"opens_at\" < \"duty_plan\".\"unavailability_deadline\""
-        }
-      },
-      "isRLSEnabled": false
-    },
-    "public.duty_response": {
-      "name": "duty_response",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "amap_id": {
-          "name": "amap_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "duty_plan_id": {
-          "name": "duty_plan_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "answered_at": {
-          "name": "answered_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "last_reminded_at": {
-          "name": "last_reminded_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "duty_response_amap_id_amap_id_fk": {
-          "name": "duty_response_amap_id_amap_id_fk",
-          "tableFrom": "duty_response",
-          "tableTo": "amap",
-          "columnsFrom": [
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "duty_response_user_id_user_id_fk": {
-          "name": "duty_response_user_id_user_id_fk",
-          "tableFrom": "duty_response",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "duty_response_plan_fk": {
-          "name": "duty_response_plan_fk",
-          "tableFrom": "duty_response",
-          "tableTo": "duty_plan",
-          "columnsFrom": [
-            "duty_plan_id",
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id",
-            "amap_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "duty_response_unique": {
-          "name": "duty_response_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "duty_plan_id",
-            "user_id"
-          ]
-        }
-      },
-      "policies": {
-        "duty_response_select": {
-          "name": "duty_response_select",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "public"
-          ],
-          "using": "\"duty_response\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"duty_response\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
-        },
-        "duty_response_insert": {
-          "name": "duty_response_insert",
-          "as": "PERMISSIVE",
-          "for": "INSERT",
-          "to": [
-            "public"
-          ],
-          "withCheck": "\"duty_response\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"duty_response\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
-        },
-        "duty_response_update": {
-          "name": "duty_response_update",
-          "as": "PERMISSIVE",
-          "for": "UPDATE",
-          "to": [
-            "public"
-          ],
-          "using": "\"duty_response\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"duty_response\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')",
-          "withCheck": "\"duty_response\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"duty_response\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n) or coalesce(current_setting('app.trusted', true), '') = 'closing_job')"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.household": {
       "name": "household",
       "schema": "",
@@ -3020,6 +2699,99 @@
           "value": "(\"join_request\".\"status\" = 'accepted') = (\"join_request\".\"household_id\" is not null)"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.known_device": {
+      "name": "known_device",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "user_id": {
+          "name": "user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "device_hash": {
+          "name": "device_hash",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "label": {
+          "name": "label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "''"
+        },
+        "last_seen_at": {
+          "name": "last_seen_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "known_device_user_id_user_id_fk": {
+          "name": "known_device_user_id_user_id_fk",
+          "tableFrom": "known_device",
+          "tableTo": "user",
+          "columnsFrom": [
+            "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {
+        "known_device_unique": {
+          "name": "known_device_unique",
+          "nullsNotDistinct": false,
+          "columns": [
+            "user_id",
+            "device_hash"
+          ]
+        }
+      },
+      "policies": {
+        "known_device_own": {
+          "name": "known_device_own",
+          "as": "PERMISSIVE",
+          "for": "ALL",
+          "to": [
+            "public"
+          ],
+          "using": "\"known_device\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid",
+          "withCheck": "\"known_device\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid"
+        }
+      },
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.membership": {
@@ -5606,150 +5378,6 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.unavailability": {
-      "name": "unavailability",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "uuid",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "amap_id": {
-          "name": "amap_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "duty_plan_id": {
-          "name": "duty_plan_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "distribution_id": {
-          "name": "distribution_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp with time zone",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {},
-      "foreignKeys": {
-        "unavailability_amap_id_amap_id_fk": {
-          "name": "unavailability_amap_id_amap_id_fk",
-          "tableFrom": "unavailability",
-          "tableTo": "amap",
-          "columnsFrom": [
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "unavailability_user_id_user_id_fk": {
-          "name": "unavailability_user_id_user_id_fk",
-          "tableFrom": "unavailability",
-          "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "unavailability_plan_fk": {
-          "name": "unavailability_plan_fk",
-          "tableFrom": "unavailability",
-          "tableTo": "duty_plan",
-          "columnsFrom": [
-            "duty_plan_id",
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id",
-            "amap_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        },
-        "unavailability_distribution_fk": {
-          "name": "unavailability_distribution_fk",
-          "tableFrom": "unavailability",
-          "tableTo": "distribution",
-          "columnsFrom": [
-            "distribution_id",
-            "amap_id"
-          ],
-          "columnsTo": [
-            "id",
-            "amap_id"
-          ],
-          "onDelete": "no action",
-          "onUpdate": "no action"
-        }
-      },
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {
-        "unavailability_unique": {
-          "name": "unavailability_unique",
-          "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "distribution_id"
-          ]
-        }
-      },
-      "policies": {
-        "unavailability_select": {
-          "name": "unavailability_select",
-          "as": "PERMISSIVE",
-          "for": "SELECT",
-          "to": [
-            "public"
-          ],
-          "using": "\"unavailability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and (\"unavailability\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid or exists (\n  select 1 from amap_role where amap_role.user_id = nullif(current_setting('app.user_id', true), '')::uuid and amap_role.role = 'admin'\n))"
-        },
-        "unavailability_insert": {
-          "name": "unavailability_insert",
-          "as": "PERMISSIVE",
-          "for": "INSERT",
-          "to": [
-            "public"
-          ],
-          "withCheck": "\"unavailability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and \"unavailability\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid"
-        },
-        "unavailability_delete": {
-          "name": "unavailability_delete",
-          "as": "PERMISSIVE",
-          "for": "DELETE",
-          "to": [
-            "public"
-          ],
-          "using": "\"unavailability\".\"amap_id\" = nullif(current_setting('app.amap_id', true), '')::uuid and \"unavailability\".\"user_id\" = nullif(current_setting('app.user_id', true), '')::uuid"
-        }
-      },
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
     "public.user": {
       "name": "user",
       "schema": "",
@@ -6046,15 +5674,6 @@
       "values": [
         "created",
         "deducted"
-      ]
-    },
-    "public.duty_plan_status": {
-      "name": "duty_plan_status",
-      "schema": "public",
-      "values": [
-        "collecting",
-        "draft",
-        "sent"
       ]
     },
     "public.join_request_status": {

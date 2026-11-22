@@ -22,6 +22,7 @@ export const NOTIFICATION_TEMPLATES = [
   "invitation",
   "producer_invitation",
   "admin_invitation",
+  "new_device",
   "order_reminder",
   "order_confirmation",
   "order_form",

@@ -47,7 +47,7 @@ describe("Avoirs (F2)", () => {
   let otherReport: string; // « Autre »
   let secondReport: string;
 
-  const as = (userId: string, secondFactorVerified = false): AmapContext => ({
+  const as = (userId: string, secondFactorVerified = true): AmapContext => ({
     amapId: amapA.id,
     userId,
     secondFactorVerified,
