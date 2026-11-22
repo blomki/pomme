@@ -22,6 +22,7 @@ describe("Deuxième vérification", () => {
   let admin: { id: string; email: string };
   let referent: { id: string; email: string };
   let platformAdmin: { id: string; email: string };
+  let family: { id: string; email: string };
 
   /** Connexion par lien magique : renvoie l'en-tête Cookie de la nouvelle session. */
   const signInByEmail = async (email: string) => {
@@ -70,6 +71,7 @@ describe("Deuxième vérification", () => {
     admin = await f.createUser({ email: "admin@example.org" });
     referent = await f.createUser({ email: "referent@example.org" });
     platformAdmin = await f.createUser({ email: "gestion@example.org", isPlatformAdmin: true });
+    family = await f.createUser({ email: "famille@example.org" });
     await f.grantRole(amapId, admin.id, "admin");
     await f.grantRole(amapId, referent.id, "referent");
   });
@@ -81,7 +83,9 @@ describe("Deuxième vérification", () => {
   it("sait quels comptes y sont soumis", async () => {
     expect((await loadAccountFactors(db.auth, admin.id)).required).toBe(true);
     expect((await loadAccountFactors(db.auth, platformAdmin.id)).required).toBe(true);
-    expect((await loadAccountFactors(db.auth, referent.id)).required).toBe(false);
+    // Depuis S10 (ADR 0041), les référents aussi ; pas un compte sans rôle (famille).
+    expect((await loadAccountFactors(db.auth, referent.id)).required).toBe(true);
+    expect((await loadAccountFactors(db.auth, family.id)).required).toBe(false);
   });
 
   it("ne vérifie pas une session ouverte par lien magique", async () => {
@@ -137,7 +141,20 @@ describe("Deuxième vérification", () => {
     ).resolves.toBeDefined();
   });
 
-  it("laisse un référent gérer ses passkeys sans deuxième vérification", async () => {
+  it("ne réinitialise jamais la deuxième vérification par email : un lien magique ne suffit pas (S10)", async () => {
+    // L'admin a l'application d'authentification (test plus haut). Avec un simple lien magique
+    // (accès à la boîte email seulement), ni la désactiver, ni en régénérer les codes de secours.
+    const cookie = await signInByEmail(admin.email);
+    await expect(
+      auth.api.disableTwoFactor({ body: {}, headers: headersWith(cookie) }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    await expect(
+      auth.api.generateBackupCodes({ body: {}, headers: headersWith(cookie) }),
+    ).rejects.toMatchObject({ statusCode: 403 });
+    expect((await loadAccountFactors(db.auth, admin.id)).totp).toBe(true);
+  });
+
+  it("laisse un compte sans aucun moyen enregistrer le premier (référent)", async () => {
     const cookie = await signInByEmail(referent.email);
     await expect(
       auth.api.generatePasskeyRegistrationOptions({ headers: headersWith(cookie) }),
@@ -165,8 +182,11 @@ describe("Deuxième vérification", () => {
       await expect(run(admin.id, true, ["admin"])).resolves.toEqual(["admin"]);
     });
 
-    it("ne l'exige pas pour une action ouverte aux référents", async () => {
-      await expect(run(referent.id, false, ["admin", "referent"])).resolves.toEqual(["referent"]);
+    it("l'exige aussi d'un référent depuis S10", async () => {
+      await expect(run(referent.id, false, ["admin", "referent"])).rejects.toBeInstanceOf(
+        SecondFactorRequiredError,
+      );
+      await expect(run(referent.id, true, ["admin", "referent"])).resolves.toEqual(["referent"]);
     });
   });
 });

@@ -2,7 +2,7 @@ import { expect, test, type Page } from "@playwright/test";
 import sharp from "sharp";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
-import { ADMIN_DEMO, signInByEmail, signInWithSecondFactor } from "./helpers/auth";
+import { ADMIN_DEMO, signInWithSecondFactor } from "./helpers/auth";
 
 // Envoi et stockage des photos (fiche S11) : l'admin envoie la photo d'un producteur au clavier,
 // le référent la voit et la retire. Le stockage est le service « files » (SeaweedFS).
@@ -95,7 +95,7 @@ test.describe("photos (ordinateur)", () => {
     const referentContext = await browser.newContext();
     try {
       const referent = await referentContext.newPage();
-      await signInByEmail(referent, request, "referent.demo@example.org");
+      await signInWithSecondFactor(referent, request, "referent.demo@example.org");
       await referent.goto("/hommesdeterre/referent/producteurs");
       await referent.getByRole("tab", { name: PRODUCER }).click();
       const own = referent.getByRole("region", { name: "Photo" });

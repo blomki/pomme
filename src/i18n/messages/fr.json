@@ -955,6 +955,17 @@
       "closedTitle": "Demandes traitées",
       "on": "le {date}",
       "seeHousehold": "voir le foyer"
+    },
+    "resetSecondFactor": {
+      "reset": "Réinitialiser la deuxième vérification",
+      "resetOf": "Réinitialiser la deuxième vérification de {name}",
+      "dialogTitle": "Réinitialiser la deuxième vérification de {name} ?",
+      "dialogIntro": "À faire seulement si vous avez reconnu {name} (de vive voix, à la distribution) : son application d'authentification et ses passkeys seront retirées, et la personne sera déconnectée de tous ses appareils. À sa prochaine connexion, elle choisira une nouvelle deuxième vérification. Cette action est inscrite au journal.",
+      "confirm": "Réinitialiser",
+      "cancel": "Annuler",
+      "done": "Deuxième vérification de {name} réinitialisée.",
+      "self": "Vous ne pouvez pas réinitialiser votre propre deuxième vérification : demandez à un autre admin de l'AMAP.",
+      "forbidden": "Réinitialisation impossible : cette personne ne fait pas partie de l'AMAP."
     }
   },
   "Producer": {
@@ -1301,6 +1312,14 @@
       "confirm": "Confirmer",
       "backupTitle": "2. Notez vos codes de secours",
       "backupIntro": "Gardez ces 10 codes en lieu sûr (sur papier, ou dans un gestionnaire de mots de passe). Chacun vous permet de vous connecter une fois si vous perdez votre téléphone. Ils ne seront plus affichés."
+    },
+    "revoke": {
+      "title": "Déconnecter tous mes appareils",
+      "intro": "Toutes les connexions ouvertes à votre compte Pomme seront fermées, sur tous les appareils : téléphone, ordinateur, et celui qui vous inquiète. Vous pourrez ensuite vous reconnecter avec un nouveau lien.",
+      "confirm": "Déconnecter tous mes appareils",
+      "done": "{count, plural, =0 {Aucune connexion n'était ouverte.} one {# connexion fermée.} other {# connexions fermées.}} Pensez à sécuriser votre boîte email : c'est elle qui reçoit vos liens de connexion.",
+      "signIn": "Me reconnecter",
+      "invalid": "Ce lien n'est plus valable (il dure 7 jours). Connectez-vous, puis utilisez « Me déconnecter de tous mes appareils » dans « Mon compte »."
     }
   },
   "Email": {
@@ -1377,6 +1396,17 @@
       "button": "Me connecter à Pomme",
       "noPassword": "Aucun mot de passe à retenir : à chaque connexion, Pomme vous envoie un lien, ou vous utilisez une passkey.",
       "footer": "Vous recevez cet email parce que le gestionnaire de la plateforme Pomme a ouvert « {amap} » à votre nom."
+    },
+    "newDevice": {
+      "subject": "Nouvelle connexion à votre compte Pomme",
+      "preview": "Connexion depuis {device}",
+      "greeting": "Bonjour {firstName},",
+      "intro": "Votre compte Pomme vient d'être ouvert depuis un appareil que nous ne connaissions pas : {device}, le {when}.",
+      "ifYou": "Si c'était vous, il n'y a rien à faire.",
+      "ifNot": "Si ce n'était pas vous, déconnectez tout de suite tous vos appareils, puis vérifiez la sécurité de votre boîte email : c'est elle qui reçoit vos liens de connexion.",
+      "button": "Déconnecter tous mes appareils",
+      "validity": "Ce bouton reste valable 7 jours ; une confirmation vous sera demandée.",
+      "footer": "Vous recevez cet email pour protéger votre compte."
     }
   },
   "Roles": {

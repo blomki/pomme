@@ -58,7 +58,7 @@ describe("Corriger la commande d'un foyer (D7)", () => {
   let dec3: string;
   let dec10: string;
 
-  const as = (userId: string, secondFactorVerified = false, amapId = amapA.id): AmapContext => ({
+  const as = (userId: string, secondFactorVerified = true, amapId = amapA.id): AmapContext => ({
     amapId,
     userId,
     secondFactorVerified,

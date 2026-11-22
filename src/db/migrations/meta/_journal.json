@@ -267,6 +267,13 @@
       "when": 1795253187571,
       "tag": "0037_rls-tables-amap",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1795360343828,
+      "tag": "0038_appareils-connus",
+      "breakpoints": true
     }
   ]
 }

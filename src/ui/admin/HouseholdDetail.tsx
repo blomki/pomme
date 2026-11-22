@@ -44,6 +44,7 @@ import {
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
 import { CorrectEmailDialog } from "./CorrectEmailDialog";
+import { ResetSecondFactorDialog } from "./ResetSecondFactorDialog";
 
 const fullName = (m: { firstName: string; lastName: string }) =>
   `${m.firstName} ${m.lastName}`.trim();
@@ -68,6 +69,8 @@ export function HouseholdDetail({
   const showSnackbar = useSnackbar();
   const [rolesOf, setRolesOf] = useState<HouseholdMemberView | null>(null);
   const [emailOf, setEmailOf] = useState<HouseholdMemberView | null>(null);
+  const [factorOf, setFactorOf] = useState<HouseholdMemberView | null>(null);
+  const tf = useTranslations("Admin.resetSecondFactor");
   const archived = household.archivedAt !== null;
   const anonymized = household.anonymizedAt !== null;
   const [anonymizing, setAnonymizing] = useState(false);
@@ -197,6 +200,16 @@ export function HouseholdDetail({
                         >
                           {tc("correctEmail")}
                         </Button>
+                        {/* Admins et référents : les rôles qui ont une deuxième vérification (S10). */}
+                        {member.roles.some((r) => r === "admin" || r === "referent") && (
+                          <Button
+                            size="small"
+                            onClick={() => setFactorOf(member)}
+                            aria-label={tf("resetOf", { name })}
+                          >
+                            {tf("reset")}
+                          </Button>
+                        )}
                         {!member.isPrimary && (
                           <Button
                             size="small"
@@ -277,6 +290,14 @@ export function HouseholdDetail({
           amapSlug={amapSlug}
           person={{ userId: emailOf.userId, name: fullName(emailOf), email: emailOf.email }}
           onClose={() => setEmailOf(null)}
+        />
+      )}
+      {factorOf && (
+        <ResetSecondFactorDialog
+          key={factorOf.userId}
+          amapSlug={amapSlug}
+          person={{ userId: factorOf.userId, name: fullName(factorOf) }}
+          onClose={() => setFactorOf(null)}
         />
       )}
     </>

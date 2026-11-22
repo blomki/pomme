@@ -69,33 +69,36 @@ export async function requirePlatformAdminPage() {
 }
 
 /**
- * Pages du référent qui montrent des données (« Mes producteurs »…) : connexion, puis rôle
- * référent dans cette AMAP. Sinon : page 404. Pas de deuxième vérification : elle n'est exigée
- * que des administrateurs. Les Server Actions refont la vérification avec requireRole.
+ * Pages du référent qui montrent des données (« Mes producteurs »…) : connexion, deuxième
+ * vérification (S10), puis rôle référent dans cette AMAP. Sinon : page 404. Les Server Actions
+ * refont la vérification avec requireRole.
  */
 export async function requireAmapReferentPage(slug: string) {
   const amap = await getAmapBySlug(slug);
   if (!amap) notFound();
-  const current = await requireSession();
-  const ctx = {
-    amapId: amap.id,
-    userId: current.user.id,
-    secondFactorVerified: Boolean(current.session.secondFactorVerifiedAt),
-  };
-  const isReferent = await withAmapContext(getDatabase(), ctx, async (tx) => {
-    const rows = await tx
-      .select({ id: amapRole.id })
-      .from(amapRole)
-      .where(
-        and(
-          eq(amapRole.amapId, amap.id),
-          eq(amapRole.userId, current.user.id),
-          eq(amapRole.role, "referent"),
-        ),
-      );
-    return rows.length > 0;
-  });
+  const signedIn = await requireSession();
+  const isReferent = await withAmapContext(
+    getDatabase(),
+    { amapId: amap.id, userId: signedIn.user.id },
+    async (tx) => {
+      const rows = await tx
+        .select({ id: amapRole.id })
+        .from(amapRole)
+        .where(
+          and(
+            eq(amapRole.amapId, amap.id),
+            eq(amapRole.userId, signedIn.user.id),
+            eq(amapRole.role, "referent"),
+          ),
+        );
+      return rows.length > 0;
+    },
+  );
   if (!isReferent) notFound();
+  // Depuis S10 (ADR 0041), un référent passe la deuxième vérification, comme un admin : après
+  // le contrôle du rôle, pour qu'une personne sans rôle référent voie toujours la page 404.
+  const current = await requireVerifiedSession(`/${slug}/referent`);
+  const ctx = { amapId: amap.id, userId: current.user.id, secondFactorVerified: current.verified };
   return { amap, ctx };
 }
 
