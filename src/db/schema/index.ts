@@ -1493,6 +1493,35 @@ export const joinRequest = pgTable(
   ],
 );
 
+// --- known_device : appareil connu d'un compte ------------------------------------------------
+// Story S10, ADR 0041 : une connexion depuis un appareil jamais vu envoie une alerte par email.
+// On garde l'empreinte (SHA-256) du cookie de l'appareil, jamais le cookie lui-même. Lié au
+// compte, pas à une AMAP : chaque personne ne voit que ses propres appareils.
+
+export const knownDevice = pgTable(
+  "known_device",
+  {
+    id: id(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    deviceHash: text("device_hash").notNull(),
+    // Description lisible au moment de la première connexion (« Firefox sur Windows »).
+    label: text("label").notNull().default(""),
+    lastSeenAt: timestamp("last_seen_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("known_device_unique").on(t.userId, t.deviceHash),
+    pgPolicy("known_device_own", {
+      for: "all",
+      using: sql`${t.userId} = ${currentUserId}`,
+      withCheck: sql`${t.userId} = ${currentUserId}`,
+    }),
+  ],
+);
+
 // --- audit_log : journal ---------------------------------------------------------------------
 // Une ligne par action financière ou correction, écrite dans la même transaction que l'action
 // (voir src/server/audit.ts). Jamais modifiée ni supprimée : pas de politique UPDATE ou DELETE.

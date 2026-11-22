@@ -9,10 +9,12 @@ import { withAmapContext } from "@/db/context";
 import { session } from "@/db/schema";
 
 import { getAuthInstance } from "./auth/auth";
+import { clearSecondFactor } from "./auth/devices";
 import { ForbiddenError, SecondFactorRequiredError, UnauthenticatedError } from "./auth/errors";
 import { verificationUrl } from "./auth/second-factor";
 import { getAmapContext } from "./context";
 import { correctMemberEmail, type CorrectEmailResult } from "./members";
+import { resetMemberSecondFactor, type ResetSecondFactorResult } from "./second-factor-reset";
 
 export type CorrectEmailState = { status: "idle" } | CorrectEmailResult;
 
@@ -45,4 +47,30 @@ export async function correctMemberEmailAction(
     revalidatePath(`/${slug}/admin/foyers`, "layout");
   }
   return result;
+}
+
+export type ResetSecondFactorState = { status: "idle" } | ResetSecondFactorResult;
+
+/**
+ * « Réinitialiser la deuxième vérification » (fiche d'un foyer, story S10) : la personne a
+ * perdu son téléphone ou sa passkey. Elle est déconnectée partout ; journalisé.
+ */
+export async function resetSecondFactorAction(input: {
+  amap: string;
+  userId: string;
+}): Promise<ResetSecondFactorState> {
+  const ctx = await getAmapContext(input.amap);
+  try {
+    return await withAmapContext(getDatabase(), ctx, (tx, c) =>
+      resetMemberSecondFactor(tx, c, { userId: input.userId }, (userId) =>
+        clearSecondFactor(getAuthInstance().db, userId),
+      ),
+    );
+  } catch (error) {
+    if (error instanceof UnauthenticatedError) redirect("/connexion");
+    if (error instanceof SecondFactorRequiredError)
+      redirect(verificationUrl(`/${input.amap}/admin/foyers`));
+    if (error instanceof ForbiddenError) return { status: "forbidden" };
+    throw error;
+  }
 }

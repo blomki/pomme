@@ -53,7 +53,7 @@ describe("Photo du producteur (S11)", () => {
   let farm: string;
   const store = memoryStore();
 
-  const as = (userId: string, secondFactorVerified = false): AmapContext => ({
+  const as = (userId: string, secondFactorVerified = true): AmapContext => ({
     amapId: amapA.id,
     userId,
     secondFactorVerified,

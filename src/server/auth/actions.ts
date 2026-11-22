@@ -12,6 +12,7 @@ import { createRateLimiter } from "../rate-limit";
 import { getAuthInstance } from "./auth";
 import { clientIp } from "./client-ip";
 import { RATE_LIMIT_FACTOR } from "../rate-limit-factor";
+import { revokeAllSessions, verifyRevokeToken } from "./devices";
 import { requestMagicLink, type RequestMagicLinkState } from "./request-magic-link";
 
 // Par quart d'heure : 3 liens par adresse email et 10 demandes par adresse IP en production.
@@ -66,4 +67,22 @@ export async function signOutEverywhereAction(): Promise<void> {
     // La session de cet appareil vient d'être révoquée avec les autres : rien à fermer.
   });
   redirect("/connexion?deconnexion=tous");
+}
+
+export type RevokeState = { status: "idle" | "done" | "invalid"; count?: number };
+
+/**
+ * « Déconnecter tous mes appareils » depuis l'email d'alerte (story S10) : le jeton signé,
+ * encore valable, désigne le compte ; toutes ses sessions sont fermées. Aucune connexion
+ * requise : la personne n'a peut-être plus accès à son compte.
+ */
+export async function revokeAllDevicesAction(
+  _previous: RevokeState,
+  formData: FormData,
+): Promise<RevokeState> {
+  const token = String(formData.get("jeton") ?? "");
+  const userId = verifyRevokeToken(token, new Date(), process.env.BETTER_AUTH_SECRET ?? "");
+  if (!userId) return { status: "invalid" };
+  const count = await revokeAllSessions(getAuthInstance().db, userId);
+  return { status: "done", count };
 }

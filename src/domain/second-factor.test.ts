@@ -18,8 +18,8 @@ describe("requiresSecondFactor", () => {
     expect(requiresSecondFactor({ isPlatformAdmin: true, roles: [] })).toBe(true);
   });
 
-  it("ne l'exige pas d'un référent ni d'une famille", () => {
-    expect(requiresSecondFactor({ isPlatformAdmin: false, roles: ["referent"] })).toBe(false);
+  it("l'exige d'un référent (S10), pas d'une famille", () => {
+    expect(requiresSecondFactor({ isPlatformAdmin: false, roles: ["referent"] })).toBe(true);
     expect(requiresSecondFactor({ isPlatformAdmin: false, roles: [] })).toBe(false);
   });
 });
@@ -75,9 +75,9 @@ describe("actionNeedsSecondFactor", () => {
     expect(actionNeedsSecondFactor(["admin", "referent"], ["admin"])).toBe(true);
   });
 
-  it("ne l'exige pas quand un autre rôle donne aussi accès", () => {
-    expect(actionNeedsSecondFactor(["admin", "referent"], ["admin", "referent"])).toBe(false);
-    expect(actionNeedsSecondFactor(["referent"], ["admin", "referent"])).toBe(false);
+  it("l'exige aussi des référents depuis S10, quel que soit le rôle qui donne accès", () => {
+    expect(actionNeedsSecondFactor(["admin", "referent"], ["admin", "referent"])).toBe(true);
+    expect(actionNeedsSecondFactor(["referent"], ["admin", "referent"])).toBe(true);
   });
 
   it("ne l'exige pas sans rôle autorisé (l'accès sera refusé de toute façon)", () => {

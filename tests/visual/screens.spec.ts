@@ -17,7 +17,6 @@ const screens = [
     // ajoutent des producteurs à cette AMAP (la liste s'allonge).
     fullPage: false,
   },
-  { name: "referent", path: "/hommesdeterre/referent", viewport: "desktop" },
   { name: "theme-cambremer", path: "/plateforme/theme/hommesdeterre", viewport: "desktop" },
   { name: "theme-pays-d-auge", path: "/plateforme/theme/pays-d-auge-demo", viewport: "desktop" },
 ] as const satisfies ReadonlyArray<{

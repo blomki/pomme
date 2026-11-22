@@ -6,11 +6,12 @@ import type { AmapRoleName } from "./roles";
  * Un lien magique prouve seulement l'accès à la boîte email. Pour les comptes qui peuvent agir
  * sur toute une AMAP (admins) ou sur toute la plateforme (gestionnaires), on exige une deuxième
  * preuve : une passkey, ou un code d'une application d'authentification (TOTP), ou à défaut un
- * code de secours. Les familles, référents et producteurs n'y sont pas soumis.
+ * code de secours. Depuis la story S10 (ADR 0041), les référents aussi : ils pointent les
+ * chèques et voient les foyers. Les familles et les producteurs n'y sont pas soumis.
  */
 
 /** Rôles qui imposent la deuxième vérification. */
-export const SECOND_FACTOR_ROLES: readonly AmapRoleName[] = ["admin"];
+export const SECOND_FACTOR_ROLES: readonly AmapRoleName[] = ["admin", "referent"];
 
 export type AccountAuthority = {
   /** Gestionnaire de la plateforme. */
@@ -23,7 +24,8 @@ export type AccountAuthority = {
  * Vrai si le compte doit faire une deuxième vérification.
  *
  * @example requiresSecondFactor({ isPlatformAdmin: false, roles: ["admin"] }) // true
- * @example requiresSecondFactor({ isPlatformAdmin: false, roles: ["referent"] }) // false
+ * @example requiresSecondFactor({ isPlatformAdmin: false, roles: ["referent"] }) // true
+ * @example requiresSecondFactor({ isPlatformAdmin: false, roles: [] }) // false
  */
 export function requiresSecondFactor(account: AccountAuthority): boolean {
   return (
@@ -69,8 +71,8 @@ export function canManageFactors(facts: SecondFactorFacts): boolean {
 
 /**
  * Vrai si une action réservée à ces rôles exige la deuxième vérification : quand tous les
- * rôles qui donnent accès à l'action sont soumis à la deuxième vérification. Un admin qui est
- * aussi référent fait une action de référent sans deuxième vérification.
+ * rôles qui donnent accès à l'action sont soumis à la deuxième vérification. Depuis S10, admins
+ * et référents le sont tous les deux : toute action de l'équipe l'exige.
  *
  * @example actionNeedsSecondFactor(["admin"], ["admin"]) // true
  * @example actionNeedsSecondFactor(["admin", "referent"], ["admin", "referent"]) // false
