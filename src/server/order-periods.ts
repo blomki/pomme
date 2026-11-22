@@ -465,7 +465,24 @@ export async function planReminders(
   const [period] = await tx.select().from(orderPeriod).where(eq(orderPeriod.id, periodId.data));
   if (!period || effectiveStatus(period, now) !== "open") return { status: "not_open" };
 
-  const month = period.month.slice(0, 7);
+  return {
+    status: "ready",
+    periodId: period.id,
+    month: period.month.slice(0, 7),
+    closesOn: periodDays(period).closesOn,
+    recipients: await reminderRecipients(tx, period.month.slice(0, 7)),
+  };
+}
+
+/**
+ * Membres des foyers actifs (ni archivés ni anonymisés) qui n'ont rien commandé pour le mois.
+ * Sans contrôle de rôle : appelée par planReminders (admin) et par la tâche planifiée (accès
+ * de confiance), qui ont chacune vérifié leur droit.
+ */
+export async function reminderRecipients(
+  tx: Transaction,
+  month: string,
+): Promise<ReminderRecipient[]> {
   const ordering = await orderingHouseholdIds(tx, month);
   const members = await tx
     .select({
@@ -485,16 +502,9 @@ export async function planReminders(
       ),
     )
     .orderBy(asc(household.name), desc(householdMember.isPrimary));
-
-  return {
-    status: "ready",
-    periodId: period.id,
-    month,
-    closesOn: periodDays(period).closesOn,
-    recipients: members
-      .filter((m) => !ordering.has(m.householdId))
-      .map(({ userId, email, firstName }) => ({ userId, email, firstName })),
-  };
+  return members
+    .filter((m) => !ordering.has(m.householdId))
+    .map(({ userId, email, firstName }) => ({ userId, email, firstName }));
 }
 
 // --- Tâche planifiée ---------------------------------------------------------------------------

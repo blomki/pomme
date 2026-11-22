@@ -131,7 +131,7 @@ enregistrement SPF). Voir ADR 0006.
 
 `clevercloud/cron.json` lance `clevercloud/cron-hourly.sh` à la 5e minute de chaque heure
 (UTC), sur la première instance seulement : `pnpm jobs:hourly` ouvre et clôture les périodes de
-commande. Clever Cloud installe les tâches à chaque déploiement (journal : « Importing
+commande, puis envoie le rappel avant la clôture aux foyers sans commande (ADR 0038). Clever Cloud installe les tâches à chaque déploiement (journal : « Importing
 cronjobs ») ; leur sortie apparaît dans les journaux de l'application, préfixée par `CMDOUT`,
 par exemple `Tâches horaires terminées (0 changement(s)).`
 

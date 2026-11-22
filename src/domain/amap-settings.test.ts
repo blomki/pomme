@@ -9,6 +9,7 @@ const valid: AmapSettingsInput = {
     volunteersPerDistribution: 3,
     experiencedThreshold: 6,
     membershipExpiryAlertDays: 30,
+    orderReminderDays: 2,
   },
 };
 
@@ -37,12 +38,14 @@ describe("checkAmapSettings", () => {
           volunteersPerDistribution: 0,
           experiencedThreshold: 2.5,
           membershipExpiryAlertDays: 181,
+          orderReminderDays: 15,
         },
       }),
     ).toEqual([
       { field: "volunteersPerDistribution", problem: "range" },
       { field: "experiencedThreshold", problem: "range" },
       { field: "membershipExpiryAlertDays", problem: "range" },
+      { field: "orderReminderDays", problem: "range" },
     ]);
   });
 });
@@ -53,11 +56,13 @@ describe("effectiveParameters", () => {
       volunteersPerDistribution: 3,
       experiencedThreshold: 4,
       membershipExpiryAlertDays: 30,
+      orderReminderDays: 2,
     });
     expect(effectiveParameters(null)).toEqual({
       volunteersPerDistribution: 3,
       experiencedThreshold: 6,
       membershipExpiryAlertDays: 30,
+      orderReminderDays: 2,
     });
   });
 });

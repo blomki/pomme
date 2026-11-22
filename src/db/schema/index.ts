@@ -172,6 +172,7 @@ export type AmapSettings = {
   volunteersPerDistribution?: number; // 3 bénévoles par distribution
   experiencedThreshold?: number; // expérimenté à partir de 6 permanences
   membershipExpiryAlertDays?: number; // alerte 30 jours avant la fin d'adhésion
+  orderReminderDays?: number; // rappel aux familles 2 jours avant la clôture (0 : aucun)
   /** Distribution habituelle (story D1) : jour (1 = lundi … 7 = dimanche) et horaires « HH:MM ». */
   distributionWeekday?: number;
   distributionStartTime?: string;

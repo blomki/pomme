@@ -12,6 +12,7 @@ import {
   parseDay,
   periodDays,
   periodInstants,
+  reminderDue,
 } from "./order-periods";
 
 describe("parseDay et addDays", () => {
@@ -201,5 +202,20 @@ describe("chequesAtClosing", () => {
     expect(
       chequesAtClosing([], [{ id: "1", householdId: "h", producerId: "p", amountCents: 5 }]),
     ).toEqual([]);
+  });
+});
+
+describe("reminderDue", () => {
+  const closesOn = "2026-11-25";
+  it("à partir de N jours avant la clôture, jusqu'au jour de clôture", () => {
+    expect(
+      ["2026-11-22", "2026-11-23", "2026-11-24", "2026-11-25", "2026-11-26"].map((today) =>
+        reminderDue({ closesOn, today, daysBefore: 2 }),
+      ),
+    ).toEqual([false, true, true, true, false]);
+  });
+
+  it("0 jour : rappel désactivé", () => {
+    expect(reminderDue({ closesOn, today: "2026-11-25", daysBefore: 0 })).toBe(false);
   });
 });

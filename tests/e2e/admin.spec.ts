@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { text } from "node:stream/consumers";
 
 import { expect, test } from "@playwright/test";
@@ -418,6 +419,29 @@ test.describe("administration (ordinateur)", () => {
     // Remise à la valeur du jeu de données (d'autres tests s'en servent).
     await setVolunteers("3");
     await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+
+    // Rappel avant la clôture (D5) : délai réglé à 14 jours, la tâche horaire envoie les
+    // rappels de la période ouverte (ou les a déjà envoyés si le test a déjà tourné).
+    const reminder = page.getByRole("spinbutton", { name: "Rappel avant la clôture (jours)" });
+    await expect(reminder).toHaveValue("2");
+    const setReminder = async (value: string) => {
+      await reminder.focus();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type(value);
+      await page.getByRole("button", { name: "Enregistrer les réglages" }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+    };
+    await setReminder("14");
+    const output = execFileSync("pnpm", ["-s", "jobs:hourly"], { encoding: "utf8" });
+    const line =
+      /Rappel avant clôture \d{4}-\d{2}, AMAP \S+ : (\d+) envoyé\(s\), (\d+) déjà fait\(s\), 0 en échec\./.exec(
+        output,
+      );
+    expect(line, output).not.toBeNull();
+    expect(Number(line![1]) + Number(line![2])).toBeGreaterThan(0);
+    await page.reload();
+    await setReminder("2");
   });
 
   test("un admin suit sa liste de tâches au clavier : à suivre, fait, rétabli (H3)", async ({
