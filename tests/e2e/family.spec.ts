@@ -275,4 +275,32 @@ test.describe("commande du mois (téléphone)", () => {
     }
     await page.emulateMedia({ media: "screen" });
   });
+
+  test("une famille reprend sa commande du mois précédent, après confirmation (D4)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto(ORDER);
+    // Jeu de données : la famille a commandé ce mois-ci, base de la commande du mois prochain.
+    const button = page.getByRole("button", { name: /^Reprendre ma commande de / });
+    await button.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", { name: /^Reprendre ma commande de .* \?$/ });
+    await expect(dialog).toBeVisible();
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expect(
+      dialog.getByRole("heading", { name: "Recopié, semaine par semaine" }),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Annuler : rien n'est enregistré ; puis confirmer.
+    await dialog.getByRole("button", { name: "Annuler" }).click();
+    await expect(dialog).toHaveCount(0);
+    await button.focus();
+    await page.keyboard.press("Enter");
+    await dialog.getByRole("button", { name: "Reprendre ces quantités" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(/^Commande reprise/)).toBeVisible();
+  });
 });

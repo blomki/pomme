@@ -81,7 +81,24 @@
         "backHome": "Retour à l'accueil"
       },
       "saving": "Enregistrement…",
-      "saved": "Modifications enregistrées"
+      "saved": "Modifications enregistrées",
+      "reuse": {
+        "button": "Reprendre ma commande de {month}",
+        "title": "Reprendre ma commande de {month} ?",
+        "copied": "Recopié, semaine par semaine",
+        "partial": "Recopié en partie : indisponible certaines semaines",
+        "missing": "Pas recopié : plus au catalogue, ou indisponible",
+        "line": "{product} ({producer}) : {quantity} au total",
+        "lineNoQuantity": "{product} ({producer})",
+        "replaceNote": "Les quantités déjà saisies pour ces produits seront remplacées. Vous pourrez tout modifier ensuite, producteur par producteur.",
+        "nothingToCopy": "Aucun produit de votre commande précédente n'est disponible ce mois-ci.",
+        "nothing": "Vous n'aviez rien commandé en {month}.",
+        "cancel": "Annuler",
+        "confirm": "Reprendre ces quantités",
+        "applied": "Commande reprise. Vérifiez-la producteur par producteur.",
+        "appliedPartly": "Commande reprise, sauf {refused, plural, one {# case refusée} other {# cases refusées}}. Vérifiez-la producteur par producteur.",
+        "error": "La reprise n'a pas abouti. Rechargez la page."
+      }
     },
     "home": {
       "noHousehold": "Votre compte n'est rattaché à aucun foyer de cette AMAP. Contactez un administrateur.",

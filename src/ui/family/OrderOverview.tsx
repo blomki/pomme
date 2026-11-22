@@ -22,6 +22,8 @@ import type { OrderProducer } from "@/server/orders";
 
 import { m3 } from "../theme/create-theme";
 
+import { ReuseLastMonth } from "./ReuseLastMonth";
+
 const STATUS_ROLES: Record<
   ProducerOrderStatus,
   [
@@ -74,6 +76,10 @@ export function OrderOverview({
       </Box>
 
       {!membershipActive && <Alert severity="warning">{t("membership")}</Alert>}
+
+      {membershipActive && producers.length > 0 && (
+        <ReuseLastMonth amapSlug={amapSlug} month={month} />
+      )}
 
       {producers.length === 0 ? (
         <Typography>{t("noCatalog")}</Typography>
