@@ -32,12 +32,15 @@ export function FamilyHome({
   membership,
   period,
   nextDistribution,
+  duty = null,
 }: {
   amapSlug: string;
   title: string;
   membership: MembershipState;
   period: HomePeriodView | null;
   nextDistribution: NextDistribution | null;
+  /** Carte « Permanences » (story G1), pendant la période de réponse seulement. */
+  duty?: DutyCardView | null;
 }) {
   const t = useTranslations("Family.home");
   const base = `/${amapSlug}/famille`;
@@ -59,6 +62,8 @@ export function FamilyHome({
       )}
 
       <PeriodCard base={base} period={period} />
+
+      {duty && <DutyCard base={base} duty={duty} />}
 
       {nextDistribution && (
         <Paper
@@ -112,6 +117,54 @@ export function FamilyHome({
         </Paper>
       )}
     </Stack>
+  );
+}
+
+export type DutyCardView = {
+  /** Trimestre en toutes lettres (« janvier à mars 2027 »). */
+  quarter: string;
+  deadlineOn: string;
+  distributionCount: number;
+  answered: boolean;
+  unavailableCount: number;
+};
+
+/** Carte « Permanences » : disponibilités du trimestre à renseigner, ou réponse enregistrée. */
+function DutyCard({ base, duty }: { base: string; duty: DutyCardView }) {
+  const t = useTranslations("Family.home");
+  const date = longDay(duty.deadlineOn);
+  return (
+    <Paper
+      component="section"
+      aria-labelledby="permanences"
+      elevation={0}
+      sx={{ p: 3, bgcolor: m3("surfaceContainer") }}
+    >
+      <Stack spacing={1.5} sx={{ alignItems: "flex-start" }}>
+        <Typography
+          variant="labelLarge"
+          sx={{ textTransform: "uppercase", letterSpacing: "0.04em" }}
+        >
+          {duty.answered ? t("dutyDoneLabel") : t("dutyTodoLabel", { date })}
+        </Typography>
+        <Typography id="permanences" variant="titleLarge" component="h2">
+          {t("dutyTitle", { quarter: duty.quarter })}
+        </Typography>
+        <Typography>
+          {duty.answered
+            ? t("dutyDoneText", { count: duty.unavailableCount, date })
+            : t("dutyTodoText", { count: duty.distributionCount })}
+        </Typography>
+        <Button
+          component={Link}
+          nativeButton={false}
+          href={`${base}/disponibilites`}
+          variant={duty.answered ? "outlined" : "contained"}
+        >
+          {duty.answered ? t("dutyDoneButton") : t("dutyTodoButton")}
+        </Button>
+      </Stack>
+    </Paper>
   );
 }
 

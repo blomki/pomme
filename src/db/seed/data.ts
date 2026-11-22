@@ -22,6 +22,7 @@
  */
 import { validateAmapSlug } from "@/domain/amap-slug";
 import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
+import { defaultDutyPlanDays, nextQuarterStart } from "@/domain/duty-plans";
 import { addDays, defaultPeriodDays, parisDay, periodInstants } from "@/domain/order-periods";
 import type { RichDoc } from "@/domain/pages";
 import type { AmapRoleName } from "@/domain/roles";
@@ -134,6 +135,29 @@ export type SeedOrderPeriod = {
   status: "open" | "closed";
   closedAt: Date | null;
 };
+// Indisponibilités du trimestre (story G1).
+export type SeedDutyPlan = {
+  id: string;
+  amapId: string;
+  quarterStart: string;
+  opensAt: Date;
+  unavailabilityDeadline: Date;
+  openingNoticeAt: Date;
+};
+export type SeedDutyResponse = {
+  id: string;
+  amapId: string;
+  dutyPlanId: string;
+  userId: string;
+  answeredAt: Date;
+};
+export type SeedUnavailability = {
+  id: string;
+  amapId: string;
+  dutyPlanId: string;
+  userId: string;
+  distributionId: string;
+};
 export type SeedCheque = {
   id: string;
   amapId: string;
@@ -213,6 +237,9 @@ export type SeedData = {
   orderLines: SeedOrderLine[];
   cheques: SeedCheque[];
   memberships: SeedMembership[];
+  dutyPlans: SeedDutyPlan[];
+  dutyResponses: SeedDutyResponse[];
+  unavailabilities: SeedUnavailability[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -694,13 +721,20 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     return producerId ? [{ id: nextId(), producerId, userId: demoUser.id }] : [];
   });
 
-  // Distributions du mois en cours et des deux suivants ; la dernière de décembre est fermée.
+  // Distributions du mois en cours jusqu'à la fin du trimestre suivant (planning des
+  // permanences, G1), au moins trois mois ; la dernière de décembre est fermée.
   const distributions: SeedDistribution[] = [];
   const firstMonth = today.toISOString().slice(0, 7);
+  const quarterStart = nextQuarterStart(parisDay(today));
+  const lastMonth = addMonths(quarterStart.slice(0, 7), 2);
+  const seedMonths: string[] = [];
+  for (let m = firstMonth; m <= lastMonth || seedMonths.length < 3; m = addMonths(m, 1)) {
+    seedMonths.push(m);
+  }
   AMAPS.forEach((definition, index) => {
     const amapRecord = amaps[index];
     if (!amapRecord) return;
-    for (const month of [0, 1, 2].map((delta) => addMonths(firstMonth, delta))) {
+    for (const month of seedMonths) {
       const dates = distributionDates(month, definition.distribution.weekday as Weekday);
       dates.forEach((date, position) => {
         const christmas = month.endsWith("-12") && position === dates.length - 1;
@@ -1087,6 +1121,67 @@ export function buildSeedData(today: Date = new Date()): SeedData {
       ]
     : [];
 
+  // Disponibilités du prochain trimestre dans la première AMAP : période de réponse ouverte en
+  // ce moment, et la réponse de 8 amapiens (pas celle des comptes de démonstration, pour qu'on
+  // puisse essayer « Mes disponibilités » de zéro).
+  const dutyPlans: SeedDutyPlan[] = [];
+  const dutyResponses: SeedDutyResponse[] = [];
+  const unavailabilities: SeedUnavailability[] = [];
+  if (firstAmap) {
+    const todayInParis = parisDay(today);
+    const proposed = defaultDutyPlanDays(quarterStart);
+    const opensOn = proposed.opensOn < todayInParis ? proposed.opensOn : addDays(todayInParis, -2);
+    const latest = addDays(quarterStart, -1);
+    const wanted =
+      proposed.deadlineOn > addDays(todayInParis, 7)
+        ? proposed.deadlineOn
+        : addDays(todayInParis, 7);
+    const deadlineOn = wanted < latest ? wanted : latest;
+    const instants = periodInstants(opensOn, deadlineOn);
+    const planId = nextId();
+    dutyPlans.push({
+      id: planId,
+      amapId: firstAmap.id,
+      quarterStart,
+      opensAt: instants.opensAt,
+      unavailabilityDeadline: instants.closesAt,
+      openingNoticeAt: instants.opensAt,
+    });
+    const quarterDays = distributions.filter(
+      (d) =>
+        d.amapId === firstAmap.id &&
+        d.isOpen &&
+        d.date >= quarterStart &&
+        d.date.slice(0, 7) <= lastMonth,
+    );
+    const demoIds = new Set(demoUsers.map(({ demoUser }) => demoUser.id));
+    const answering = householdMembers
+      .filter((m) => m.amapId === firstAmap.id && !demoIds.has(m.userId))
+      .slice(0, 8);
+    answering.forEach((member, index) => {
+      dutyResponses.push({
+        id: nextId(),
+        amapId: firstAmap.id,
+        dutyPlanId: planId,
+        userId: member.userId,
+        answeredAt: instants.opensAt,
+      });
+      // Une personne sur deux : une ou deux dates impossibles.
+      if (index % 2 === 0) return;
+      const picked = index % 3 === 0 ? [index, index + 4] : [index];
+      for (const d of picked.map((k) => quarterDays[k])) {
+        if (!d) continue;
+        unavailabilities.push({
+          id: nextId(),
+          amapId: firstAmap.id,
+          dutyPlanId: planId,
+          userId: member.userId,
+          distributionId: d.id,
+        });
+      }
+    });
+  }
+
   return {
     pages,
     joinRequests,
@@ -1109,6 +1204,9 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     orderLines,
     cheques,
     memberships,
+    dutyPlans,
+    dutyResponses,
+    unavailabilities,
     totpUserIds,
   };
 }

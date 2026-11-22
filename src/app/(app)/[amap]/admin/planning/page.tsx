@@ -1,3 +1,4 @@
+import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
@@ -28,15 +29,22 @@ export default async function PlanningPage({ params, searchParams }: Props) {
     distributions: await listDistributions(tx, c, month),
   }));
   const t = await getTranslations("Admin.planning");
+  const td = await getTranslations("Admin.duty");
   return (
     <>
       <Typography variant="h1" gutterBottom>
         {t("title")}
       </Typography>
       {/* Feuille d'émargement du mois affiché, prête à imprimer (story E3). */}
-      <LinkButton href={`/${slug}/emargement/${month}`} variant="outlined" sx={{ mb: 3 }}>
-        {t("signInSheet", { month: formatDate(`${month}-01T12:00:00Z`, "MMMM yyyy") })}
-      </LinkButton>
+      <Stack direction="row" sx={{ mb: 3, flexWrap: "wrap", gap: 1.5 }}>
+        {/* Disponibilités des amapiens pour le prochain trimestre (story G1). */}
+        <LinkButton href={`/${slug}/admin/planning/disponibilites`} variant="contained">
+          {td("open")}
+        </LinkButton>
+        <LinkButton href={`/${slug}/emargement/${month}`} variant="outlined">
+          {t("signInSheet", { month: formatDate(`${month}-01T12:00:00Z`, "MMMM yyyy") })}
+        </LinkButton>
+      </Stack>
       <DistributionPlanning
         key={month}
         amapSlug={slug}

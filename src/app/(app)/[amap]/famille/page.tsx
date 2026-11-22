@@ -3,6 +3,8 @@ import { getTranslations } from "next-intl/server";
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
 import { requireFamilyPage } from "@/server/auth/guards";
+import { quarterLabel } from "@/server/duty-notices";
+import { getMyAvailability } from "@/server/duty-plans";
 import { getFamilyHome } from "@/server/family-home";
 import { FamilyHome } from "@/ui/family/FamilyHome";
 
@@ -14,7 +16,11 @@ type Props = { params: Promise<{ amap: string }> };
 export default async function FamilyHomePage({ params }: Props) {
   const { amap: slug } = await params;
   const { ctx } = await requireFamilyPage(slug);
-  const home = await withAmapContext(getDatabase(), ctx, (tx, c) => getFamilyHome(tx, c));
+  const [home, duty] = await withAmapContext(
+    getDatabase(),
+    ctx,
+    async (tx, c) => [await getFamilyHome(tx, c), await getMyAvailability(tx, c)] as const,
+  );
   if (home.state === "no_household") return <OrderState state="no_household" />;
   const t = await getTranslations("Family");
   return (
@@ -24,6 +30,17 @@ export default async function FamilyHomePage({ params }: Props) {
       membership={home.membership}
       period={home.period}
       nextDistribution={home.nextDistribution}
+      duty={
+        duty.status === "ready" && duty.phase === "open"
+          ? {
+              quarter: quarterLabel(duty.quarterStart),
+              deadlineOn: duty.deadlineOn,
+              distributionCount: duty.distributions.length,
+              answered: duty.answeredOn !== null,
+              unavailableCount: duty.unavailable.length,
+            }
+          : null
+      }
     />
   );
 }
