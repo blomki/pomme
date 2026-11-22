@@ -28,6 +28,8 @@ export const NOTIFICATION_TEMPLATES = [
   "order_form",
   "duty_opening",
   "duty_reminder",
+  "duty_planning",
+  "duty_change",
 ] as const;
 
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];

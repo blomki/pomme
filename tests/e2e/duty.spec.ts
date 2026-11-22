@@ -63,7 +63,10 @@ test.describe("Disponibilités du trimestre (ordinateur)", () => {
   }) => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin/planning");
-    await page.getByRole("link", { name: "Disponibilités du trimestre" }).click();
+    await page
+      .getByRole("region", { name: "Prochain trimestre" })
+      .getByRole("link", { name: "Voir les réponses" })
+      .click();
     await expect(
       page.getByRole("heading", { level: 1, name: /^Disponibilités · .* \d{4}$/ }),
     ).toBeVisible();
@@ -84,5 +87,82 @@ test.describe("Disponibilités du trimestre (ordinateur)", () => {
     await expect(
       page.getByText(/^(1 relance envoyée\.|Aucun email envoyé \(déjà relancé aujourd'hui\)\.)$/),
     ).toBeVisible();
+  });
+});
+
+test.describe("Planning des permanences (ordinateur)", () => {
+  test.skip(({ browserName }) => browserName !== "chromium", "écran d'ordinateur");
+
+  test("un admin génère le planning, l'ajuste au clavier et prévient les personnes (G2)", async ({
+    page,
+    request,
+  }) => {
+    /** Vide au clavier la première case occupée (le test peut repasser sur la même base). */
+    const emptyAFilledSlot = async (table: ReturnType<typeof page.getByRole>) => {
+      const selects = table.getByRole("combobox");
+      const count = await selects.count();
+      for (let i = 0; i < count; i++) {
+        if ((await selects.nth(i).inputValue()) !== "") {
+          await selects.nth(i).focus();
+          await page.keyboard.press("Home");
+          await expect(selects.nth(i)).toHaveValue("");
+          return;
+        }
+      }
+      throw new Error("Aucune case occupée");
+    };
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/planning");
+    const banner = page.getByRole("region", { name: "Prochain trimestre" });
+    await expect(banner.getByText(/amapiens sur \d+ ont répondu/)).toBeVisible();
+    await banner
+      .getByRole("link", { name: /^(Générer le planning|Voir et éditer le planning)$/ })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: /^Permanences · / })).toBeVisible();
+
+    // Prochain trimestre : génération (ou regénération du brouillon), au clavier.
+    const generate = page.getByRole("button", { name: /^(Générer le planning|Regénérer)$/ });
+    await generate.focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Planning généré.")).toBeVisible();
+    const table = page.getByRole("table", { name: /^Bénévoles de / });
+    await expect(table.getByRole("combobox").first()).toBeVisible();
+    await expect(page.getByText(/^Équité : /)).toBeVisible();
+    // Les boutons, désactivés pendant la génération, changent de couleur en 250 ms : axe ne
+    // doit pas mesurer le contraste au milieu de cette transition.
+    const send = page.getByRole("button", { name: "Envoyer le planning aux bénévoles" });
+    await expect(send).toBeEnabled();
+    await expect.poll(() => send.evaluate((el) => el.getAnimations().length)).toBe(0);
+    await expectNoSeriousA11yViolations(page);
+
+    // Une case vidée au clavier (touche Début : « — personne — »), puis le brouillon enregistré.
+    await emptyAFilledSlot(table);
+    await page.getByRole("button", { name: "Enregistrer le brouillon" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText("Brouillon enregistré.")).toBeVisible();
+
+    // Trimestre en cours, déjà envoyé : un changement enregistré sans prévenir.
+    await page.getByRole("link", { name: "Trimestre en cours" }).click();
+    await expect(page.getByText(/^Planning envoyé le /)).toBeVisible();
+    const current = page.getByRole("table", { name: /^Bénévoles de / });
+    await emptyAFilledSlot(current);
+    await expect(page.getByText("Modifications non enregistrées.")).toBeVisible();
+    await page.getByRole("checkbox", { name: "Prévenir les personnes concernées" }).uncheck();
+    await page.getByRole("button", { name: "Enregistrer", exact: true }).click();
+    await expect(page.getByText("Changements enregistrés sans prévenir.")).toBeVisible();
+
+    // Le bandeau propose de prévenir maintenant.
+    const pending = page
+      .getByRole("status")
+      .filter({ hasText: "Changements enregistrés sans prévenir :" });
+    await expect(pending).toBeVisible();
+    const notifyNow = pending.getByRole("button", { name: "Prévenir maintenant" });
+    await expect.poll(() => notifyNow.evaluate((el) => el.getAnimations().length)).toBe(0);
+    await expectNoSeriousA11yViolations(page);
+    await pending.getByRole("button", { name: "Prévenir maintenant" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByText(/personnes? prévenues?\.$/)).toBeVisible();
+    await expect(pending).toBeHidden();
   });
 });

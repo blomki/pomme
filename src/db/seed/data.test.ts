@@ -209,8 +209,7 @@ describe("buildSeedData", () => {
   });
 
   it("ouvre les disponibilités du trimestre suivant, avec 8 réponses hors comptes de démonstration (G1)", () => {
-    const [plan] = data.dutyPlans;
-    expect(data.dutyPlans).toHaveLength(1);
+    const plan = data.dutyPlans.find((p) => p.quarterStart === "2027-01-01");
     expect(plan?.quarterStart).toBe("2027-01-01");
     expect(plan!.opensAt < today && today < plan!.unavailabilityDeadline).toBe(true);
     expect(plan!.unavailabilityDeadline <= new Date("2027-01-01T00:00:00+01:00")).toBe(true);
@@ -224,6 +223,21 @@ describe("buildSeedData", () => {
     );
     expect(data.unavailabilities.length).toBeGreaterThan(0);
     for (const u of data.unavailabilities) expect(quarter.has(u.distributionId)).toBe(true);
+  });
+
+  it("envoie le planning du trimestre en cours, 3 bénévoles par distribution ouverte (G2)", () => {
+    const plan = data.dutyPlans.find((p) => p.quarterStart === "2026-10-01");
+    expect(plan).toMatchObject({ status: "sent" });
+    const [first] = data.amaps;
+    const open = data.distributions.filter(
+      (d) => d.amapId === first?.id && d.isOpen && d.date < "2027-01-01",
+    );
+    for (const d of open) {
+      const slots = data.dutySlots.filter((s) => s.distributionId === d.id);
+      expect(slots.map((s) => s.position)).toEqual([1, 2, 3]);
+      expect(new Set(slots.map((s) => s.userId)).size).toBe(3);
+    }
+    expect(data.dutyHistories.length).toBeGreaterThan(0);
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

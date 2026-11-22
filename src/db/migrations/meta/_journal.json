@@ -281,6 +281,13 @@
       "when": 1795364477401,
       "tag": "0039_indisponibilites",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795364764588,
+      "tag": "0040_planning-permanences",
+      "breakpoints": true
     }
   ]
 }
