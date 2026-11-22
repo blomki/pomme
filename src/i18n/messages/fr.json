@@ -81,7 +81,24 @@
         "backHome": "Retour à l'accueil"
       },
       "saving": "Enregistrement…",
-      "saved": "Modifications enregistrées"
+      "saved": "Modifications enregistrées",
+      "reuse": {
+        "button": "Reprendre ma commande de {month}",
+        "title": "Reprendre ma commande de {month} ?",
+        "copied": "Recopié, semaine par semaine",
+        "partial": "Recopié en partie : indisponible certaines semaines",
+        "missing": "Pas recopié : plus au catalogue, ou indisponible",
+        "line": "{product} ({producer}) : {quantity} au total",
+        "lineNoQuantity": "{product} ({producer})",
+        "replaceNote": "Les quantités déjà saisies pour ces produits seront remplacées. Vous pourrez tout modifier ensuite, producteur par producteur.",
+        "nothingToCopy": "Aucun produit de votre commande précédente n'est disponible ce mois-ci.",
+        "nothing": "Vous n'aviez rien commandé en {month}.",
+        "cancel": "Annuler",
+        "confirm": "Reprendre ces quantités",
+        "applied": "Commande reprise. Vérifiez-la producteur par producteur.",
+        "appliedPartly": "Commande reprise, sauf {refused, plural, one {# case refusée} other {# cases refusées}}. Vérifiez-la producteur par producteur.",
+        "error": "La reprise n'a pas abouti. Rechargez la page."
+      }
     },
     "home": {
       "noHousehold": "Votre compte n'est rattaché à aucun foyer de cette AMAP. Contactez un administrateur.",
@@ -242,7 +259,17 @@
       "statusReceived": "Reçu",
       "statusExpected": "Attendu",
       "gapOpen": "Écart : {amount}",
-      "gapSettledChip": "Écart traité : {amount}"
+      "gapSettledChip": "Écart traité : {amount}",
+      "handOverButton": "{count, plural, one {Marquer le chèque reçu comme remis à {producer}} other {Marquer les # chèques reçus comme remis à {producer}}}",
+      "handOverTitle": "{count, plural, one {Remettre # chèque à {producer} ?} other {Remettre # chèques à {producer} ?}}",
+      "handOverText": "À faire au moment où vous donnez les chèques au producteur. Un chèque remis ne se modifie plus : vérifiez d'abord les montants. Le producteur voit la remise dans ses paiements.",
+      "handOverConfirm": "Marquer comme remis",
+      "handedOverDone": "{count, plural, one {# chèque remis à {producer}.} other {# chèques remis à {producer}.}}",
+      "handOverHeldBack": "{count, plural, one {# chèque reçu attend que son écart soit traité avant d'être remis.} other {# chèques reçus attendent que leur écart soit traité avant d'être remis.}}",
+      "handOverAllDone": "{count, plural, one {# chèque remis à {producer}.} other {# chèques remis à {producer}.}}",
+      "handOverNothing": "Aucun chèque reçu à remettre : rechargez la page.",
+      "handOverError": "La remise n'a pas pu être enregistrée. Rechargez la page.",
+      "cancel": "Annuler"
     }
   },
   "Catalog": {
@@ -746,12 +773,14 @@
       "parameter": {
         "volunteersPerDistribution": "Bénévoles par distribution",
         "experiencedThreshold": "Seuil « expérimenté » (permanences)",
-        "membershipExpiryAlertDays": "Alerte de fin d'adhésion (jours avant)"
+        "membershipExpiryAlertDays": "Alerte de fin d'adhésion (jours avant)",
+        "orderReminderDays": "Rappel avant la clôture (jours)"
       },
       "parameterHelp": {
         "volunteersPerDistribution": "Nombre de bénévoles nécessaires à chaque distribution (3 par défaut).",
         "experiencedThreshold": "Nombre de permanences à partir duquel un bénévole est « expérimenté » (6 par défaut).",
-        "membershipExpiryAlertDays": "Une adhésion apparaît « expire bientôt » ce nombre de jours avant sa fin (30 par défaut)."
+        "membershipExpiryAlertDays": "Une adhésion apparaît « expire bientôt » ce nombre de jours avant sa fin (30 par défaut).",
+        "orderReminderDays": "Email automatique aux foyers qui n'ont pas encore commandé, ce nombre de jours avant la clôture (2 par défaut, 0 : aucun rappel)."
       },
       "range": "Nombre entier de {min} à {max}.",
       "save": "Enregistrer les réglages",

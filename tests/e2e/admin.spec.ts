@@ -1,3 +1,4 @@
+import { execFileSync } from "node:child_process";
 import { text } from "node:stream/consumers";
 
 import { expect, test } from "@playwright/test";
@@ -418,6 +419,29 @@ test.describe("administration (ordinateur)", () => {
     // Remise à la valeur du jeu de données (d'autres tests s'en servent).
     await setVolunteers("3");
     await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+
+    // Rappel avant la clôture (D5) : délai réglé à 14 jours, la tâche horaire envoie les
+    // rappels de la période ouverte (ou les a déjà envoyés si le test a déjà tourné).
+    const reminder = page.getByRole("spinbutton", { name: "Rappel avant la clôture (jours)" });
+    await expect(reminder).toHaveValue("2");
+    const setReminder = async (value: string) => {
+      await reminder.focus();
+      await page.keyboard.press("ControlOrMeta+A");
+      await page.keyboard.type(value);
+      await page.getByRole("button", { name: "Enregistrer les réglages" }).focus();
+      await page.keyboard.press("Enter");
+      await expect(page.getByText("Réglages enregistrés.")).toBeVisible();
+    };
+    await setReminder("14");
+    const output = execFileSync("pnpm", ["-s", "jobs:hourly"], { encoding: "utf8" });
+    const line =
+      /Rappel avant clôture \d{4}-\d{2}, AMAP \S+ : (\d+) envoyé\(s\), (\d+) déjà fait\(s\), 0 en échec\./.exec(
+        output,
+      );
+    expect(line, output).not.toBeNull();
+    expect(Number(line![1]) + Number(line![2])).toBeGreaterThan(0);
+    await page.reload();
+    await setReminder("2");
   });
 
   test("un admin suit sa liste de tâches au clavier : à suivre, fait, rétabli (H3)", async ({
@@ -1297,6 +1321,48 @@ test.describe("administration (ordinateur)", () => {
     await press(page.getByRole("link", { name: "Retour" }));
     await expect(page.getByRole("region", { name: "Commande du mois" })).toBeVisible();
   });
+  test("un référent remet au producteur les chèques reçus, au clavier (F3)", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/referent/cheques");
+    await expect(page.getByRole("heading", { level: 1, name: /^Chèques de / })).toBeVisible();
+    // Un autre producteur que celui du test F1 : les deux tests ne touchent pas les mêmes chèques.
+    const tab = page.getByRole("tab", { name: "Les Ruches du Vallon" });
+    await tab.focus();
+    await page.keyboard.press("Enter");
+    await expect(tab).toHaveAttribute("aria-selected", "true");
+
+    // Un chèque reçu, au clavier.
+    const box = page.getByRole("checkbox", { name: /^Reçu : /, checked: false }).first();
+    const household = (await box.getAttribute("aria-label"))!.replace("Reçu : ", "");
+    await box.focus();
+    await page.keyboard.press("Space");
+    await expect(page.getByRole("checkbox", { name: `Reçu : ${household}` })).toBeChecked();
+
+    // Remise au producteur, après confirmation.
+    const handOver = page.getByRole("button", {
+      name: /^Marquer (le chèque reçu|les \d+ chèques reçus) comme remis à Les Ruches du Vallon$/,
+    });
+    await handOver.focus();
+    await page.keyboard.press("Enter");
+    const dialog = page.getByRole("dialog", {
+      name: /^Remettre \d+ chèques? à Les Ruches du Vallon \?$/,
+    });
+    await expect(dialog).toBeVisible();
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await dialog.getByRole("button", { name: "Marquer comme remis" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByText(/^\d+ chèques? remis à Les Ruches du Vallon\.$/).first(),
+    ).toBeVisible();
+    // Remis : le chèque ne se modifie plus.
+    await expect(page.getByRole("checkbox", { name: `Reçu : ${household}` })).toBeDisabled();
+    await expect(handOver).toHaveCount(0);
+  });
+
   test("un référent pointe les chèques reçus au clavier et traite un écart (F1)", async ({
     page,
     request,

@@ -2,9 +2,11 @@
 
 import { runAmapAction } from "./amap-action";
 import {
+  handOverCheques,
   markChequeReceived,
   settleChequeGap,
   unmarkChequeReceived,
+  type HandOverResult,
   type PointageResult,
 } from "./cheques";
 
@@ -44,6 +46,17 @@ export async function settleChequeGapAction(
 ): Promise<PointageResult | { status: "no_gap" } | Forbidden> {
   const outcome = await runAmapAction(amap, chequesPath(amap), (tx, ctx) =>
     settleChequeGap(tx, ctx, input),
+  );
+  return "status" in outcome ? outcome : outcome.result;
+}
+
+/** Remise au producteur des chèques reçus d'un mois (story F3). */
+export async function handOverChequesAction(
+  amap: string,
+  input: { amapProducerId: string; month: string },
+): Promise<HandOverResult | Forbidden> {
+  const outcome = await runAmapAction(amap, chequesPath(amap), (tx, ctx) =>
+    handOverCheques(tx, ctx, input),
   );
   return "status" in outcome ? outcome : outcome.result;
 }

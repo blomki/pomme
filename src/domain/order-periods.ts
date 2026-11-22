@@ -200,3 +200,19 @@ export function chequesAtClosing(
 
 /** Clé d'un couple foyer et producteur, pour `locked`. */
 export { pairKey as chequeKey };
+
+/**
+ * Le rappel automatique avant la clôture (story D5) est-il à envoyer aujourd'hui ? Oui à partir
+ * de `daysBefore` jours avant le jour de clôture, et jusqu'à ce jour compris. 0 : jamais (rappel
+ * désactivé). L'envoi n'a lieu qu'une fois par personne et par période (notification_log).
+ *
+ * @example reminderDue({ closesOn: "2026-11-25", today: "2026-11-23", daysBefore: 2 }) // true
+ */
+export function reminderDue(input: {
+  closesOn: string;
+  today: string;
+  daysBefore: number;
+}): boolean {
+  if (input.daysBefore <= 0) return false;
+  return input.today >= addDays(input.closesOn, -input.daysBefore) && input.today <= input.closesOn;
+}

@@ -25,6 +25,7 @@ import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors"
 import {
   defaultChequeMonth,
   getChequePointage,
+  handOverCheques,
   markChequeReceived,
   settleChequeGap,
   unmarkChequeReceived,
@@ -300,5 +301,44 @@ describe("Pointage des chèques (F1)", () => {
     // Chèque de la ferme pointé : verrouillé. Chèque du fournil attendu : modifiable.
     expect(await order(eggs)).toEqual({ status: "locked", reason: "cheque_received" });
     expect(await order(bread)).toMatchObject({ status: "saved" });
+  });
+
+  it("remet au producteur les chèques reçus, en retenant ceux dont l'écart reste à traiter (F3)", async () => {
+    // Martin : reçu au montant attendu ; Dubois : reçu avec un écart pas encore traité.
+    const [martinRow] = await db.owner.select().from(cheque).where(eq(cheque.id, martinFarm));
+    await db.owner
+      .update(cheque)
+      .set({ status: "received", receivedCents: martinRow!.expectedCents, gapSettledAt: null })
+      .where(eq(cheque.id, martinFarm));
+    await db.owner
+      .update(cheque)
+      .set({ status: "received", receivedCents: 100, gapSettledAt: null })
+      .where(eq(cheque.id, duboisFarm));
+    const handOver = (ctx: AmapContext) =>
+      run(ctx, (tx, c) => handOverCheques(tx, c, { amapProducerId: farm, month: "2026-12" }, NOW));
+
+    // Accès refusé : le référent d'un autre producteur, une famille.
+    await expect(handOver(as(otherReferent.id))).rejects.toThrow(ForbiddenError);
+    await expect(handOver(as(family.id))).rejects.toThrow(ForbiddenError);
+
+    expect(await handOver(as(referent.id))).toEqual({
+      status: "handed_over",
+      count: 1,
+      heldBack: 1,
+    });
+    const [martin] = await db.owner.select().from(cheque).where(eq(cheque.id, martinFarm));
+    expect(martin).toMatchObject({
+      status: "handed_over",
+      handedOverAt: NOW,
+      handedOverBy: referent.id,
+    });
+    const [dubois] = await db.owner.select().from(cheque).where(eq(cheque.id, duboisFarm));
+    expect(dubois?.status).toBe("received");
+    expect((await journal(martinFarm)).at(-1)).toMatchObject({
+      action: "hand_over",
+      actor: referent.id,
+    });
+    // Plus rien de prêt : l'écart de Dubois retient encore son chèque.
+    expect(await handOver(as(referent.id))).toEqual({ status: "nothing" });
   });
 });
