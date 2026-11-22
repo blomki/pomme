@@ -143,11 +143,11 @@ describe("buildSeedData", () => {
     expect(data.householdMembers.some((m) => m.userId === ange?.id)).toBe(false);
   });
 
-  it("crée les distributions de trois mois au jour habituel, dont une fermée à Noël", () => {
+  it("crée les distributions jusqu'à la fin du trimestre suivant, dont une fermée à Noël", () => {
     const [first] = data.amaps;
     const ofFirst = data.distributions.filter((d) => d.amapId === first?.id);
-    // Jeudis de novembre 2026 (4), décembre (5) et janvier 2027 (4).
-    expect(ofFirst).toHaveLength(13);
+    // Jeudis de novembre 2026 (4), décembre (5), puis janvier, février et mars 2027 (4 chacun).
+    expect(ofFirst).toHaveLength(21);
     expect(ofFirst.filter((d) => !d.isOpen)).toEqual([
       expect.objectContaining({ date: "2026-12-31", closedReason: "Vacances de Noël" }),
     ]);
@@ -206,6 +206,24 @@ describe("buildSeedData", () => {
       for (const p of pages.filter((x) => x.status === "published"))
         expect(p.publishedOn).not.toBeNull();
     }
+  });
+
+  it("ouvre les disponibilités du trimestre suivant, avec 8 réponses hors comptes de démonstration (G1)", () => {
+    const [plan] = data.dutyPlans;
+    expect(data.dutyPlans).toHaveLength(1);
+    expect(plan?.quarterStart).toBe("2027-01-01");
+    expect(plan!.opensAt < today && today < plan!.unavailabilityDeadline).toBe(true);
+    expect(plan!.unavailabilityDeadline <= new Date("2027-01-01T00:00:00+01:00")).toBe(true);
+    expect(data.dutyResponses).toHaveLength(8);
+    const demo = new Set(
+      data.users.filter((u) => u.email.endsWith(".demo@example.org")).map((u) => u.id),
+    );
+    expect(data.dutyResponses.some((r) => demo.has(r.userId))).toBe(false);
+    const quarter = new Set(
+      data.distributions.filter((d) => d.date >= "2027-01-01").map((d) => d.id),
+    );
+    expect(data.unavailabilities.length).toBeGreaterThan(0);
+    for (const u of data.unavailabilities) expect(quarter.has(u.distributionId)).toBe(true);
   });
 
   it("donne au moins un administrateur à chaque AMAP", () => {

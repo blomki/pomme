@@ -22,6 +22,9 @@ import {
   order,
   orderLine,
   orderPeriod,
+  dutyPlan,
+  dutyResponse,
+  unavailability,
   page,
   pageRedirect,
   producer,
@@ -84,6 +87,9 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.delete(orderLine);
     await tx.delete(order);
     await tx.delete(orderPeriod);
+    await tx.delete(unavailability);
+    await tx.delete(dutyResponse);
+    await tx.delete(dutyPlan);
     await tx.delete(catalogItemAvailability);
     await tx.delete(catalogItem);
     await tx.delete(catalog);
@@ -119,6 +125,12 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.insert(orderLine).values(data.orderLines);
     await tx.insert(cheque).values(data.cheques);
     await tx.insert(membership).values(data.memberships);
+    if (data.dutyPlans.length > 0) {
+      await tx.insert(dutyPlan).values(data.dutyPlans);
+      await tx.insert(dutyResponse).values(data.dutyResponses);
+      if (data.unavailabilities.length > 0)
+        await tx.insert(unavailability).values(data.unavailabilities);
+    }
     await tx.insert(page).values(data.pages);
     if (data.joinRequests.length > 0) await tx.insert(joinRequest).values(data.joinRequests);
     if (data.totpUserIds.length > 0) {

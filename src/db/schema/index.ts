@@ -42,6 +42,7 @@ import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
 import { CHILDREN_ORDERS, PAGE_ROLES, PAGE_STATUSES, type RichDoc } from "@/domain/pages";
 import { REPORT_REASONS, REPORT_STATUSES } from "@/domain/reports";
 import { ADMIN_TASK_KINDS } from "@/domain/admin-tasks";
+import { DUTY_PLAN_STATUSES } from "@/domain/duty-plans";
 import { AMAP_ROLES } from "@/domain/roles";
 
 import { uuidv7 } from "../uuid";
@@ -1518,6 +1519,127 @@ export const knownDevice = pgTable(
       for: "all",
       using: sql`${t.userId} = ${currentUserId}`,
       withCheck: sql`${t.userId} = ${currentUserId}`,
+    }),
+  ],
+);
+
+// --- duty_plan, duty_response, unavailability : indisponibilités du trimestre -----------------
+// Story G1, ADR 0042 ; modèle de données, section 8. Le planning des permanences est
+// trimestriel : duty_plan porte la période de réponse (ouverture, date limite), duty_response
+// dit qui a répondu (une réponse sans rien coché compte : « toujours disponible ») et quand il a
+// été relancé, unavailability garde les dates cochées. Une réponse par personne, pas par foyer.
+
+export const dutyPlanStatus = pgEnum("duty_plan_status", DUTY_PLAN_STATUSES);
+
+export const dutyPlan = pgTable(
+  "duty_plan",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    // Premier jour du trimestre (« 2027-01-01 »).
+    quarterStart: date("quarter_start", { mode: "string" }).notNull(),
+    // Instants exacts : 0 h le jour d'ouverture, minuit à la fin de la date limite (Paris).
+    opensAt: timestamp("opens_at", { withTimezone: true }).notNull(),
+    unavailabilityDeadline: timestamp("unavailability_deadline", { withTimezone: true }).notNull(),
+    autoReminder: boolean("auto_reminder").notNull().default(true),
+    status: dutyPlanStatus("status").notNull().default("collecting"),
+    // Email d'ouverture envoyé à tous les amapiens (tâche horaire).
+    openingNoticeAt: timestamp("opening_notice_at", { withTimezone: true }),
+    // Dernière relance groupée, manuelle ou automatique.
+    lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
+    sentAt: timestamp("sent_at", { withTimezone: true }),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("duty_plan_quarter_unique").on(t.amapId, t.quarterStart),
+    unique("duty_plan_amap_unique").on(t.id, t.amapId),
+    check(
+      "duty_plan_quarter_first_day",
+      sql`extract(day from ${t.quarterStart}) = 1 and extract(month from ${t.quarterStart}) in (1, 4, 7, 10)`,
+    ),
+    check("duty_plan_dates", sql`${t.opensAt} < ${t.unavailabilityDeadline}`),
+    // Lecture : toute l'AMAP (accueil et écran « Mes disponibilités »). Écriture : les admins,
+    // et la tâche horaire qui note l'email d'ouverture et la relance (« closing_job »).
+    ...scopedPolicies("duty_plan", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      update: sql`(${isCurrentAmapAdmin} or ${trustedAccess} = 'closing_job')`,
+    }),
+  ],
+);
+
+/** Ligne visible et modifiable par la personne elle-même, les admins et la tâche horaire. */
+const ownOrAdminOrJob = (userId: unknown) =>
+  sql`(${userId} = ${currentUserId} or ${isCurrentAmapAdmin} or ${trustedAccess} = 'closing_job')`;
+
+export const dutyResponse = pgTable(
+  "duty_response",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    dutyPlanId: uuid("duty_plan_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    // Vide : pas encore répondu (la ligne existe alors pour noter une relance).
+    answeredAt: timestamp("answered_at", { withTimezone: true }),
+    lastRemindedAt: timestamp("last_reminded_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "duty_response_plan_fk",
+      columns: [t.dutyPlanId, t.amapId],
+      foreignColumns: [dutyPlan.id, dutyPlan.amapId],
+    }),
+    unique("duty_response_unique").on(t.dutyPlanId, t.userId),
+    ...scopedPolicies("duty_response", t.amapId, {
+      select: ownOrAdminOrJob(t.userId),
+      insert: ownOrAdminOrJob(t.userId),
+      update: ownOrAdminOrJob(t.userId),
+    }),
+  ],
+);
+
+export const unavailability = pgTable(
+  "unavailability",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    dutyPlanId: uuid("duty_plan_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    distributionId: uuid("distribution_id").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "unavailability_plan_fk",
+      columns: [t.dutyPlanId, t.amapId],
+      foreignColumns: [dutyPlan.id, dutyPlan.amapId],
+    }),
+    foreignKey({
+      name: "unavailability_distribution_fk",
+      columns: [t.distributionId, t.amapId],
+      foreignColumns: [distribution.id, distribution.amapId],
+    }),
+    unique("unavailability_unique").on(t.userId, t.distributionId),
+    // Lecture : soi-même et les admins (planning). Écriture : soi-même seulement ; les dates
+    // sont remplacées à chaque envoi (suppression puis ajout), d'où la politique delete.
+    ...scopedPolicies("unavailability", t.amapId, {
+      select: sql`(${t.userId} = ${currentUserId} or ${isCurrentAmapAdmin})`,
+      insert: sql`${t.userId} = ${currentUserId}`,
+      delete: sql`${t.userId} = ${currentUserId}`,
     }),
   ],
 );

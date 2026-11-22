@@ -32,6 +32,8 @@ describe("Migrations", () => {
       "cheque",
       "credit",
       "distribution",
+      "duty_plan",
+      "duty_response",
       "household",
       "household_member",
       "join_request",
@@ -51,6 +53,7 @@ describe("Migrations", () => {
       "report",
       "session",
       "two_factor",
+      "unavailability",
       "user",
       "verification",
     ]);
