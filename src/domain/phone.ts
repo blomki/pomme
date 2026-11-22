@@ -41,3 +41,15 @@ export function formatPhone(phone: string): string {
   const digits = `0${french[1]}${french[2]}`;
   return digits.replace(/(\d{2})(?=\d)/g, "$1 ");
 }
+
+/**
+ * Liens « Appeler » et « Écrire sur Signal » d'un numéro (story H4), seulement s'il est au format
+ * international (« +33612345678 ») : un numéro mal saisi ne donne aucun lien, plutôt qu'un lien
+ * qui appellerait le mauvais numéro. Le lien Signal ouvre la conversation dans l'application.
+ *
+ * @example contactLinks("+33612345678") // { tel: "tel:+33612345678", signal: "https://signal.me/#p/+33612345678" }
+ */
+export function contactLinks(phone: string | null): { tel: string; signal: string } | null {
+  if (!phone || !/^\+[1-9][0-9]{6,14}$/.test(phone)) return null;
+  return { tel: `tel:${phone}`, signal: `https://signal.me/#p/${phone}` };
+}

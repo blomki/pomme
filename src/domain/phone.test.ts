@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { formatPhone, normalizePhone } from "./phone";
+import { contactLinks, formatPhone, normalizePhone } from "./phone";
 
 describe("normalizePhone", () => {
   it.each([
@@ -33,5 +33,20 @@ describe("formatPhone", () => {
 
   it("laisse un numéro étranger tel quel", () => {
     expect(formatPhone("+32470123456")).toBe("+32470123456");
+  });
+});
+
+describe("contactLinks", () => {
+  it("donne les liens d'un numéro au format international", () => {
+    expect(contactLinks("+33612345678")).toEqual({
+      tel: "tel:+33612345678",
+      signal: "https://signal.me/#p/+33612345678",
+    });
+  });
+
+  it("aucun lien sans numéro, ou pour un numéro mal formé", () => {
+    for (const phone of [null, "", "06 12 34 56 78", "0612345678", "+0612345678", "+33 6 12"]) {
+      expect(contactLinks(phone)).toBeNull();
+    }
   });
 });
