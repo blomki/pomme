@@ -4,7 +4,7 @@ import { z } from "zod";
 import type { Transaction } from "@/db/client";
 import type { AmapContext } from "@/db/context";
 import { amapProducer, cheque, household, orderPeriod } from "@/db/schema";
-import { cleanChequeNumber, type ChequeStatus } from "@/domain/cheques";
+import { canHandOver, cleanChequeNumber, type ChequeStatus } from "@/domain/cheques";
 import { parisDay } from "@/domain/order-periods";
 
 import { writeAuditLog } from "./audit";
@@ -278,4 +278,59 @@ export async function settleChequeGap(
     after: journalView(after!),
   });
   return { status: "saved", cheque: rowOf(after!, await householdNameOf(tx, before.householdId)) };
+}
+
+export type HandOverResult =
+  | { status: "handed_over"; count: number; heldBack: number }
+  | { status: "nothing" } // aucun chèque reçu à remettre
+  | { status: "invalid" };
+
+/**
+ * Remise au producteur (story F3) : passe d'un coup tous les chèques reçus d'un producteur,
+ * pour un mois, à « remis », avec la date et l'auteur. Un chèque dont l'écart reste à traiter
+ * est retenu (une fois remis, il ne se modifie plus). Chaque chèque remis est journalisé.
+ */
+export async function handOverCheques(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: unknown,
+  now = new Date(),
+): Promise<HandOverResult> {
+  const parsed = z
+    .object({ amapProducerId: z.string(), month: z.string().regex(/^\d{4}-\d{2}$/) })
+    .safeParse(input);
+  if (!parsed.success) return { status: "invalid" };
+  const target = await requireReferentOrAdmin(tx, ctx, parsed.data.amapProducerId);
+  const [period] = await tx
+    .select({ id: orderPeriod.id })
+    .from(orderPeriod)
+    .where(eq(orderPeriod.month, `${parsed.data.month}-01`));
+  if (!period) return { status: "nothing" };
+  const received = await tx
+    .select()
+    .from(cheque)
+    .where(
+      and(
+        eq(cheque.orderPeriodId, period.id),
+        eq(cheque.producerId, target.producerId),
+        eq(cheque.status, "received"),
+        isNull(cheque.archivedAt),
+      ),
+    );
+  const ready = received.filter((c) => canHandOver(c));
+  if (ready.length === 0) return { status: "nothing" };
+  for (const c of ready) {
+    await tx
+      .update(cheque)
+      .set({ status: "handed_over", handedOverAt: now, handedOverBy: ctx.userId })
+      .where(eq(cheque.id, c.id));
+    await writeAuditLog(tx, ctx, {
+      entityType: "cheque",
+      entityId: c.id,
+      action: "hand_over",
+      before: { status: c.status },
+      after: { status: "handed_over" },
+    });
+  }
+  return { status: "handed_over", count: ready.length, heldBack: received.length - ready.length };
 }

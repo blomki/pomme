@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  canHandOver,
   chequeGap,
   cleanChequeNumber,
   hasOpenGap,
@@ -105,5 +106,26 @@ describe("nothingThisMonth", () => {
       "Ferme du Coteau",
       "Laiterie du Pré Vert",
     ]);
+  });
+});
+
+describe("canHandOver", () => {
+  const base = { expectedCents: 1200, receivedCents: 1200, gapSettledAt: null };
+  it("remet un chèque reçu, sans écart ou avec un écart réglé", () => {
+    expect(canHandOver({ ...base, status: "received" })).toBe(true);
+    expect(
+      canHandOver({
+        ...base,
+        status: "received",
+        receivedCents: 1000,
+        gapSettledAt: new Date("2026-12-05T10:00:00Z"),
+      }),
+    ).toBe(true);
+  });
+
+  it("retient un chèque attendu, déjà remis, ou dont l'écart reste à traiter", () => {
+    expect(canHandOver({ ...base, status: "expected", receivedCents: null })).toBe(false);
+    expect(canHandOver({ ...base, status: "handed_over" })).toBe(false);
+    expect(canHandOver({ ...base, status: "received", receivedCents: 1000 })).toBe(false);
   });
 });

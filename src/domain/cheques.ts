@@ -33,6 +33,14 @@ export function hasOpenGap(cheque: PointedCheque): boolean {
   return gap !== null && gap !== 0 && cheque.gapSettledAt === null;
 }
 
+/**
+ * Remise au producteur (story F3) : un chèque reçu dont l'écart éventuel est réglé. Un écart
+ * encore à traiter retient le chèque : une fois remis, il ne se modifie plus.
+ */
+export function canHandOver(cheque: PointedCheque): boolean {
+  return cheque.status === "received" && !hasOpenGap(cheque);
+}
+
 /** Filtres de l'écran de pointage : tous, non reçus, écarts à traiter. */
 export const CHEQUE_FILTERS = ["all", "pending", "gaps"] as const;
 export type ChequeFilter = (typeof CHEQUE_FILTERS)[number];
