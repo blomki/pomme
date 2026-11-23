@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 
+import mappingFile from "./import-mapping.json";
 import {
+  checkMapping,
   headerKey,
+  importColumns,
   mapHeaders,
   parseHouseholdRow,
   parseProducerRow,
@@ -152,5 +155,37 @@ describe("refuseDuplicates", () => {
       { line: 4, problems: [] },
       { line: 5, value: "b" },
     ]);
+  });
+});
+
+describe("fichier de correspondance (import-mapping.json)", () => {
+  it("est valable : sections, colonnes Pomme connues, aucun nom pour deux colonnes", () => {
+    expect(checkMapping(mappingFile)).toEqual([]);
+  });
+
+  it("signale les erreurs de saisie dans le fichier", () => {
+    expect(
+      checkMapping({
+        adherents: {
+          Prenom: [],
+          Email: "Mail",
+          Nom: ["Nom de famille"],
+          Foyer: ["nom de famille"],
+        },
+        producteurs: {},
+      }),
+    ).toEqual([
+      { code: "unknown_column", section: "adherents", column: "Prenom" },
+      { code: "not_a_list", section: "adherents", column: "Email" },
+      { code: "duplicate", section: "adherents", name: "nom de famille" },
+      { code: "missing_section", section: "produits" },
+    ]);
+  });
+
+  it("donne ses synonymes aux colonnes ; une colonne absente garde son seul nom Pomme", () => {
+    const columns = importColumns({ adherents: { Email: ["Courriel AmapJ"] } });
+    expect(columns.households.find((c) => c.key === "email")?.aliases).toEqual(["Courriel AmapJ"]);
+    expect(columns.households.find((c) => c.key === "phone")?.aliases).toEqual([]);
+    expect(columns.products.map((c) => c.label)).toEqual(["Producteur", "Produit"]);
   });
 });

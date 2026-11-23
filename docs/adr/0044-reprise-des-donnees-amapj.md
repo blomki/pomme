@@ -18,9 +18,10 @@ doivent jamais servir en développement ni dans les tests.
    producteurs, puis produits.
 2. **Colonnes reconnues par leur nom**, sans tenir compte des majuscules, des accents ni de la
    ponctuation ; l'ordre est libre et les autres colonnes sont ignorées. Un **modèle Pomme**
-   (téléchargeable) donne un nom par colonne ; des **synonymes** couvrent les noms des exports
-   AmapJ et des tableurs (`domain/imports.ts`, `IMPORT_COLUMNS`). Les noms exacts des exports
-   AmapJ de Cambremer s'y ajouteront.
+   (téléchargeable) donne un nom par colonne. Les **synonymes** (noms des exports AmapJ, des
+   tableurs) sont dans un **fichier de correspondance**, `src/domain/import-mapping.json` :
+   pour chaque colonne de Pomme, la liste des noms acceptés. Il se modifie sans toucher au code
+   (mode d'emploi : `docs/import-amapj.md`) ; un test le vérifie à chaque modification.
 3. **Lecture tolérante** (`domain/csv.ts`) : séparateur deviné (point-virgule, virgule ou
    tabulation), guillemets, BOM, fins de ligne Windows ; dates `jj/mm/aaaa` ; encodage UTF-8, ou
    à défaut Windows-1252 (Excel sous Windows).
@@ -44,6 +45,8 @@ doivent jamais servir en développement ni dans les tests.
   et poids de l'application) ; tout tableur sait enregistrer en CSV.
 - **Reconnaissance par nom de colonne** plutôt qu'un écran d'association colonne par colonne :
   plus simple pour l'admin, et suffisant tant que les synonymes couvrent les exports réels.
+- **Fichier de correspondance séparé du code** : les exports réels d'AmapJ ne sont pas encore
+  connus ; quand ils le seront, il suffira d'y ajouter leurs en-têtes, sans modifier la logique.
 - **Même chemin pour l'aperçu et l'import** : l'admin voit exactement ce qui sera fait.
 - **Un producteur d'une autre AMAP n'est jamais rattaché par l'import** : sa fiche est commune ;
   le rattachement se fait à la main (« Rattacher un producteur »), en connaissance de cause.
@@ -53,6 +56,6 @@ doivent jamais servir en développement ni dans les tests.
 ## Conséquences
 
 - Les tests n'utilisent que des fichiers fictifs (adresses `@example.org`).
-- À faire quand les en-têtes des exports AmapJ de Cambremer seront connus : ajouter leurs noms
-  aux synonymes et un test avec ces en-têtes (sans aucune donnée réelle).
+- À faire quand les en-têtes des exports AmapJ de Cambremer seront connus : les ajouter au
+  fichier de correspondance (sans aucune donnée réelle).
 - Les commandes passées dans AmapJ ne sont pas reprises (hors périmètre de K1).

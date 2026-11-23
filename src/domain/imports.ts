@@ -5,10 +5,12 @@
  *
  * Les colonnes se reconnaissent par leur nom, sans tenir compte des majuscules, des accents ni
  * de la ponctuation : « E-mail », « email » et « Adresse email » désignent la même colonne. Le
- * modèle Pomme donne un nom par colonne ; les synonymes couvrent les exports AmapJ et les
- * habitudes des tableurs.
+ * modèle Pomme donne un nom par colonne ; les synonymes (exports AmapJ, habitudes des
+ * tableurs) sont dans le fichier de correspondance import-mapping.json, modifiable sans toucher
+ * au code (mode d'emploi : docs/import-amapj.md).
  */
 import { normalizeHouseholdName } from "./households";
+import mappingFile from "./import-mapping.json";
 import { parseDay } from "./order-periods";
 import { normalizePhone } from "./phone";
 
@@ -17,77 +19,109 @@ export type ImportKind = (typeof IMPORT_KINDS)[number];
 
 type ColumnSpec = {
   key: string;
-  /** En-tête du modèle Pomme. */
+  /** En-tête du modèle Pomme ; c'est aussi le nom de la colonne dans import-mapping.json. */
   label: string;
-  /** Autres noms acceptés (exports AmapJ, tableurs). */
+  /** Autres noms acceptés (exports AmapJ, tableurs), lus dans import-mapping.json. */
   aliases: string[];
   required?: boolean;
 };
 
-export const IMPORT_COLUMNS: Record<ImportKind, ColumnSpec[]> = {
+/** Section du fichier de correspondance pour chaque type d'import. */
+export const MAPPING_SECTIONS: Record<ImportKind, string> = {
+  households: "adherents",
+  producers: "producteurs",
+  products: "produits",
+};
+
+/** Colonnes de Pomme : nom interne, en-tête du modèle, colonne obligatoire. */
+const POMME_COLUMNS: Record<ImportKind, Array<Omit<ColumnSpec, "aliases">>> = {
   households: [
-    { key: "household", label: "Foyer", aliases: ["nom du foyer", "famille"] },
-    { key: "firstName", label: "Prénom", aliases: [], required: true },
-    { key: "lastName", label: "Nom", aliases: ["nom de famille"] },
-    {
-      key: "email",
-      label: "Email",
-      aliases: ["e-mail", "mail", "courriel", "adresse email", "adresse e-mail", "adresse mail"],
-      required: true,
-    },
-    {
-      key: "phone",
-      label: "Téléphone",
-      aliases: ["tel", "tél", "tel1", "téléphone 1", "portable", "mobile", "numéro de téléphone"],
-    },
-    { key: "primary", label: "Contact principal", aliases: ["principal"] },
-    {
-      key: "membershipStart",
-      label: "Début adhésion",
-      aliases: ["date de début", "date début", "début", "début de l'adhésion"],
-    },
-    {
-      key: "membershipEnd",
-      label: "Fin adhésion",
-      aliases: ["date de fin", "date fin", "fin", "fin de l'adhésion"],
-    },
-    {
-      key: "dutyCount",
-      label: "Permanences faites",
-      aliases: ["permanences", "nombre de permanences", "nb permanences"],
-    },
+    { key: "household", label: "Foyer" },
+    { key: "firstName", label: "Prénom", required: true },
+    { key: "lastName", label: "Nom" },
+    { key: "email", label: "Email", required: true },
+    { key: "phone", label: "Téléphone" },
+    { key: "primary", label: "Contact principal" },
+    { key: "membershipStart", label: "Début adhésion" },
+    { key: "membershipEnd", label: "Fin adhésion" },
+    { key: "dutyCount", label: "Permanences faites" },
   ],
   producers: [
-    {
-      key: "name",
-      label: "Producteur",
-      aliases: ["nom", "nom du producteur", "raison sociale"],
-      required: true,
-    },
-    { key: "category", label: "Catégorie", aliases: ["type", "type de production"] },
-    {
-      key: "email",
-      label: "Email",
-      aliases: ["e-mail", "mail", "courriel", "adresse email", "adresse e-mail"],
-    },
-    { key: "phone", label: "Téléphone", aliases: ["tel", "tél", "tel1", "portable", "mobile"] },
-    {
-      key: "checkPayee",
-      label: "Ordre des chèques",
-      aliases: ["chèque à l'ordre de", "ordre", "libellé chèque"],
-    },
-    { key: "description", label: "Présentation", aliases: ["description"] },
+    { key: "name", label: "Producteur", required: true },
+    { key: "category", label: "Catégorie" },
+    { key: "email", label: "Email" },
+    { key: "phone", label: "Téléphone" },
+    { key: "checkPayee", label: "Ordre des chèques" },
+    { key: "description", label: "Présentation" },
   ],
   products: [
-    { key: "producer", label: "Producteur", aliases: ["nom du producteur"], required: true },
-    {
-      key: "name",
-      label: "Produit",
-      aliases: ["nom", "nom du produit", "libellé", "désignation"],
-      required: true,
-    },
+    { key: "producer", label: "Producteur", required: true },
+    { key: "name", label: "Produit", required: true },
   ],
 };
+
+export type ImportMapping = Record<string, Record<string, string[]>>;
+
+/**
+ * Colonnes reconnues, d'après un fichier de correspondance (par défaut import-mapping.json) :
+ * pour chaque colonne de Pomme, la liste des noms de colonne acceptés dans le fichier importé.
+ * Une colonne absente du fichier de correspondance n'a pas de synonyme : seul son nom Pomme
+ * est reconnu.
+ */
+export function importColumns(mapping: ImportMapping): Record<ImportKind, ColumnSpec[]> {
+  const result = {} as Record<ImportKind, ColumnSpec[]>;
+  for (const kind of IMPORT_KINDS) {
+    const section = mapping[MAPPING_SECTIONS[kind]] ?? {};
+    result[kind] = POMME_COLUMNS[kind].map((c) => ({ ...c, aliases: section[c.label] ?? [] }));
+  }
+  return result;
+}
+
+export const IMPORT_COLUMNS = importColumns(mappingFile as unknown as ImportMapping);
+
+export type MappingProblem =
+  | { code: "missing_section"; section: string }
+  | { code: "unknown_column"; section: string; column: string }
+  | { code: "not_a_list"; section: string; column: string }
+  | { code: "duplicate"; section: string; name: string };
+
+/**
+ * Vérifie un fichier de correspondance : sections attendues, colonnes Pomme connues, listes de
+ * noms, et aucun nom utilisé pour deux colonnes d'une même section (le fichier importé serait
+ * ambigu). Lancé par les tests à chaque modification du fichier.
+ */
+export function checkMapping(mapping: Record<string, unknown>): MappingProblem[] {
+  const problems: MappingProblem[] = [];
+  for (const kind of IMPORT_KINDS) {
+    const section = MAPPING_SECTIONS[kind];
+    const content = mapping[section];
+    if (!content || typeof content !== "object") {
+      problems.push({ code: "missing_section", section });
+      continue;
+    }
+    const labels = POMME_COLUMNS[kind].map((c) => c.label);
+    const seen = new Map<string, string>();
+    for (const label of labels) seen.set(headerKey(label), label);
+    for (const [column, names] of Object.entries(content as Record<string, unknown>)) {
+      if (!labels.includes(column)) {
+        problems.push({ code: "unknown_column", section, column });
+        continue;
+      }
+      if (!Array.isArray(names) || names.some((n) => typeof n !== "string")) {
+        problems.push({ code: "not_a_list", section, column });
+        continue;
+      }
+      for (const name of names as string[]) {
+        const owner = seen.get(headerKey(name));
+        if (owner !== undefined && owner !== column) {
+          problems.push({ code: "duplicate", section, name });
+        }
+        seen.set(headerKey(name), column);
+      }
+    }
+  }
+  return problems;
+}
 
 /** Nom de colonne comparable : minuscules, sans accents ni ponctuation, espaces simples. */
 export function headerKey(header: string): string {
