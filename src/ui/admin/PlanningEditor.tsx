@@ -229,16 +229,26 @@ export function PlanningEditor({ amapSlug, view }: { amapSlug: string; view: Pla
 
           {month && (
             <TableContainer component={Paper} variant="outlined">
-              <Table size="small" aria-label={t("tableLabel", { month: monthName(month.month) })}>
+              {/* Colonnes de largeur fixe : le tableau tient dans la page, aucune liste n'est
+                  coupée par le défilement horizontal (cibles entièrement visibles). */}
+              <Table
+                size="small"
+                aria-label={t("tableLabel", { month: monthName(month.month) })}
+                sx={{ tableLayout: "fixed", width: "100%" }}
+              >
                 <TableHead>
                   <TableRow>
-                    <TableCell scope="col">{t("colDistribution")}</TableCell>
+                    <TableCell scope="col" sx={{ width: "20%" }}>
+                      {t("colDistribution")}
+                    </TableCell>
                     {Array.from({ length: view.perDistribution }, (_, i) => (
                       <TableCell scope="col" key={i}>
                         {t("colVolunteer", { n: i + 1 })}
                       </TableCell>
                     ))}
-                    <TableCell scope="col">{t("colCheck")}</TableCell>
+                    <TableCell scope="col" sx={{ width: "18%" }}>
+                      {t("colCheck")}
+                    </TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -253,11 +263,11 @@ export function PlanningEditor({ amapSlug, view }: { amapSlug: string; view: Pla
                     });
                     return (
                       <TableRow key={d.id}>
-                        <TableCell component="th" scope="row" sx={{ whiteSpace: "nowrap" }}>
+                        <TableCell component="th" scope="row">
                           {capitalize(dayLabel(d.date))}
                         </TableCell>
                         {ids.map((userId, i) => (
-                          <TableCell key={i} sx={{ minWidth: 180 }}>
+                          <TableCell key={i}>
                             {month.readOnly ? (
                               (userId && people.get(userId)?.name) || "—"
                             ) : (
@@ -269,6 +279,8 @@ export function PlanningEditor({ amapSlug, view }: { amapSlug: string; view: Pla
                                   setSlot(d.id, i, e.target.value || null)
                                 }
                                 sx={{
+                                  // border-box : la liste, bordure comprise, tient dans sa cellule.
+                                  boxSizing: "border-box",
                                   width: "100%",
                                   minHeight: 40,
                                   px: 1,
@@ -297,7 +309,14 @@ export function PlanningEditor({ amapSlug, view }: { amapSlug: string; view: Pla
                         <TableCell>
                           <Chip
                             size="small"
-                            sx={toneSx(month.readOnly ? "neutral" : tone(check))}
+                            sx={{
+                              ...toneSx(month.readOnly ? "neutral" : tone(check)),
+                              // Libellé sur plusieurs lignes si la colonne est étroite.
+                              maxWidth: "100%",
+                              height: "auto",
+                              py: 0.25,
+                              "& .MuiChip-label": { whiteSpace: "normal" },
+                            }}
                             label={month.readOnly ? t("check_past") : label(check)}
                           />
                         </TableCell>

@@ -40,11 +40,11 @@ async function sendNotices(
   const amapRow = await getAmapBySlug(amap);
   const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
   const template = notice.kind === "planning" ? "duty_planning" : "duty_change";
-  // Envoi du planning : une fois par planning. Changement : une fois par minute au plus.
+  // Envoi du planning : une fois par planning. Changement : chaque prévenance est une occasion
+  // à part (horodatée) ; un double clic ne renvoie rien, car la liste des personnes à prévenir
+  // est vidée dans la même transaction que la préparation des emails.
   const occasion =
-    notice.kind === "planning"
-      ? notice.planId
-      : `${notice.planId}:${now.toISOString().slice(0, 16)}`;
+    notice.kind === "planning" ? notice.planId : `${notice.planId}:${now.toISOString()}`;
   const counts: NoticeCounts = { sent: 0, skipped: 0, failed: 0 };
   for (const r of notice.recipients) {
     const result = await withAmapContext(getDatabase(), ctx, (tx) =>

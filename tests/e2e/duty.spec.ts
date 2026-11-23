@@ -97,19 +97,26 @@ test.describe("Planning des permanences (ordinateur)", () => {
     page,
     request,
   }) => {
-    /** Vide au clavier la première case occupée (le test peut repasser sur la même base). */
-    const emptyAFilledSlot = async (table: ReturnType<typeof page.getByRole>) => {
-      const selects = table.getByRole("combobox");
-      const count = await selects.count();
-      for (let i = 0; i < count; i++) {
-        if ((await selects.nth(i).inputValue()) !== "") {
-          await selects.nth(i).focus();
-          await page.keyboard.press("Home");
-          await expect(selects.nth(i)).toHaveValue("");
-          return;
-        }
+    /**
+     * Change au clavier la 1re case de la 1re distribution : la vide (touche Début : « — personne
+     * — ») si elle est occupée, sinon la remplit (touche Fin, puis Haut tant que la personne est
+     * déjà sur la ligne). Le test peut ainsi repasser sur la même base sans l'épuiser.
+     */
+    const changeASlot = async (table: ReturnType<typeof page.getByRole>) => {
+      const row = table.getByRole("row").nth(1).getByRole("combobox");
+      const first = row.first();
+      await first.focus();
+      if ((await first.inputValue()) !== "") {
+        await page.keyboard.press("Home");
+        await expect(first).toHaveValue("");
+        return;
       }
-      throw new Error("Aucune case occupée");
+      await page.keyboard.press("End");
+      const others = async () => Promise.all([1, 2].map((k) => row.nth(k).inputValue()));
+      while ((await others()).includes(await first.inputValue())) {
+        await page.keyboard.press("ArrowUp");
+      }
+      await expect(first).not.toHaveValue("");
     };
 
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
@@ -136,8 +143,8 @@ test.describe("Planning des permanences (ordinateur)", () => {
     await expect.poll(() => send.evaluate((el) => el.getAnimations().length)).toBe(0);
     await expectNoSeriousA11yViolations(page);
 
-    // Une case vidée au clavier (touche Début : « — personne — »), puis le brouillon enregistré.
-    await emptyAFilledSlot(table);
+    // Une case changée au clavier, puis le brouillon enregistré.
+    await changeASlot(table);
     await page.getByRole("button", { name: "Enregistrer le brouillon" }).focus();
     await page.keyboard.press("Enter");
     await expect(page.getByText("Brouillon enregistré.")).toBeVisible();
@@ -146,7 +153,7 @@ test.describe("Planning des permanences (ordinateur)", () => {
     await page.getByRole("link", { name: "Trimestre en cours" }).click();
     await expect(page.getByText(/^Planning envoyé le /)).toBeVisible();
     const current = page.getByRole("table", { name: /^Bénévoles de / });
-    await emptyAFilledSlot(current);
+    await changeASlot(current);
     await expect(page.getByText("Modifications non enregistrées.")).toBeVisible();
     await page.getByRole("checkbox", { name: "Prévenir les personnes concernées" }).uncheck();
     await page.getByRole("button", { name: "Enregistrer", exact: true }).click();
@@ -157,6 +164,15 @@ test.describe("Planning des permanences (ordinateur)", () => {
       .getByRole("status")
       .filter({ hasText: "Changements enregistrés sans prévenir :" });
     await expect(pending).toBeVisible();
+    // Contrôle d'accessibilité sur la page telle qu'on la retrouve (rechargée), pas pendant sa
+    // mise à jour sur place après l'enregistrement.
+    await page.reload();
+    // Page entièrement mise en place (tableau affiché, polices chargées) avant de mesurer.
+    await expect(current.getByRole("combobox").first()).toBeVisible();
+    await page.evaluate(() => document.fonts.ready.then(() => undefined));
+    // Le navigateur garde la position de défilement : remonté en haut, aucune ligne du tableau
+    // n'est à moitié cachée sous la barre du haut (axe la compterait comme cible trop petite).
+    await page.evaluate(() => window.scrollTo(0, 0));
     const notifyNow = pending.getByRole("button", { name: "Prévenir maintenant" });
     await expect.poll(() => notifyNow.evaluate((el) => el.getAnimations().length)).toBe(0);
     await expectNoSeriousA11yViolations(page);
