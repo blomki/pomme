@@ -682,7 +682,15 @@
       "moveUpcomingHelp": "Chaque distribution à venir passe au nouveau jour de la même semaine, avec les nouveaux horaires. Une distribution fermée le reste. Les distributions passées ne changent pas.",
       "moved": "{count, plural, =0 {Aucune distribution à venir déplacée.} one {# distribution à venir déplacée.} other {# distributions à venir déplacées.}}",
       "skipped": "{count, plural, one {Laissée telle quelle : {dates} (le jour visé est déjà pris ou passé).} other {Laissées telles quelles : {dates} (le jour visé est déjà pris ou passé).}}",
-      "signInSheet": "Imprimer la feuille d'émargement de {month}"
+      "signInSheet": "Imprimer la feuille d'émargement de {month}",
+      "volunteers": "Bénévoles : {names}",
+      "volunteer": "{name} ({count})",
+      "noVolunteer": "Bénévoles : à désigner",
+      "volunteersHint": "Entre parenthèses : nombre de permanences de la personne sur le trimestre.",
+      "orderPeriod_scheduled": "Commandes de {month} : ouvriront le {opensOn}, jusqu'au {closesOn}.",
+      "orderPeriod_open": "Commandes de {month} : ouvertes du {opensOn} au {closesOn}.",
+      "orderPeriod_closed": "Commandes de {month} : clôturées (du {opensOn} au {closesOn}).",
+      "orderPeriodNone": "Commandes de {month} : pas encore de période de commande."
     },
     "orders": {
       "title": "Commandes de {month}",

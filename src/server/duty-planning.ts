@@ -10,12 +10,15 @@ import {
   dutyPlan,
   dutyResponse,
   dutySlot,
+  orderPeriod,
   unavailability,
+  user,
 } from "@/db/schema";
 import { effectiveParameters } from "@/domain/amap-settings";
 import {
   changedPeople,
   generatePlanning,
+  quarterDutyCounts,
   type Assignment,
   type PlanningPerson,
 } from "@/domain/duty-planning";
@@ -28,7 +31,7 @@ import {
   type DutyPhase,
   type DutyPlanStatus,
 } from "@/domain/duty-plans";
-import { parisDay, periodInstants } from "@/domain/order-periods";
+import { effectiveStatus, parisDay, periodDays, periodInstants } from "@/domain/order-periods";
 
 import { requireRole } from "./auth/require-role";
 import { dutyPeople, planDays, type DutyPerson } from "./duty-plans";
@@ -525,5 +528,71 @@ export async function getPlanningBanner(
     pending: plans
       .filter((p) => p.pendingNotice.length > 0)
       .map((p) => ({ planId: p.id, names: p.pendingNotice.map(nameOf).filter(Boolean) })),
+  };
+}
+
+export type MonthDuties = {
+  /** Période de commande du mois (commandes de ce mois), ou null si elle n'existe pas. */
+  orderPeriod: {
+    opensOn: string;
+    closesOn: string;
+    status: "scheduled" | "open" | "closed";
+  } | null;
+  /** Bénévoles prévus par distribution, avec leur nombre de permanences sur le trimestre. */
+  volunteers: Record<string, Array<{ name: string; quarterCount: number }>>;
+};
+
+/**
+ * Calendrier du mois en lecture seule (story G3) : période de commande et bénévoles prévus à
+ * chaque distribution, avec leur nombre de permanences du trimestre.
+ */
+export async function getMonthDuties(
+  tx: Transaction,
+  ctx: AmapContext,
+  month: string,
+  now = new Date(),
+): Promise<MonthDuties> {
+  await requireRole(tx, ctx, ["admin"]);
+  const parsed = /^\d{4}-\d{2}$/.test(month) ? month : null;
+  if (!parsed) return { orderPeriod: null, volunteers: {} };
+  const range = quarterRange(quarterStartOf(`${parsed}-01`));
+  const [slots, people, [period]] = await Promise.all([
+    tx
+      .select({
+        userId: dutySlot.userId,
+        distributionId: dutySlot.distributionId,
+        position: dutySlot.position,
+        date: distribution.date,
+      })
+      .from(dutySlot)
+      .innerJoin(distribution, eq(distribution.id, dutySlot.distributionId))
+      .where(and(gte(distribution.date, range.from), lt(distribution.date, range.to)))
+      .orderBy(asc(distribution.date), asc(dutySlot.position)),
+    tx.select({ id: user.id, firstName: user.firstName, lastName: user.lastName }).from(user),
+    tx
+      .select()
+      .from(orderPeriod)
+      .where(eq(orderPeriod.month, `${parsed}-01`)),
+  ]);
+  const counts = quarterDutyCounts(slots, range);
+  const nameOf = (id: string) => {
+    const p = people.find((x) => x.id === id);
+    return p ? `${p.firstName} ${p.lastName}`.trim() : "";
+  };
+  const volunteers: MonthDuties["volunteers"] = {};
+  for (const s of slots.filter((x) => x.date.startsWith(parsed))) {
+    (volunteers[s.distributionId] ??= []).push({
+      name: nameOf(s.userId),
+      quarterCount: counts.get(s.userId) ?? 0,
+    });
+  }
+  return {
+    orderPeriod: period
+      ? {
+          ...periodDays(period),
+          status: effectiveStatus(period, now),
+        }
+      : null,
+    volunteers,
   };
 }

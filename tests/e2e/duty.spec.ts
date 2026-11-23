@@ -182,3 +182,35 @@ test.describe("Planning des permanences (ordinateur)", () => {
     await expect(pending).toBeHidden();
   });
 });
+
+test.describe("Calendrier du mois (ordinateur)", () => {
+  test.skip(({ browserName }) => browserName !== "chromium", "écran d'ordinateur");
+
+  test("un admin consulte au clavier les bénévoles du mois et leur nombre de permanences (G3)", async ({
+    page,
+    request,
+  }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin");
+    const menu = page
+      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("link", { name: "Planning des permanences" });
+    await menu.focus();
+    await page.keyboard.press("Enter");
+    await expect(
+      page.getByRole("heading", { level: 1, name: "Planning des permanences" }),
+    ).toBeVisible();
+
+    // Jeu de données : planning du trimestre en cours envoyé, période de commande du mois.
+    await expect(page.getByText(/^Commandes de /)).toBeVisible();
+    const list = page.getByRole("region", { name: "Distributions" });
+    await expect(list.getByText(/^Bénévoles : .+ \(\d+\)/).first()).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // Mois suivant, au clavier : décembre a aussi ses bénévoles (même trimestre).
+    await page.getByRole("link", { name: "Mois suivant" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page).toHaveURL(/mois=\d{4}-\d{2}$/);
+    await expect(list.getByText(/^Bénévoles : .+ \(\d+\)/).first()).toBeVisible();
+  });
+});

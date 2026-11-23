@@ -159,3 +159,19 @@ export function changedPeople(
   for (const a of after) if (!was.has(key(a))) changed.add(a.userId);
   return [...changed];
 }
+
+/**
+ * Nombre de permanences de chacun sur un trimestre (story G3) : les cases dont la distribution
+ * tombe dans le trimestre. Affiché entre parenthèses à côté du nom dans le calendrier du mois.
+ */
+export function quarterDutyCounts(
+  slots: ReadonlyArray<{ userId: string; date: string }>,
+  range: { from: string; to: string },
+): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const s of slots) {
+    if (s.date < range.from || s.date >= range.to) continue;
+    counts.set(s.userId, (counts.get(s.userId) ?? 0) + 1);
+  }
+  return counts;
+}

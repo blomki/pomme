@@ -6,6 +6,7 @@ import {
   generatePlanning,
   isExperienced,
   loadSpread,
+  quarterDutyCounts,
   type PlanningPerson,
 } from "./duty-planning";
 
@@ -174,5 +175,22 @@ describe("changedPeople", () => {
       { distributionId: "d1", position: 1, userId: "c" },
     ];
     expect(changedPeople(before, after).sort()).toEqual(["a", "c"]);
+  });
+});
+
+describe("quarterDutyCounts", () => {
+  it("compte les permanences de chacun dans le trimestre seulement", () => {
+    const slots = [
+      { userId: "a", date: "2026-10-01" },
+      { userId: "a", date: "2026-12-31" },
+      { userId: "b", date: "2026-11-05" },
+      { userId: "a", date: "2027-01-07" },
+      { userId: "b", date: "2026-09-30" },
+    ];
+    const counts = quarterDutyCounts(slots, { from: "2026-10-01", to: "2027-01-01" });
+    expect([...counts.entries()].sort()).toEqual([
+      ["a", 2],
+      ["b", 1],
+    ]);
   });
 });
