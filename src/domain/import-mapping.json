@@ -1,0 +1,35 @@
+{
+  "_aide": "Correspondance des colonnes pour la reprise des données (AmapJ ou tableur). Mode d'emploi : docs/import-amapj.md",
+  "adherents": {
+    "Foyer": ["Nom du foyer", "Famille"],
+    "Prénom": [],
+    "Nom": ["Nom de famille"],
+    "Email": ["E-mail", "Mail", "Courriel", "Adresse email", "Adresse e-mail", "Adresse mail"],
+    "Téléphone": [
+      "Tel",
+      "Tél",
+      "Tel1",
+      "Téléphone 1",
+      "Portable",
+      "Mobile",
+      "Numéro de téléphone",
+      "n° de téléphone"
+    ],
+    "Contact principal": ["Principal"],
+    "Début adhésion": ["Date de début", "Date début", "Début", "Début de l'adhésion"],
+    "Fin adhésion": ["Date de fin", "Date fin", "Fin", "Fin de l'adhésion"],
+    "Permanences faites": ["Permanences", "Nombre de permanences", "Nb permanences"]
+  },
+  "producteurs": {
+    "Producteur": ["Label", "Nom du producteur", "Raison sociale"],
+    "Catégorie": ["Type", "Type de production"],
+    "Email": ["E-mail", "Mail", "Courriel", "Adresse email", "Adresse e-mail"],
+    "Téléphone": ["Tel", "Tél", "Tel1", "Portable", "Mobile", "N° de téléphone"],
+    "Ordre des chèques": ["Chèque à l'ordre de", "Ordre", "Libellé chèque"],
+    "Présentation": ["Description"]
+  },
+  "produits": {
+    "Producteur": ["Nom du producteur"],
+    "Produit": ["Label", "Nom", "Nom du produit", "Libellé", "Désignation"]
+  }
+}

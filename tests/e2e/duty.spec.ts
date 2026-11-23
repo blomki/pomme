@@ -202,7 +202,7 @@ test.describe("Calendrier du mois (ordinateur)", () => {
     ).toBeVisible();
 
     // Jeu de données : planning du trimestre en cours envoyé, période de commande du mois.
-    await expect(page.getByText(/^Commandes de /)).toBeVisible();
+    await expect(page.getByText(/^Commandes de \S+ : /)).toBeVisible();
     const list = page.getByRole("region", { name: "Distributions" });
     await expect(list.getByText(/^Bénévoles : .+ \(\d+\)/).first()).toBeVisible();
     await expectNoSeriousA11yViolations(page);

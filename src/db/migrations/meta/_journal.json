@@ -288,6 +288,13 @@
       "when": 1795364764588,
       "tag": "0040_planning-permanences",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1795432305227,
+      "tag": "0041_import-produits-admin",
+      "breakpoints": true
     }
   ]
 }
