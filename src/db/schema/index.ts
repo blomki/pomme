@@ -1550,6 +1550,8 @@ export const dutyPlan = pgTable(
     // Dernière relance groupée, manuelle ou automatique.
     lastReminderAt: timestamp("last_reminder_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
+    // Personnes concernées par des changements enregistrés sans prévenir (story G2).
+    pendingNotice: jsonb("pending_notice").$type<string[]>().notNull().default([]),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
@@ -1640,6 +1642,80 @@ export const unavailability = pgTable(
       select: sql`(${t.userId} = ${currentUserId} or ${isCurrentAmapAdmin})`,
       insert: sql`${t.userId} = ${currentUserId}`,
       delete: sql`${t.userId} = ${currentUserId}`,
+    }),
+  ],
+);
+
+// --- duty_slot, duty_history : planning des permanences ---------------------------------------
+// Story G2, ADR 0043 ; modèle de données, section 8. Une ligne de duty_slot = une personne de
+// permanence à une distribution, à une place (1, 2, 3…). Les personnes à prévenir d'un
+// changement sont gardées sur le planning (duty_plan.pending_notice), pas sur la case : une
+// personne retirée n'a plus de case, mais doit être prévenue. duty_history : permanences faites
+// avant Pomme (reprise AmapJ), comptées dans l'expérience.
+
+export const dutySlot = pgTable(
+  "duty_slot",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    dutyPlanId: uuid("duty_plan_id").notNull(),
+    distributionId: uuid("distribution_id").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    position: integer("position").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "duty_slot_plan_fk",
+      columns: [t.dutyPlanId, t.amapId],
+      foreignColumns: [dutyPlan.id, dutyPlan.amapId],
+    }),
+    foreignKey({
+      name: "duty_slot_distribution_fk",
+      columns: [t.distributionId, t.amapId],
+      foreignColumns: [distribution.id, distribution.amapId],
+    }),
+    unique("duty_slot_person_unique").on(t.distributionId, t.userId),
+    unique("duty_slot_position_unique").on(t.distributionId, t.position),
+    check("duty_slot_position", sql`${t.position} >= 1`),
+    // Lecture : toute l'AMAP (les noms des bénévoles sont affichés et imprimés). Écriture :
+    // les admins seulement (éditeur du planning).
+    ...scopedPolicies("duty_slot", t.amapId, {
+      select: sql`true`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
+      delete: isCurrentAmapAdmin,
+    }),
+  ],
+);
+
+export const dutyHistory = pgTable(
+  "duty_history",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id),
+    importedCount: integer("imported_count").notNull().default(0),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    unique("duty_history_unique").on(t.amapId, t.userId),
+    check("duty_history_count", sql`${t.importedCount} >= 0`),
+    // Lecture : la personne et les admins. Écriture : les admins (import AmapJ, story K1).
+    ...scopedPolicies("duty_history", t.amapId, {
+      select: sql`(${t.userId} = ${currentUserId} or ${isCurrentAmapAdmin})`,
+      insert: isCurrentAmapAdmin,
+      update: isCurrentAmapAdmin,
     }),
   ],
 );

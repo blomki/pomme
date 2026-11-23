@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
+// Ouvre le lien en réessayant après la limite de débit (429) : la suite complète la dépasse.
+import { openMagicLink } from "./helpers/auth";
 import { countMessagesTo, inboxSnapshot, newMagicLink } from "./helpers/mailpit";
 
 // Connexion sans mot de passe, avec les comptes de démonstration du jeu de données
@@ -28,7 +30,7 @@ test("connexion par lien magique au clavier, puis déconnexion de tous les appar
   await page.keyboard.press("Enter");
   await expect(page.getByText(/un lien de connexion vient d'être envoyé/)).toBeVisible();
 
-  await page.goto(await newMagicLink(request, email, before));
+  await openMagicLink(page, await newMagicLink(request, email, before));
   await expect(page).toHaveURL(/\/connexion\/bienvenue$/);
   await expect(page.getByRole("heading", { level: 1, name: /^Bienvenue/ })).toBeVisible();
   await expectNoSeriousA11yViolations(page);
@@ -57,10 +59,10 @@ test("un lien déjà utilisé est refusé", async ({ page, request }, testInfo) 
   const before = await inboxSnapshot(request, email);
   await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
   const link = await newMagicLink(request, email, before);
-  await page.goto(link);
+  await openMagicLink(page, link);
   await expect(page).toHaveURL(/\/connexion\/bienvenue$/);
   await page.context().clearCookies();
-  await page.goto(link);
+  await openMagicLink(page, link);
   await expect(page.getByText(/n'est plus valable/)).toBeVisible();
 });
 
@@ -96,7 +98,7 @@ test("passkey : création après connexion, puis connexion sans email", async ({
   await page.getByRole("textbox", { name: "Adresse email" }).fill(email);
   const before = await inboxSnapshot(request, email);
   await page.getByRole("button", { name: "Recevoir un lien de connexion" }).click();
-  await page.goto(await newMagicLink(request, email, before));
+  await openMagicLink(page, await newMagicLink(request, email, before));
 
   await page.getByRole("button", { name: "Créer une passkey" }).click();
   await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);

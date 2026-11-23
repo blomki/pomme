@@ -146,7 +146,8 @@ export async function saveMyAvailability(
   if (!parsed.success) return { status: "invalid" };
   const [plan] = await tx.select().from(dutyPlan).where(eq(dutyPlan.id, parsed.data.planId));
   if (!plan) return { status: "invalid" };
-  if (phaseOf(plan, now) !== "open" || plan.status !== "collecting") return { status: "closed" };
+  // Jusqu'à la date limite, même si l'admin a déjà généré un brouillon (G2) ; plus après l'envoi.
+  if (phaseOf(plan, now) !== "open" || plan.status === "sent") return { status: "closed" };
   const quarter = (await quarterDistributions(tx, plan.quarterStart)).map((d) => d.id);
   const kept = keepQuarterDistributions(parsed.data.distributionIds, quarter);
   if (!kept) return { status: "invalid" };

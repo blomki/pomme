@@ -22,7 +22,8 @@
  */
 import { validateAmapSlug } from "@/domain/amap-slug";
 import { addMonths, distributionDates, type Weekday } from "@/domain/distributions";
-import { defaultDutyPlanDays, nextQuarterStart } from "@/domain/duty-plans";
+import { generatePlanning } from "@/domain/duty-planning";
+import { defaultDutyPlanDays, nextQuarterStart, quarterStartOf } from "@/domain/duty-plans";
 import { addDays, defaultPeriodDays, parisDay, periodInstants } from "@/domain/order-periods";
 import type { RichDoc } from "@/domain/pages";
 import type { AmapRoleName } from "@/domain/roles";
@@ -143,7 +144,19 @@ export type SeedDutyPlan = {
   opensAt: Date;
   unavailabilityDeadline: Date;
   openingNoticeAt: Date;
+  status: "collecting" | "draft" | "sent";
+  sentAt: Date | null;
 };
+// Planning des permanences (story G2).
+export type SeedDutySlot = {
+  id: string;
+  amapId: string;
+  dutyPlanId: string;
+  distributionId: string;
+  userId: string;
+  position: number;
+};
+export type SeedDutyHistory = { id: string; amapId: string; userId: string; importedCount: number };
 export type SeedDutyResponse = {
   id: string;
   amapId: string;
@@ -240,6 +253,8 @@ export type SeedData = {
   dutyPlans: SeedDutyPlan[];
   dutyResponses: SeedDutyResponse[];
   unavailabilities: SeedUnavailability[];
+  dutySlots: SeedDutySlot[];
+  dutyHistories: SeedDutyHistory[];
   /** Comptes dont l'application d'authentification est activée avec DEMO_TOTP_SECRET. */
   totpUserIds: string[];
 };
@@ -1149,6 +1164,8 @@ export function buildSeedData(today: Date = new Date()): SeedData {
       opensAt: instants.opensAt,
       unavailabilityDeadline: instants.closesAt,
       openingNoticeAt: instants.opensAt,
+      status: "collecting",
+      sentAt: null,
     });
     const quarterDays = distributions.filter(
       (d) =>
@@ -1185,6 +1202,66 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     });
   }
 
+  // Planning des permanences du trimestre en cours dans la première AMAP, déjà envoyé, généré
+  // par la règle de l'application ; et des permanences faites avant Pomme (antériorité AmapJ) :
+  // un amapien sur deux est « expérimenté » (6 ou plus).
+  const dutySlots: SeedDutySlot[] = [];
+  const dutyHistories: SeedDutyHistory[] = [];
+  if (firstAmap) {
+    const members = householdMembers.filter((m) => m.amapId === firstAmap.id);
+    members.forEach((member, index) => {
+      if (index % 2 === 0) {
+        dutyHistories.push({
+          id: nextId(),
+          amapId: firstAmap.id,
+          userId: member.userId,
+          importedCount: 6 + (index % 5),
+        });
+      }
+    });
+    const current = quarterStartOf(parisDay(today));
+    const days = defaultDutyPlanDays(current);
+    const instants = periodInstants(days.opensOn, days.deadlineOn);
+    const planId = nextId();
+    dutyPlans.push({
+      id: planId,
+      amapId: firstAmap.id,
+      quarterStart: current,
+      opensAt: instants.opensAt,
+      unavailabilityDeadline: instants.closesAt,
+      openingNoticeAt: instants.opensAt,
+      status: "sent",
+      sentAt: instants.closesAt,
+    });
+    const quarterEnd = `${addMonths(current.slice(0, 7), 3)}-01`;
+    const userName = new Map(users.map((u) => [u.id, `${u.firstName} ${u.lastName}`]));
+    const assignments = generatePlanning({
+      distributions: distributions
+        .filter(
+          (d) => d.amapId === firstAmap.id && d.isOpen && d.date >= current && d.date < quarterEnd,
+        )
+        .map((d) => d.id),
+      people: [...new Set(members.map((m) => m.userId))].map((userId) => ({
+        userId,
+        name: userName.get(userId) ?? userId,
+        experience: dutyHistories.find((h) => h.userId === userId)?.importedCount ?? 0,
+        unavailable: [],
+      })),
+      perDistribution: 3,
+      threshold: 6,
+    });
+    for (const a of assignments) {
+      dutySlots.push({
+        id: nextId(),
+        amapId: firstAmap.id,
+        dutyPlanId: planId,
+        distributionId: a.distributionId,
+        userId: a.userId,
+        position: a.position + 1,
+      });
+    }
+  }
+
   return {
     pages,
     joinRequests,
@@ -1210,6 +1287,8 @@ export function buildSeedData(today: Date = new Date()): SeedData {
     dutyPlans,
     dutyResponses,
     unavailabilities,
+    dutySlots,
+    dutyHistories,
     totpUserIds,
   };
 }
