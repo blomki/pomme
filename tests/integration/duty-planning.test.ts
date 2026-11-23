@@ -9,6 +9,7 @@ import {
   dutySlot,
   household,
   householdMember,
+  orderPeriod,
   unavailability,
 } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
@@ -16,6 +17,7 @@ import { periodInstants } from "@/domain/order-periods";
 import { ForbiddenError } from "@/server/auth/errors";
 import {
   generateQuarterPlanning,
+  getMonthDuties,
   getPlanningBanner,
   getPlanningEditor,
   planChangeNotice,
@@ -232,6 +234,36 @@ describe("Planning des permanences (G2)", () => {
     );
     const [plan] = await db.owner.select().from(dutyPlan).where(eq(dutyPlan.id, planId));
     expect(plan?.pendingNotice).toEqual([]);
+  });
+
+  it("calendrier du mois : bénévoles et nombre de permanences du trimestre (G3, accès autorisé)", async () => {
+    await db.owner.insert(orderPeriod).values({
+      amapId: amapA.id,
+      month: "2027-01-01",
+      ...periodInstants("2026-12-10", "2026-12-25"),
+    });
+    const month = await run(admin.id, (tx, ctx) => getMonthDuties(tx, ctx, "2027-01", NOW));
+    expect(month.orderPeriod).toEqual({
+      opensOn: "2026-12-10",
+      closesOn: "2026-12-25",
+      status: "open",
+    });
+    const slots = await slotsOf();
+    for (const d of jan) {
+      const expected = slots.filter((s) => s.distributionId === d).length;
+      expect(month.volunteers[d] ?? []).toHaveLength(expected);
+    }
+    // Le nombre entre parenthèses est celui du trimestre entier.
+    const firstOfAlix = Object.values(month.volunteers)
+      .flat()
+      .find((v) => v.name.startsWith("Alix"));
+    expect(firstOfAlix?.quarterCount).toBe(slots.filter((s) => s.userId === admin.id).length);
+  });
+
+  it("calendrier du mois réservé aux admins (G3, accès refusé)", async () => {
+    await expect(
+      run(people[2]!.id, (tx, ctx) => getMonthDuties(tx, ctx, "2027-01", NOW)),
+    ).rejects.toThrow(ForbiddenError);
   });
 
   it("isole les cases et l'antériorité entre AMAP ; les cases se lisent dans l'AMAP", async () => {

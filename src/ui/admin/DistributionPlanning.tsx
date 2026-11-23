@@ -27,6 +27,7 @@ import { useState } from "react";
 import { addMonths, WEEKDAYS } from "@/domain/distributions";
 import { formatDate } from "@/i18n/dates";
 import type { DistributionSettings, DistributionView } from "@/server/distributions";
+import type { MonthDuties } from "@/server/duty-planning";
 import {
   generateDistributionsAction,
   saveDistributionSettingsAction,
@@ -41,18 +42,22 @@ const monthLabel = (month: string) => day(`${month}-01`, "MMMM yyyy");
 
 /**
  * Calendrier des distributions d'un mois (story D1), dans « Planning des permanences » :
- * distribution habituelle, puis chaque distribution, ouverte ou fermée avec son motif.
+ * distribution habituelle, période de commande du mois, puis chaque distribution, ouverte (avec
+ * ses bénévoles, story G3) ou fermée avec son motif.
  */
 export function DistributionPlanning({
   amapSlug,
   month,
   settings,
   distributions,
+  duties = { orderPeriod: null, volunteers: {} },
 }: {
   amapSlug: string;
   month: string;
   settings: DistributionSettings;
   distributions: DistributionView[];
+  /** Période de commande et bénévoles prévus (story G3). */
+  duties?: MonthDuties;
 }) {
   const t = useTranslations("Admin.planning");
   const tw = useTranslations("Weekdays");
@@ -160,6 +165,15 @@ export function DistributionPlanning({
             {t("openCount", { count: openCount, month: label })}
           </Typography>
         </Stack>
+        <Typography sx={{ mb: 2 }}>
+          {duties.orderPeriod
+            ? t(`orderPeriod_${duties.orderPeriod.status}`, {
+                month: day(`${month}-01`, "MMMM"),
+                opensOn: day(duties.orderPeriod.opensOn, "EEEE d MMMM"),
+                closesOn: day(duties.orderPeriod.closesOn, "EEEE d MMMM"),
+              })
+            : t("orderPeriodNone", { month: day(`${month}-01`, "MMMM") })}
+        </Typography>
 
         {distributions.length === 0 ? (
           <Typography sx={{ mb: 2 }}>{t("none", { month: label })}</Typography>
@@ -198,7 +212,15 @@ export function DistributionPlanning({
                     />
                   </Box>
                   <Typography sx={{ color: "text.secondary" }}>
-                    {d.isOpen ? "" : t("reason", { reason: d.closedReason ?? "" })}
+                    {!d.isOpen
+                      ? t("reason", { reason: d.closedReason ?? "" })
+                      : duties.volunteers[d.id]?.length
+                        ? t("volunteers", {
+                            names: duties.volunteers[d.id]!.map((v) =>
+                              t("volunteer", { name: v.name, count: v.quarterCount }),
+                            ).join(", "),
+                          })
+                        : t("noVolunteer")}
                   </Typography>
                   {d.isOpen ? (
                     <Button
@@ -236,7 +258,7 @@ export function DistributionPlanning({
           </Typography>
         )}
         <Typography variant="bodySmall" component="p" sx={{ color: "text.secondary", mt: 3 }}>
-          {t("note")}
+          {t("volunteersHint")} {t("note")}
         </Typography>
       </Box>
 
