@@ -189,3 +189,46 @@ describe("fichier de correspondance (import-mapping.json)", () => {
     expect(columns.products.map((c) => c.label)).toEqual(["Producteur", "Produit"]);
   });
 });
+
+describe("en-têtes des exports AmapJ de Cambremer (2026-11-23, sans données)", () => {
+  it("reconnaît l'export des adhérents ; ignore adresse, ville, AMAP et date de création", () => {
+    const mapping = mapHeaders(
+      "households",
+      "Nom;Prénom;Adresse email;n° de téléphone;Adresse;Code postal;Ville;Amaps;date de création".split(
+        ";",
+      ),
+    );
+    expect(mapping.columns).toEqual({ lastName: 0, firstName: 1, email: 2, phone: 3 });
+    expect(mapping.missing).toEqual([]);
+    expect(mapping.ignored).toEqual([
+      "Adresse",
+      "Code postal",
+      "Ville",
+      "Amaps",
+      "date de création",
+    ]);
+  });
+
+  it("reconnaît l'export des producteurs : le Label est le nom de la ferme", () => {
+    const mapping = mapHeaders(
+      "producers",
+      "Label;Ordre;Nom;Prénom;N° de téléphone;email;Description".split(";"),
+    );
+    expect(mapping.columns).toEqual({
+      name: 0,
+      checkPayee: 1,
+      phone: 4,
+      email: 5,
+      description: 6,
+    });
+    expect(mapping.missing).toEqual([]);
+    // Nom et prénom de la personne de contact : pas de champ dans Pomme.
+    expect(mapping.ignored).toEqual(["Nom", "Prénom"]);
+  });
+
+  it("reconnaît l'export des produits, mais il n'a pas de colonne Producteur", () => {
+    const mapping = mapHeaders("products", ["Label", "Prix unitaire"]);
+    expect(mapping.columns).toEqual({ name: 0 });
+    expect(mapping.missing).toEqual(["Producteur"]);
+  });
+});

@@ -48,6 +48,16 @@ de Pomme, quels noms de colonne accepter dans le fichier importé (story K1, ADR
    une colonne Pomme mal écrite, une liste mal formée ou un nom utilisé deux fois.
 4. Proposer la modification par une pull request, comme le reste du code.
 
+## Exports AmapJ de Cambremer (en-têtes relevés le 2026-11-23)
+
+| Export      | En-têtes                                                                                                  | Remarques                                                                                                                                                                                                                                                       |
+| ----------- | --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Adhérents   | Nom ; Prénom ; Adresse email ; n° de téléphone ; Adresse ; Code postal ; Ville ; Amaps ; date de création | Pas de colonne « Foyer » : chaque personne est rangée dans « Foyer <Nom> ». Deux familles du même nom seraient réunies : vérifier l'aperçu, et ajouter au besoin une colonne « Foyer » dans le tableur. Adresse, ville, AMAP et date de création sont ignorées. |
+| Producteurs | Label ; Ordre ; Nom ; Prénom ; N° de téléphone ; email ; Description                                      | « Label » est le nom de la ferme ; « Nom » et « Prénom » (personne de contact) sont ignorés.                                                                                                                                                                    |
+| Produits    | Label ; Prix unitaire                                                                                     | **Pas de colonne « Producteur »** : l'ajouter dans le tableur avant l'import (le nom exact du producteur dans Pomme). Le prix est ignoré : il se fixe dans le catalogue du mois.                                                                                |
+
+Ces fichiers sont enregistrés par AmapJ en Windows-1252 ; l'écran d'import le reconnaît.
+
 ## Limites
 
 - Une colonne AmapJ qui réunit deux informations (par exemple « Nom Prénom » dans une seule
