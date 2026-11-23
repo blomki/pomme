@@ -598,6 +598,13 @@ export const product = pgTable(
     // Création et modification : le référent du producteur dans l'AMAP courante, ou le
     // producteur lui-même. La fiche étant commune, une modification vaut pour toutes ses AMAP.
     pgPolicy("product_insert", { for: "insert", withCheck: isCatalogEditor(t.producerId) }),
+    // Reprise des données (story K1, ADR 0044) : un admin crée les produits d'un producteur de
+    // son AMAP. Création seulement ; la modification reste au référent et au producteur.
+    pgPolicy("product_insert_by_admin", {
+      for: "insert",
+      withCheck: sql`${isCurrentAmapAdmin}
+        and exists (select 1 from amap_producer where amap_producer.producer_id = ${t.producerId})`,
+    }),
     pgPolicy("product_update", {
       for: "update",
       using: isCatalogEditor(t.producerId),

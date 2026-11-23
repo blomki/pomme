@@ -1,0 +1,156 @@
+import { describe, expect, it } from "vitest";
+
+import {
+  headerKey,
+  mapHeaders,
+  parseHouseholdRow,
+  parseProducerRow,
+  parseProductRow,
+  parseSheetDate,
+  parseYesNo,
+  refuseDuplicates,
+  templateHeader,
+  type RowResult,
+} from "./imports";
+
+describe("mapHeaders", () => {
+  it("reconnaît les colonnes sans tenir compte des majuscules, accents ni ponctuation", () => {
+    const mapping = mapHeaders("households", ["NOM", "Prenom", "E-mail", "Tél", "Remarques"]);
+    expect(mapping.columns).toEqual({ lastName: 0, firstName: 1, email: 2, phone: 3 });
+    expect(mapping.missing).toEqual([]);
+    expect(mapping.ignored).toEqual(["Remarques"]);
+  });
+
+  it("signale les colonnes obligatoires absentes", () => {
+    expect(mapHeaders("households", ["Nom"]).missing).toEqual(["Prénom", "Email"]);
+    expect(mapHeaders("products", ["Produit"]).missing).toEqual(["Producteur"]);
+  });
+
+  it("donne le même nom de colonne au modèle et à l'en-tête du fichier", () => {
+    expect(headerKey("  Début   d'adhésion ")).toBe("debut d adhesion");
+    expect(mapHeaders("households", templateHeader("households").split(";")).missing).toEqual([]);
+  });
+});
+
+describe("dates et oui/non", () => {
+  it("lit les dates des tableurs", () => {
+    expect(parseSheetDate("01/09/2026")).toBe("2026-09-01");
+    expect(parseSheetDate("1/9/2026 00:00")).toBe("2026-09-01");
+    expect(parseSheetDate("2026-09-01")).toBe("2026-09-01");
+    expect(parseSheetDate("31/02/2026")).toBeNull();
+    expect(parseSheetDate("septembre")).toBeNull();
+  });
+
+  it("lit oui et non", () => {
+    expect(["oui", "X", "1", "Vrai"].map(parseYesNo)).toEqual([true, true, true, true]);
+    expect(["", "non", "N", "0"].map(parseYesNo)).toEqual([false, false, false, false]);
+    expect(parseYesNo("peut-être")).toBeNull();
+  });
+});
+
+describe("parseHouseholdRow", () => {
+  const mapping = mapHeaders("households", templateHeader("households").split(";"));
+  const row = (values: Partial<Record<string, string>>) => [
+    values.household ?? "",
+    values.firstName ?? "Léa",
+    values.lastName ?? "Martin",
+    values.email ?? "Lea.Martin@Example.org",
+    values.phone ?? "06 12 34 56 78",
+    values.primary ?? "",
+    values.start ?? "01/09/2026",
+    values.end ?? "31/08/2027",
+    values.duties ?? "7",
+  ];
+
+  it("convertit une ligne valable ; le foyer prend le nom de famille s'il n'est pas donné", () => {
+    expect(parseHouseholdRow(row({}), mapping, 2)).toEqual({
+      line: 2,
+      value: {
+        household: "Foyer Martin",
+        firstName: "Léa",
+        lastName: "Martin",
+        email: "lea.martin@example.org",
+        phone: "+33612345678",
+        primary: false,
+        membership: { startDate: "2026-09-01", endDate: "2027-08-31" },
+        dutyCount: 7,
+      },
+    });
+  });
+
+  it("refuse une ligne avec ses raisons", () => {
+    const result = parseHouseholdRow(
+      row({
+        email: "pas-un-email",
+        phone: "12",
+        start: "31/08/2027",
+        end: "01/09/2026",
+        duties: "-1",
+      }),
+      mapping,
+      5,
+    );
+    expect(result).toEqual({
+      line: 5,
+      problems: [
+        { code: "email", value: "pas-un-email" },
+        { code: "phone", value: "12" },
+        { code: "dates_order", value: "31/08/2027 – 01/09/2026" },
+        { code: "count", value: "-1" },
+      ],
+    });
+    expect(parseHouseholdRow(row({ firstName: "", email: "" }), mapping, 3)).toMatchObject({
+      problems: [
+        { code: "required", column: "Prénom" },
+        { code: "required", column: "Email" },
+      ],
+    });
+  });
+
+  it("accepte une ligne sans adhésion ni antériorité", () => {
+    const result = parseHouseholdRow(row({ start: "", end: "", duties: "" }), mapping, 2);
+    expect(result).toMatchObject({ value: { membership: null, dutyCount: null } });
+  });
+});
+
+describe("producteurs et produits", () => {
+  it("met le nom du producteur comme ordre des chèques par défaut", () => {
+    const mapping = mapHeaders("producers", ["Producteur", "Email"]);
+    expect(parseProducerRow(["  Ferme du Pré ", ""], mapping, 2)).toEqual({
+      line: 2,
+      value: {
+        name: "Ferme du Pré",
+        category: "",
+        email: null,
+        phone: null,
+        checkPayee: "Ferme du Pré",
+        description: "",
+      },
+    });
+  });
+
+  it("exige le producteur et le produit", () => {
+    const mapping = mapHeaders("products", ["Producteur", "Produit"]);
+    expect(parseProductRow(["Ferme", ""], mapping, 4)).toEqual({
+      line: 4,
+      problems: [{ code: "required", column: "Produit" }],
+    });
+  });
+});
+
+describe("refuseDuplicates", () => {
+  it("garde la première ligne d'une même clé et refuse les suivantes", () => {
+    const rows: Array<RowResult<string>> = [
+      { line: 2, value: "a" },
+      { line: 3, value: "A" },
+      { line: 4, problems: [] },
+      { line: 5, value: "b" },
+    ];
+    expect(refuseDuplicates(rows, (v) => v.toLowerCase())).toEqual([
+      { line: 2, value: "a" },
+      { line: 3, problems: [{ code: "duplicate_in_file" }] },
+      { line: 4, problems: [] },
+      { line: 5, value: "b" },
+    ]);
+  });
+});

@@ -7,6 +7,7 @@ import { getAmapSettings } from "@/server/amap-settings";
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { getFileStore } from "@/server/files/storage";
 import { AmapSettingsForm } from "@/ui/admin/AmapSettingsForm";
+import { LinkButton } from "@/ui/navigation/LinkButton";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -24,6 +25,10 @@ export default async function AmapSettingsPage({ params }: Props) {
         {t("title")}
       </Typography>
       <Typography sx={{ mb: 3, maxWidth: 820 }}>{t("intro")}</Typography>
+      {/* Reprise des données (story K1) : utile une fois, en quittant AmapJ. */}
+      <LinkButton href={`/${slug}/admin/reprise`} variant="outlined" sx={{ mb: 3 }}>
+        {t("importLink")}
+      </LinkButton>
       <AmapSettingsForm
         amapSlug={slug}
         settings={settings}
