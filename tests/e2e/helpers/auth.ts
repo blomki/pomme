@@ -29,7 +29,7 @@ export async function signInByEmail(page: Page, request: APIRequestContext, emai
  * tourne depuis la même adresse, et les tests rejoués peuvent dépasser la limite. Réponse 429 :
  * le lien n'a pas été utilisé, on attend la minute suivante et on le rouvre.
  */
-async function openMagicLink(page: Page, link: string) {
+export async function openMagicLink(page: Page, link: string) {
   for (let attempt = 1; ; attempt++) {
     const response = await page.goto(link);
     if (response?.status() !== 429 || attempt === 3) return;
