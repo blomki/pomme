@@ -94,7 +94,11 @@ export function DistributionPlanning({
       distributionId: distribution.id,
       open: true,
     });
-    showSnackbar({ message: result.status === "updated" ? t("reopened", { date }) : t("error") });
+    showSnackbar(
+      result.status === "updated"
+        ? { message: t("reopened", { date }) }
+        : { message: t("error"), severity: "error" },
+    );
   };
 
   return (

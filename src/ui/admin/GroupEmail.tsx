@@ -1,18 +1,12 @@
 "use client";
 
 import CheckCircleOutlined from "@mui/icons-material/CheckCircleOutlined";
-import ScheduleOutlined from "@mui/icons-material/ScheduleOutlined";
 import SendOutlined from "@mui/icons-material/SendOutlined";
 import WarningAmberOutlined from "@mui/icons-material/WarningAmberOutlined";
 import Alert from "@mui/material/Alert";
 import Box from "@mui/material/Box";
 import Button from "@mui/material/Button";
 import Chip from "@mui/material/Chip";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import Paper from "@mui/material/Paper";
 import Radio from "@mui/material/Radio";
 import RadioGroup from "@mui/material/RadioGroup";
@@ -44,7 +38,9 @@ import { formatDate } from "@/i18n/dates";
 import { sendGroupEmailAction, sendTestEmailAction } from "@/server/group-emails-actions";
 import type { ComposerView } from "@/server/group-emails";
 
+import { ConfirmDialog } from "../feedback/ConfirmDialog";
 import { useSnackbar } from "../feedback/SnackbarProvider";
+import { SectionTitle } from "../layout/SectionTitle";
 import { StepCard } from "../layout/StepCard";
 import { m3 } from "../theme/create-theme";
 
@@ -384,26 +380,17 @@ export function GroupEmail({ amapSlug, view }: { amapSlug: string; view: Compose
       </Box>
 
       <Box component="section" aria-labelledby="historique">
-        <Stack direction="row" sx={{ alignItems: "center", gap: 1.5, mb: 1.5, flexWrap: "wrap" }}>
-          <Typography id="historique" variant="h2" sx={{ fontSize: "1.5rem" }}>
-            {t("historyTitle")}
-          </Typography>
-          <Chip
-            size="small"
-            icon={<ScheduleOutlined />}
-            label={t("historyCount", { count: view.history.length })}
-          />
-        </Stack>
+        <SectionTitle
+          id="historique"
+          title={t("historyTitle")}
+          count={t("historyCount", { count: view.history.length })}
+        />
         {view.history.length === 0 ? (
           <Typography>{t("historyEmpty")}</Typography>
         ) : (
-          <TableContainer
-            component={Paper}
-            variant="outlined"
-            sx={{ borderRadius: "16px", borderColor: m3("outlineVariant") }}
-          >
+          <TableContainer component={Paper} variant="outlined">
             <Table aria-label={t("historyLabel")} sx={{ minWidth: 720 }}>
-              <TableHead sx={{ bgcolor: m3("surfaceContainerLow") }}>
+              <TableHead>
                 <TableRow>
                   <TableCell scope="col">{t("colDate")}</TableCell>
                   <TableCell scope="col">{t("colSubject")}</TableCell>
@@ -458,24 +445,18 @@ export function GroupEmail({ amapSlug, view }: { amapSlug: string; view: Compose
         )}
       </Box>
 
-      <Dialog
+      <ConfirmDialog
         open={confirming}
+        icon={<SendOutlined />}
+        title={t("confirmTitle")}
+        confirmLabel={t("confirm")}
+        cancelLabel={t("cancel")}
+        onConfirm={send}
         onClose={() => setConfirming(false)}
-        aria-labelledby="confirm-envoi"
+        pending={pending}
       >
-        <DialogTitle id="confirm-envoi">{t("confirmTitle")}</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {t("confirmText", { subject, recipients: recipients.length, households })}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirming(false)}>{t("cancel")}</Button>
-          <Button variant="contained" onClick={send} disabled={pending}>
-            {t("confirm")}
-          </Button>
-        </DialogActions>
-      </Dialog>
+        {t("confirmText", { subject, recipients: recipients.length, households })}
+      </ConfirmDialog>
     </Stack>
   );
 }

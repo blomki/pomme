@@ -178,7 +178,7 @@ export function PageEditor({
         sx={{
           display: "grid",
           gap: 3,
-          gridTemplateColumns: { xs: "1fr", lg: "minmax(0, 1fr) 320px" },
+          gridTemplateColumns: { xs: "1fr", xl: "minmax(0, 1fr) 320px" },
           alignItems: "start",
         }}
       >

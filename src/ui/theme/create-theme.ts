@@ -99,7 +99,9 @@ export function createAmapTheme(config: ThemeConfig): Theme {
         styleOverrides: {
           root: {
             borderRadius: M3_SHAPE.full,
-            minHeight: 48, // cible tactile de 48 px
+            // Charte S14 : boutons pilule d'environ 40 px. La cible reste bien au-dessus des
+            // 24 px minimum du critère WCAG 2.5.8.
+            minHeight: 40,
             paddingInline: 24,
             "&:hover": stateLayer(8),
             "&.Mui-focusVisible": stateLayer(10),
@@ -130,6 +132,33 @@ export function createAmapTheme(config: ThemeConfig): Theme {
       MuiPaper: {
         // M3 marque l'élévation par la teinte de la surface, pas par une ombre ni un dégradé.
         styleOverrides: { root: { backgroundImage: "none" } },
+        variants: [
+          {
+            // Cartes de formulaire et de tableau (charte S14) : fond de surface, bordure
+            // discrète, coins de 16 px, sans ombre.
+            props: { variant: "outlined" },
+            style: {
+              borderRadius: M3_SHAPE.large,
+              borderColor: m3("outlineVariant"),
+              backgroundColor: m3("surface"),
+            },
+          },
+        ],
+      },
+      MuiTableHead: {
+        styleOverrides: { root: { backgroundColor: m3("surfaceContainerLow") } },
+      },
+      MuiTableCell: {
+        styleOverrides: {
+          root: { borderBottomColor: m3("outlineVariant") },
+          head: { fontSize: "0.75rem", lineHeight: "1rem", fontWeight: 700, letterSpacing: 0.5 },
+        },
+      },
+      MuiTableRow: {
+        styleOverrides: {
+          // Survol léger des lignes de données (pas de l'en-tête).
+          root: { ".MuiTableBody-root &:hover": { backgroundColor: m3("surfaceContainerLow") } },
+        },
       },
       MuiCard: {
         defaultProps: { elevation: 0 },
@@ -184,7 +213,8 @@ export function createAmapTheme(config: ThemeConfig): Theme {
         },
       },
       MuiChip: {
-        styleOverrides: { root: { borderRadius: M3_SHAPE.small } },
+        // Puces pilules (charte S14), statuts compris.
+        styleOverrides: { root: { borderRadius: M3_SHAPE.full } },
       },
       MuiOutlinedInput: {
         styleOverrides: {
@@ -195,7 +225,7 @@ export function createAmapTheme(config: ThemeConfig): Theme {
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: M3_SHAPE.extraLarge,
+            borderRadius: 24, // charte S14
             backgroundColor: m3("surfaceContainerHigh"),
             // Téléphone (sous 600 px) : presque plein écran, 16 px de marge (charte S14). MUI
             // laisse sinon 32 px de chaque côté, trop sur un écran de 360 px.
@@ -210,7 +240,7 @@ export function createAmapTheme(config: ThemeConfig): Theme {
       MuiSnackbarContent: {
         styleOverrides: {
           root: {
-            borderRadius: M3_SHAPE.extraSmall,
+            borderRadius: M3_SHAPE.large, // charte S14
             backgroundColor: m3("inverseSurface"),
             color: m3("inverseOnSurface"),
           },

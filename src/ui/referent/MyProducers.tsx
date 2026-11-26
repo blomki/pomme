@@ -87,7 +87,7 @@ export function MyProducers({
           sx={{
             display: "grid",
             gap: 2,
-            gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
+            gridTemplateColumns: { xs: "1fr", xl: "1fr 1fr" },
             alignItems: "start",
           }}
         >

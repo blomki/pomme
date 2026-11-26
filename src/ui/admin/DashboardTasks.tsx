@@ -131,7 +131,7 @@ export function DashboardTasks({
     const result = await markTaskDoneAction(amapSlug, { taskId: task.id, done: isDone });
     setPending(null);
     if (result.status !== "saved") {
-      showSnackbar({ message: t("markError") });
+      showSnackbar({ message: t("markError"), severity: "error" });
       return;
     }
     showSnackbar({

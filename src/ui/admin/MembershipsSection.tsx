@@ -60,7 +60,7 @@ export function MembershipsSection({
   const archive = async (m: MembershipView) => {
     const result = await archiveMembershipAction(amapSlug, { householdId, id: m.id });
     if (result.status !== "archived") {
-      showSnackbar({ message: t(`errors.${result.status}`) });
+      showSnackbar({ message: t(`errors.${result.status}`), severity: "error" });
       return;
     }
     showSnackbar({
@@ -74,7 +74,11 @@ export function MembershipsSection({
           fee: m.feeCents === null ? "" : priceInput(m.feeCents),
           note: m.note,
         });
-        showSnackbar({ message: restored.status === "saved" ? t("restored") : t("restoreFailed") });
+        showSnackbar(
+          restored.status === "saved"
+            ? { message: t("restored") }
+            : { message: t("restoreFailed"), severity: "error" },
+        );
       },
     });
   };

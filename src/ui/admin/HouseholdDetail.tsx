@@ -90,7 +90,10 @@ export function HouseholdDetail({
     } else if (result.status === "member_taken") {
       showSnackbar({ message: t("restoreMemberTaken") });
     } else {
-      showSnackbar({ message: result.status === "forbidden" ? t("forbidden") : t("error") });
+      showSnackbar({
+        message: result.status === "forbidden" ? t("forbidden") : t("error"),
+        severity: "error",
+      });
     }
   };
 

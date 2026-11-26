@@ -47,7 +47,11 @@ export function ProducerAccessSection({
       amapProducerId: producer.id,
       userId,
     });
-    showSnackbar({ message: result.status === "sent" ? t("resent", { name }) : t("resendFailed") });
+    showSnackbar(
+      result.status === "sent"
+        ? { message: t("resent", { name }) }
+        : { message: t("resendFailed"), severity: "error" },
+    );
   };
 
   const invite = async (event: React.FormEvent<HTMLFormElement>) => {
