@@ -2,6 +2,7 @@ import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import type { OrderCorrection } from "@/server/order-corrections";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 import { ProducerOrder } from "../family/ProducerOrder";
 import { LinkButton } from "../navigation/LinkButton";
@@ -26,9 +27,7 @@ export async function OrderCorrectionScreen({
   if (correction.state !== "open" || !correction.producer) {
     return (
       <>
-        <Typography variant="h1" sx={{ mb: 2 }}>
-          {t("heading")}
-        </Typography>
+        <PageBanner title={t("heading")} />
         <Typography sx={{ mb: 2 }}>
           {correction.state === "open" ? t("noCatalog") : t("notOpen")}
         </Typography>

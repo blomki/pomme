@@ -1,5 +1,4 @@
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { getDatabase } from "@/db/client";
@@ -13,6 +12,7 @@ import { getMonthDuties, getPlanningBanner } from "@/server/duty-planning";
 import { DistributionPlanning } from "@/ui/admin/DistributionPlanning";
 import { DutyBanner } from "@/ui/admin/DutyBanner";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = {
   params: Promise<{ amap: string }>;
@@ -39,11 +39,10 @@ export default async function PlanningPage({ params, searchParams }: Props) {
   );
   const t = await getTranslations("Admin.planning");
   const tp = await getTranslations("Admin.dutyPlanning");
+  const tb = await getTranslations("Banners");
   return (
     <>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
+      <PageBanner title={t("title")}>{tb("adminPlanning")}</PageBanner>
       {/* Feuille d'émargement du mois affiché, prête à imprimer (story E3). */}
       {/* Prochain trimestre : réponses (G1) et planning des permanences (G2). */}
       <DutyBanner amapSlug={slug} quarter={quarterLabel(banner.quarterStart)} banner={banner} />

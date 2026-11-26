@@ -27,6 +27,7 @@ import { RichTextEditor } from "../pages/RichTextEditor";
 import { m3 } from "../theme/create-theme";
 
 import { PageStatusChip } from "./PagesList";
+import { PageBanner } from "../layout/PageBanner";
 
 type Intent = "save" | "publish" | "unpublish";
 
@@ -48,6 +49,7 @@ export function PageEditor({
 }) {
   const t = useTranslations("Admin.pages");
   const te = useTranslations("Admin.pages.editor");
+  const tb = useTranslations("Banners");
   const router = useRouter();
   const showSnackbar = useSnackbar();
   const id = useId();
@@ -162,11 +164,13 @@ export function PageEditor({
         >
           {t("title")}
         </Button>
-        <Stack direction="row" sx={{ gap: 2, alignItems: "center", flexWrap: "wrap" }}>
-          <Typography variant="h1">{page.id ? te("editTitle") : te("newTitle")}</Typography>
-          {page.id && <PageStatusChip status={page.status} />}
-        </Stack>
       </Box>
+      <PageBanner title={page.id ? te("editTitle") : te("newTitle")}>{tb("pageEditor")}</PageBanner>
+      {page.id && (
+        <Box>
+          <PageStatusChip status={page.status} />
+        </Box>
+      )}
 
       {summary && (
         <Alert severity="error" ref={summaryRef} tabIndex={-1}>

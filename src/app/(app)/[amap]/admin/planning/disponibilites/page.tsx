@@ -1,4 +1,3 @@
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { getDatabase } from "@/db/client";
@@ -8,6 +7,7 @@ import { quarterLabel } from "@/server/duty-notices";
 import { getDutyAdmin } from "@/server/duty-plans";
 import { DutyAnswers } from "@/ui/admin/DutyAnswers";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -23,12 +23,9 @@ export default async function DutyAnswersPage({ params }: Props) {
       <LinkButton href={`/${slug}/admin/planning`} sx={{ mb: 2 }}>
         {t("back")}
       </LinkButton>
-      <Typography variant="h1" gutterBottom>
-        {t("title", { quarter: quarterLabel(view.quarterStart) })}
-      </Typography>
-      <Typography color="text.secondary" sx={{ mb: 3 }}>
+      <PageBanner title={t("title", { quarter: quarterLabel(view.quarterStart) })}>
         {t("intro", { count: view.distributionCount })}
-      </Typography>
+      </PageBanner>
       <DutyAnswers key={view.plan?.id ?? "new"} amapSlug={slug} view={view} />
     </>
   );

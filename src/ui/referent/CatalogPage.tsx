@@ -47,6 +47,7 @@ export function CatalogPage({
         {t("back")}
       </Button>
       <CatalogMonthHeader
+        banner
         month={month}
         monthLabel={label}
         status={draft.status}

@@ -10,6 +10,7 @@ import Link from "next/link";
 
 import { addMonths } from "@/domain/distributions";
 import type { CatalogDraft } from "@/server/catalogs";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 import { CatalogStatusChip } from "./CatalogEditor";
 
@@ -23,19 +24,28 @@ export function CatalogMonthHeader({
   monthLabel,
   status,
   hrefFor,
+  banner = false,
 }: {
   month: string;
   monthLabel: string;
   status: CatalogDraft["status"];
   hrefFor: (month: string) => string;
+  /** Titre en bandeau (espace référent, charte S14) ; sinon titre simple (espace producteur). */
+  banner?: boolean;
 }) {
   const t = useTranslations("Catalog");
+  const tb = useTranslations("Banners");
   return (
     <>
+      {banner && (
+        <PageBanner title={t("title", { month: monthLabel })}>{tb("catalogue")}</PageBanner>
+      )}
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", mb: 0.5 }}>
-        <Typography variant="h1" sx={{ flexGrow: 1 }}>
-          {t("title", { month: monthLabel })}
-        </Typography>
+        {!banner && (
+          <Typography variant="h1" sx={{ flexGrow: 1 }}>
+            {t("title", { month: monthLabel })}
+          </Typography>
+        )}
         <CatalogStatusChip status={status} />
         <IconButton
           component={Link}

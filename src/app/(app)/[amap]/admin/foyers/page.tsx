@@ -19,6 +19,7 @@ import { HouseholdsTable } from "@/ui/admin/HouseholdsTable";
 import { JoinRequestsList } from "@/ui/admin/JoinRequestsList";
 import { MembershipFilter } from "@/ui/admin/MembershipFilter";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = {
   params: Promise<{ amap: string }>;
@@ -43,9 +44,7 @@ export default async function HouseholdsPage({ params, searchParams }: Props) {
     const requests = await withAmapContext(getDatabase(), ctx, (tx, c) => listJoinRequests(tx, c));
     return (
       <>
-        <Typography variant="h1" sx={{ mb: 2 }}>
-          {t("title")}
-        </Typography>
+        <PageBanner title={t("title")}>{t("intro")}</PageBanner>
         <HouseholdTabs amapSlug={slug} current="requests" openRequests={openRequests} />
         <JoinRequestsList
           amapSlug={slug}
@@ -79,22 +78,19 @@ export default async function HouseholdsPage({ params, searchParams }: Props) {
   }
   return (
     <>
-      <Stack
-        direction="row"
-        spacing={2}
-        sx={{ mb: 2, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}
-      >
-        <Typography variant="h1">{archived ? t("archivedTitle") : t("title")}</Typography>
-        {!archived && (
+      <PageBanner title={archived ? t("archivedTitle") : t("title")}>
+        {archived ? undefined : t("intro")}
+      </PageBanner>
+      {!archived && (
+        <Stack direction="row" sx={{ mb: 2, justifyContent: "flex-end" }}>
           <LinkButton href={`${base}/nouveau`} variant="contained">
             {t("invite")}
           </LinkButton>
-        )}
-      </Stack>
+        </Stack>
+      )}
       {!archived && (
         <HouseholdTabs amapSlug={slug} current="households" openRequests={openRequests} />
       )}
-      {!archived && <Typography sx={{ mb: 2 }}>{t("intro")}</Typography>}
       <Typography variant="titleMedium" component="p" sx={{ mb: 2 }}>
         {archived
           ? t("archivedCount", { count: households.length })

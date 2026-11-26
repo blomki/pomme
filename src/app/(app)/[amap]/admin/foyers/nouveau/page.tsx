@@ -1,8 +1,8 @@
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { InviteHouseholdForm } from "@/ui/admin/InviteHouseholdForm";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -13,10 +13,7 @@ export default async function InviteHouseholdPage({ params }: Props) {
   const t = await getTranslations("Admin.inviteHousehold");
   return (
     <>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
-      <Typography sx={{ mb: 3, maxWidth: "70ch" }}>{t("intro")}</Typography>
+      <PageBanner title={t("title")}>{t("intro")}</PageBanner>
       <InviteHouseholdForm amapSlug={slug} />
     </>
   );

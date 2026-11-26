@@ -1,4 +1,3 @@
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { getDatabase } from "@/db/client";
@@ -9,6 +8,7 @@ import { getDashboardOrderPeriod } from "@/server/order-periods";
 import { blockingTasks } from "@/server/producers";
 import { DashboardTasks, MembershipCard } from "@/ui/admin/DashboardTasks";
 import { OrderPeriodBanner } from "@/ui/admin/OrderPeriodBanner";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -25,11 +25,10 @@ export default async function AdminHomePage({ params }: Props) {
     period: await getDashboardOrderPeriod(tx, c),
   }));
   const t = await getTranslations("Admin");
+  const tb = await getTranslations("Banners");
   return (
     <>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
+      <PageBanner title={t("title")}>{tb("adminDashboard")}</PageBanner>
       <OrderPeriodBanner amapSlug={slug} period={data.period} />
       <MembershipCard amapSlug={slug} progress={data.memberships} />
       <DashboardTasks

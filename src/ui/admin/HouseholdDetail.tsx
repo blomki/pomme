@@ -45,6 +45,7 @@ import { useSnackbar } from "../feedback/SnackbarProvider";
 
 import { CorrectEmailDialog } from "./CorrectEmailDialog";
 import { ResetSecondFactorDialog } from "./ResetSecondFactorDialog";
+import { PageBanner } from "../layout/PageBanner";
 
 const fullName = (m: { firstName: string; lastName: string }) =>
   `${m.firstName} ${m.lastName}`.trim();
@@ -71,6 +72,7 @@ export function HouseholdDetail({
   const [emailOf, setEmailOf] = useState<HouseholdMemberView | null>(null);
   const [factorOf, setFactorOf] = useState<HouseholdMemberView | null>(null);
   const tf = useTranslations("Admin.resetSecondFactor");
+  const tb = useTranslations("Banners");
   const archived = household.archivedAt !== null;
   const anonymized = household.anonymizedAt !== null;
   const [anonymizing, setAnonymizing] = useState(false);
@@ -124,12 +126,12 @@ export function HouseholdDetail({
       >
         {tl("back")}
       </Button>
+      <PageBanner title={household.name}>{tb("householdDetail")}</PageBanner>
       <Stack
         direction="row"
         spacing={2}
-        sx={{ mb: 2, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}
+        sx={{ mb: 2, justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}
       >
-        <Typography variant="h1">{household.name}</Typography>
         {anonymized ? null : archived ? (
           <Button variant="contained" onClick={() => void setArchived(false)}>
             {t("restore")}
