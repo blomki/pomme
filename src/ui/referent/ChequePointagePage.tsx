@@ -50,6 +50,7 @@ import {
   settleChequeGapAction,
   unmarkChequeReceivedAction,
 } from "@/server/cheques-actions";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 import { m3 } from "../theme/create-theme";
@@ -85,6 +86,7 @@ export function ChequePointagePage({
   view: ChequePointage;
 }) {
   const t = useTranslations("Referent.cheques");
+  const tb = useTranslations("Banners");
   const showSnackbar = useSnackbar();
   const [rows, setRows] = useState<PointageRow[]>(view.cheques);
   const [filter, setFilter] = useState<ChequeFilter>("all");
@@ -212,6 +214,7 @@ export function ChequePointagePage({
 
   return (
     <>
+      <PageBanner title={t("title", { month: monthLabel })}>{tb("cheques")}</PageBanner>
       <Stack
         direction="row"
         sx={{
@@ -224,7 +227,6 @@ export function ChequePointagePage({
       >
         <Box>
           <Stack direction="row" spacing={1} sx={{ alignItems: "center" }}>
-            <Typography variant="h1">{t("title", { month: monthLabel })}</Typography>
             <IconButton
               component={Link}
               nativeButton={false}

@@ -26,6 +26,7 @@ export default async function ReferentLayout({ children, params }: Props) {
       modes={modes}
       firstName={session?.user.name}
       summary={summary}
+      bannerImageUrl={amap.logoUrl}
     >
       {children}
     </DesktopShell>

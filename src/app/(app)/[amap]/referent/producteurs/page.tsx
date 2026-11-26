@@ -7,6 +7,7 @@ import { requireAmapReferentPage } from "@/server/auth/guards";
 import { storageSettings } from "@/server/files/settings";
 import { listMyProducers } from "@/server/producers";
 import { MyProducers } from "@/ui/referent/MyProducers";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -16,11 +17,10 @@ export default async function MyProducersPage({ params }: Props) {
   const { ctx } = await requireAmapReferentPage(slug);
   const producers = await withAmapContext(getDatabase(), ctx, (tx, c) => listMyProducers(tx, c));
   const t = await getTranslations("Referent.producers");
+  const tb = await getTranslations("Banners");
   return (
     <>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
+      <PageBanner title={t("title")}>{tb("referentProducers")}</PageBanner>
       {producers.length === 0 ? (
         <Typography>{t("empty")}</Typography>
       ) : (

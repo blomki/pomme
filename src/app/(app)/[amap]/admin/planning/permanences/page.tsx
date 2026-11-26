@@ -1,5 +1,4 @@
 import Stack from "@mui/material/Stack";
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { getDatabase } from "@/db/client";
@@ -9,6 +8,7 @@ import { quarterLabel } from "@/server/duty-notices";
 import { getPlanningEditor, type QuarterChoice } from "@/server/duty-planning";
 import { PlanningEditor } from "@/ui/admin/PlanningEditor";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = {
   params: Promise<{ amap: string }>;
@@ -26,19 +26,20 @@ export default async function PlanningEditorPage({ params, searchParams }: Props
     getPlanningEditor(tx, c, quarter),
   );
   const t = await getTranslations("Admin.dutyPlanning");
+  const tb = await getTranslations("Banners");
   const base = `/${slug}/admin/planning`;
   return (
     <Stack spacing={2} sx={{ maxWidth: 1100 }}>
       <LinkButton href={base} sx={{ alignSelf: "flex-start" }}>
         {t("back")}
       </LinkButton>
+      <PageBanner title={t("title", { quarter: quarterLabel(view.quarterStart) })}>
+        {tb("dutyPlan")}
+      </PageBanner>
       <Stack
         direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2 }}
+        sx={{ justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap", gap: 2 }}
       >
-        <Typography variant="h1">
-          {t("title", { quarter: quarterLabel(view.quarterStart) })}
-        </Typography>
         <Stack direction="row" role="group" aria-label={t("quarterGroup")} sx={{ gap: 1 }}>
           <LinkButton
             href={`${base}/permanences?trimestre=en-cours`}

@@ -8,6 +8,7 @@ import { requireAmapAdminPage } from "@/server/auth/guards";
 import { listAmapProducers } from "@/server/producers";
 import { ProducersTable } from "@/ui/admin/ProducersTable";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -17,14 +18,15 @@ export default async function ProducersPage({ params }: Props) {
   const { ctx } = await requireAmapAdminPage(slug);
   const producers = await withAmapContext(getDatabase(), ctx, (tx, c) => listAmapProducers(tx, c));
   const t = await getTranslations("Admin.producers");
+  const tb = await getTranslations("Banners");
   return (
     <>
+      <PageBanner title={t("title")}>{tb("adminProducers")}</PageBanner>
       <Stack
         direction="row"
         spacing={2}
-        sx={{ mb: 3, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}
+        sx={{ mb: 3, justifyContent: "flex-end", alignItems: "center", flexWrap: "wrap" }}
       >
-        <Typography variant="h1">{t("title")}</Typography>
         <LinkButton href={`/${slug}/admin/producteurs/nouveau`} variant="contained">
           {t("add")}
         </LinkButton>

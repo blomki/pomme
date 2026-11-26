@@ -32,6 +32,7 @@ import { useSnackbar } from "../feedback/SnackbarProvider";
 import { m3 } from "../theme/create-theme";
 import type { M3Role } from "../theme/m3-colors";
 import { visuallyHidden } from "../visually-hidden";
+import { PageBanner } from "../layout/PageBanner";
 
 const STATUS: Record<PageStatus, [M3Role, M3Role]> = {
   published: ["secondaryContainer", "onSecondaryContainer"],
@@ -156,14 +157,11 @@ export function PagesList({
 
   return (
     <Stack spacing={3}>
+      <PageBanner title={t("title")}>{t("site", { address: siteAddress })}</PageBanner>
       <Stack
         direction="row"
-        sx={{ justifyContent: "space-between", alignItems: "flex-end", gap: 2, flexWrap: "wrap" }}
+        sx={{ justifyContent: "flex-end", alignItems: "flex-end", gap: 2, flexWrap: "wrap" }}
       >
-        <Box>
-          <Typography variant="h1">{t("title")}</Typography>
-          <Typography color="text.secondary">{t("site", { address: siteAddress })}</Typography>
-        </Box>
         <Stack direction="row" sx={{ gap: 1.5, flexWrap: "wrap" }}>
           <Button component={Link} nativeButton={false} href={`/${amapSlug}`} variant="outlined">
             {t("viewSite")}

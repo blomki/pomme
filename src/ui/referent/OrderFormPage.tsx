@@ -20,6 +20,7 @@ import { addMonths } from "@/domain/distributions";
 import { formatDate } from "@/i18n/dates";
 import type { OrderFormView } from "@/server/order-forms";
 import { sendOrderFormAction } from "@/server/order-forms-actions";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 import { OrderFormTables } from "../order-form/OrderFormTables";
@@ -45,6 +46,7 @@ export function OrderFormPage({
 }) {
   const t = useTranslations("Referent.orderForms");
   const tc = useTranslations("Correction");
+  const tb = useTranslations("Banners");
   const router = useRouter();
   const [chosen, setChosen] = useState("");
   const showSnackbar = useSnackbar();
@@ -98,10 +100,8 @@ export function OrderFormPage({
 
   return (
     <>
+      <PageBanner title={t("title", { month: monthLabel })}>{tb("orderForms")}</PageBanner>
       <Stack direction="row" spacing={1} sx={{ alignItems: "center", flexWrap: "wrap", mb: 0.5 }}>
-        <Typography variant="h1" sx={{ flexGrow: 1 }}>
-          {t("title", { month: monthLabel })}
-        </Typography>
         <IconButton
           component={Link}
           nativeButton={false}

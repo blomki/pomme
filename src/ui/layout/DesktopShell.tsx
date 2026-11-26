@@ -41,6 +41,7 @@ import { m3 } from "../theme/create-theme";
 
 import { activeHref } from "./active-href";
 import { ModeMenu } from "./ModeMenu";
+import { BannerImageContext } from "./PageBanner";
 
 const DRAWER_WIDTH = 256;
 
@@ -101,6 +102,7 @@ export function DesktopShell({
   modes = [],
   firstName,
   summary,
+  bannerImageUrl = null,
   children,
 }: {
   title: string;
@@ -112,6 +114,8 @@ export function DesktopShell({
   firstName?: string;
   /** Carte de l'AMAP sous le menu : foyers actifs et producteurs. */
   summary?: AmapSummary;
+  /** Image par défaut des bandeaux de page (logo de l'AMAP). */
+  bannerImageUrl?: string | null;
   children: ReactNode;
 }) {
   const t = useTranslations("Nav");
@@ -212,7 +216,11 @@ export function DesktopShell({
             outline: "none",
           }}
         >
-          <Box sx={{ maxWidth: 1150, mx: "auto" }}>{children}</Box>
+          <Box sx={{ maxWidth: 1150, mx: "auto" }}>
+            <BannerImageContext.Provider value={bannerImageUrl}>
+              {children}
+            </BannerImageContext.Provider>
+          </Box>
         </Box>
       </Box>
     </Box>

@@ -2144,5 +2144,21 @@
     "captcha": "La vérification anti-robot n'a pas abouti. Réessayez.",
     "rateLimited": "Trop de demandes en peu de temps. Réessayez un peu plus tard.",
     "error": "Cette AMAP n'existe pas ou plus."
+  },
+  "Banners": {
+    "adminDashboard": "Ce qui demande votre attention : la commande du mois, les adhésions et les tâches à suivre.",
+    "adminReports": "Les signalements des familles et des référents, et les avoirs déjà accordés.",
+    "adminPlanning": "Les distributions du mois, la feuille d'émargement et les permanences du trimestre.",
+    "adminProducers": "Les producteurs qui livrent l'AMAP et leurs référents.",
+    "adminAddProducer": "Un producteur déjà présent sur Pomme garde sa fiche : il suffit de l'ajouter à votre AMAP.",
+    "producerDetail": "La fiche du producteur, ses référents et l'accès à son espace.",
+    "householdDetail": "Les membres du foyer, leurs rôles, leurs adhésions et leurs commandes.",
+    "pageEditor": "Le contenu de la page du site public, tel que les visiteurs le liront.",
+    "dutyPlan": "Ajustez le planning proposé, puis prévenez les bénévoles par email.",
+    "referentCredits": "Les signalements sur vos producteurs, et les avoirs accordés aux familles.",
+    "referentProducers": "Les producteurs que vous suivez : catalogue, commandes et chèques.",
+    "cheques": "Pointez les chèques reçus, mois par mois, et repérez les écarts.",
+    "orderForms": "Les bons de commande du mois, par producteur, à transmettre et à imprimer.",
+    "catalogue": "Préparez le catalogue du mois, puis publiez-le pour ouvrir les commandes."
   }
 }

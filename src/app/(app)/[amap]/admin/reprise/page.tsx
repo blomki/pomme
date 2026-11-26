@@ -1,9 +1,9 @@
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { ImportData } from "@/ui/admin/ImportData";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -18,10 +18,7 @@ export default async function ImportPage({ params }: Props) {
       <LinkButton href={`/${slug}/admin/reglages`} sx={{ mb: 2 }}>
         {t("back")}
       </LinkButton>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
-      <Typography sx={{ mb: 3, maxWidth: 820 }}>{t("intro")}</Typography>
+      <PageBanner title={t("title")}>{t("intro")}</PageBanner>
       <ImportData amapSlug={slug} />
     </>
   );

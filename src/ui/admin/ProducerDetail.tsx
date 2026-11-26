@@ -16,6 +16,7 @@ import { useRef, useState } from "react";
 
 import type { AmapProducerDetail, ReferentView } from "@/server/producers";
 import { setProducerReferentsAction, updateProducerAction } from "@/server/producers-actions";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
@@ -41,6 +42,7 @@ export function ProducerDetail({
 }) {
   const t = useTranslations("Admin.producerForm");
   const tp = useTranslations("Admin.producers");
+  const tb = useTranslations("Banners");
   const showSnackbar = useSnackbar();
 
   const [values, setValues] = useState<ProducerFormValues>({
@@ -96,9 +98,7 @@ export function ProducerDetail({
       >
         {tp("back")}
       </Button>
-      <Typography variant="h1" gutterBottom>
-        {producer.name}
-      </Typography>
+      <PageBanner title={producer.name}>{tb("producerDetail")}</PageBanner>
 
       <Stack spacing={6} sx={{ maxWidth: 720 }}>
         <Box component="form" onSubmit={(e) => void save(e)} noValidate>

@@ -1,4 +1,3 @@
-import Typography from "@mui/material/Typography";
 import { getTranslations } from "next-intl/server";
 
 import { getDatabase } from "@/db/client";
@@ -8,6 +7,7 @@ import { requireAmapAdminPage } from "@/server/auth/guards";
 import { getFileStore } from "@/server/files/storage";
 import { AmapSettingsForm } from "@/ui/admin/AmapSettingsForm";
 import { LinkButton } from "@/ui/navigation/LinkButton";
+import { PageBanner } from "@/ui/layout/PageBanner";
 
 type Props = { params: Promise<{ amap: string }> };
 
@@ -21,10 +21,7 @@ export default async function AmapSettingsPage({ params }: Props) {
   const weekday = settings.distribution.weekday;
   return (
     <>
-      <Typography variant="h1" gutterBottom>
-        {t("title")}
-      </Typography>
-      <Typography sx={{ mb: 3, maxWidth: 820 }}>{t("intro")}</Typography>
+      <PageBanner title={t("title")}>{t("intro")}</PageBanner>
       {/* Reprise des données (story K1) : utile une fois, en quittant AmapJ. */}
       <LinkButton href={`/${slug}/admin/reprise`} variant="outlined" sx={{ mb: 3 }}>
         {t("importLink")}

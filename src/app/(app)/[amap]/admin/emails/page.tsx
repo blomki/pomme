@@ -19,9 +19,7 @@ export default async function EmailsPage({ params }: Props) {
   const t = await getTranslations("Admin.emails");
   return (
     <>
-      <PageBanner title={t("title")} imageUrl={amap.logoUrl}>
-        {t("intro")}
-      </PageBanner>
+      <PageBanner title={t("title")}>{t("intro")}</PageBanner>
       <GroupEmail amapSlug={slug} view={view} />
     </>
   );
