@@ -330,6 +330,13 @@
       "when": 1795706914235,
       "tag": "0046_fonctions-plateforme",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1795730724203,
+      "tag": "0047_images-bandeaux",
+      "breakpoints": true
     }
   ]
 }

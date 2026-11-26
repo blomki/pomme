@@ -44,6 +44,7 @@ export function ImageUpload({
   onSaved,
   withAlt = true,
   fit = "cover",
+  heading = "h2",
 }: {
   /** Titre de la section (« Photo »). */
   title: string;
@@ -64,6 +65,8 @@ export function ImageUpload({
   withAlt?: boolean;
   /** Recadrer l'aperçu (photo) ou l'afficher en entier (logo). */
   fit?: "cover" | "contain";
+  /** Niveau du titre : h3 quand l'envoi est rangé dans une section qui a déjà son h2. */
+  heading?: "h2" | "h3";
 }) {
   const t = useTranslations("ImageUpload");
   const id = useId();
@@ -142,7 +145,12 @@ export function ImageUpload({
 
   return (
     <Box component="section" aria-labelledby={`${id}-titre`}>
-      <Typography id={`${id}-titre`} variant="h2" sx={{ mb: 1.5 }}>
+      <Typography
+        id={`${id}-titre`}
+        variant={heading === "h2" ? "h2" : "titleLarge"}
+        component={heading}
+        sx={{ mb: 1.5 }}
+      >
         {title}
       </Typography>
       {!enabled && (

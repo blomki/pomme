@@ -112,3 +112,69 @@ test.describe("photos (ordinateur)", () => {
     await expect.poll(async () => (await request.get(src)).status()).not.toBe(200);
   });
 });
+
+test.describe("images des bandeaux (ordinateur)", () => {
+  test.skip(({ browserName }) => browserName !== "chromium", "écrans d'ordinateur");
+
+  test("un admin donne une image au bandeau des foyers, visible sur ses écrans, puis la retire (S14)", async ({
+    page,
+    request,
+  }) => {
+    const press = async (locator: ReturnType<typeof page.getByRole>) => {
+      await locator.focus();
+      await page.keyboard.press("Enter");
+    };
+    const illustration = await sharp({
+      create: { width: 900, height: 900, channels: 4, background: "#4f7a28" },
+    })
+      .png()
+      .toBuffer();
+    // Image décorative du bandeau : sans texte alternatif, on la reconnaît à son adresse. Seule
+    // l'image visible compte : pendant l'envoi progressif de la page (streaming), Next.js garde un
+    // instant une copie cachée du contenu.
+    const bannerImage = page.locator('main img[src*="/bandeaux/"]').filter({ visible: true });
+
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/reglages");
+    const images = page.getByRole("region", { name: "Images des bandeaux" });
+    const section = images.getByRole("region", { name: "Foyers et adhésions" });
+    await expect(section).toBeVisible();
+    // Le test a pu tourner sur cette base : on repart sans image.
+    const leftover = section.getByRole("button", { name: "Retirer la photo" });
+    if (await leftover.isVisible()) {
+      await press(leftover);
+      await expect(page.getByText(/« Foyers et adhésions » retirée/)).toBeVisible();
+    }
+    await expectNoSeriousA11yViolations(page);
+
+    const field = section.getByLabel(/^Choisir une photo/);
+    await field.focus();
+    const chooser = page.waitForEvent("filechooser");
+    await page.keyboard.press("Space");
+    await (
+      await chooser
+    ).setFiles({
+      name: "foyers.png",
+      mimeType: "image/png",
+      buffer: illustration,
+    });
+    await press(section.getByRole("button", { name: "Enregistrer la photo" }));
+    await expect(
+      page.getByText("Image du bandeau « Foyers et adhésions » enregistrée."),
+    ).toBeVisible();
+
+    // Visible en tête des écrans des foyers, pas sur ceux des chèques.
+    await page.goto("/hommesdeterre/admin/foyers");
+    await expect(bannerImage).toBeVisible();
+    await page.goto("/hommesdeterre/admin/cheques");
+    await expect(bannerImage).toHaveCount(0);
+
+    // Retirée : le bandeau des foyers reprend le logo (ou rien).
+    await page.goto("/hommesdeterre/admin/reglages");
+    await press(section.getByRole("button", { name: "Retirer la photo" }));
+    await expect(page.getByText(/« Foyers et adhésions » retirée/)).toBeVisible();
+    await page.goto("/hommesdeterre/admin/foyers");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(bannerImage).toHaveCount(0);
+  });
+});

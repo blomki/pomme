@@ -27,6 +27,8 @@ import { ImageUpload } from "../forms/ImageUpload";
 import { ThemePreview } from "../platform/ThemePreview";
 import { HEADING_FONTS, type HeadingFont } from "../theme/key-colors";
 
+import { BannerImagesSection } from "./BannerImagesSection";
+
 const COLORS = ["primary", "secondary", "tertiary"] as const;
 const PARAMETERS = Object.keys(AMAP_PARAMETER_BOUNDS) as AmapParameter[];
 
@@ -118,6 +120,12 @@ export function AmapSettingsForm({
           }}
         />
       </Paper>
+
+      <BannerImagesSection
+        amapSlug={amapSlug}
+        images={settings.bannerImages}
+        storageEnabled={storageEnabled}
+      />
 
       <Box component="form" onSubmit={(e) => void submit(e)} noValidate>
         <Stack spacing={3}>

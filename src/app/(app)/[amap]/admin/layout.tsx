@@ -21,7 +21,7 @@ export default async function AdminLayout({ children, params }: Props) {
       modes={modes}
       firstName={state.user.name}
       summary={summary}
-      bannerImageUrl={amap.logoUrl}
+      banner={{ images: amap.bannerImages, logoUrl: amap.logoUrl }}
     >
       {children}
     </DesktopShell>

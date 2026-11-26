@@ -1,0 +1,1 @@
+ALTER TABLE "amap" ADD COLUMN "banner_images" jsonb DEFAULT '{}'::jsonb NOT NULL;

@@ -11,6 +11,7 @@ import {
   type AmapParameter,
   type AmapSettingsProblem,
 } from "@/domain/amap-settings";
+import { isBannerGroup, type BannerGroup, type BannerImages } from "@/domain/banner-images";
 import { checkUpload, IMAGE_USAGES, MAX_UPLOAD_BYTES, type UploadProblem } from "@/domain/images";
 import { HEADING_FONTS, resolveThemeConfig, type HeadingFont } from "@/ui/theme/key-colors";
 
@@ -27,6 +28,8 @@ export type AmapSettingsView = {
   name: string;
   slug: string;
   logoUrl: string | null;
+  /** Images des bandeaux, par famille d'écrans (story S14). */
+  bannerImages: BannerImages;
   colors: { primary: string; secondary: string; tertiary: string };
   headingFont: HeadingFont;
   contactEmail: string;
@@ -53,6 +56,7 @@ export async function getAmapSettings(
     name: row.name,
     slug: row.slug,
     logoUrl: row.logoUrl,
+    bannerImages: row.bannerImages,
     colors: {
       primary: theme.keyColors.primary,
       secondary: theme.keyColors.secondary,
@@ -218,4 +222,88 @@ export async function removeAmapLogo(
     after: { logoUrl: null },
   });
   return { status: "removed", previousUrl: before.logoUrl };
+}
+
+export type SaveBannerImageResult =
+  | {
+      status: "saved";
+      url: string;
+      /** Image remplacée, à supprimer du stockage une fois la transaction validée. */
+      previousUrl: string | null;
+    }
+  | { status: UploadProblem | "no_file" | "unavailable" | "invalid" };
+
+/**
+ * Enregistre l'image du bandeau d'une famille d'écrans (story S14, ADR 0049) : mêmes contrôles
+ * et même ré-encodage que le logo, 512 points au plus. Journalisé.
+ */
+export async function saveBannerImage(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: { group: unknown; file: Blob | null },
+  store: FileStore | null,
+): Promise<SaveBannerImageResult> {
+  await requireRole(tx, ctx, ["admin"]);
+  if (!isBannerGroup(input.group)) return { status: "invalid" };
+  const group: BannerGroup = input.group;
+  if (!store) return { status: "unavailable" };
+  if (!input.file || input.file.size === 0) return { status: "no_file" };
+  if (input.file.size > MAX_UPLOAD_BYTES) return { status: "too_large" };
+  const bytes = new Uint8Array(await input.file.arrayBuffer());
+  const problem = checkUpload({ size: bytes.length, head: bytes.subarray(0, 16) });
+  if (problem) return { status: problem };
+  let image;
+  try {
+    image = await reencodeImage(bytes, "banner_image");
+  } catch {
+    return { status: "not_image" };
+  }
+  const before = await loadAmap(tx, ctx);
+  const key = `${IMAGE_USAGES.banner_image.folder}/${uuidv7()}.webp`;
+  await store.put(key, image.body, image.contentType);
+  const url = store.publicUrl(key);
+  const previousUrl = before.bannerImages[group] ?? null;
+  try {
+    await tx
+      .update(amap)
+      .set({ bannerImages: { ...before.bannerImages, [group]: url } })
+      .where(eq(amap.id, ctx.amapId!));
+    await writeAuditLog(tx, ctx, {
+      entityType: "amap",
+      entityId: ctx.amapId!,
+      action: "update_banner_image",
+      before: { group, url: previousUrl },
+      after: { group, url },
+    });
+  } catch (error) {
+    // Pas d'orphelin dans le stockage si l'enregistrement échoue.
+    await store.delete(key).catch(() => undefined);
+    throw error;
+  }
+  return { status: "saved", url, previousUrl };
+}
+
+/**
+ * Retire l'image du bandeau d'une famille : le bandeau reprend le logo. Journalisé ; l'image est
+ * supprimée du stockage après la transaction.
+ */
+export async function removeBannerImage(
+  tx: Transaction,
+  ctx: AmapContext,
+  input: { group: unknown },
+): Promise<{ status: "removed"; previousUrl: string | null } | { status: "invalid" }> {
+  await requireRole(tx, ctx, ["admin"]);
+  if (!isBannerGroup(input.group)) return { status: "invalid" };
+  const group: BannerGroup = input.group;
+  const before = await loadAmap(tx, ctx);
+  const { [group]: previousUrl = null, ...rest } = before.bannerImages;
+  await tx.update(amap).set({ bannerImages: rest }).where(eq(amap.id, ctx.amapId!));
+  await writeAuditLog(tx, ctx, {
+    entityType: "amap",
+    entityId: ctx.amapId!,
+    action: "remove_banner_image",
+    before: { group, url: previousUrl },
+    after: { group, url: null },
+  });
+  return { status: "removed", previousUrl };
 }

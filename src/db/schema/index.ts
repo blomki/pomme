@@ -36,6 +36,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
+import type { BannerImages } from "@/domain/banner-images";
 import { JOIN_REQUEST_STATUSES } from "@/domain/join-requests";
 import { EMAIL_AUDIENCES } from "@/domain/email-campaigns";
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
@@ -262,6 +263,9 @@ export const amap = pgTable(
     // le nom de l'AMAP. Envoi prévu avec la fiche A4.
     logoUrl: text("logo_url"),
     theme: jsonb("theme").$type<AmapTheme>().notNull().default({}),
+    // Images des bandeaux par famille d'écrans (story S14, ADR 0049) : adresses publiques des
+    // images ré-encodées, comme le logo. Famille absente : le bandeau montre le logo.
+    bannerImages: jsonb("banner_images").$type<BannerImages>().notNull().default({}),
     contactEmail: text("contact_email"),
     distributionPlace: text("distribution_place"),
     timezone: text("timezone").notNull().default("Europe/Paris"),
