@@ -3,12 +3,11 @@
 import { revalidatePath } from "next/cache";
 
 import { getDatabase } from "@/db/client";
-import { withAmapContext } from "@/db/context";
 
 import { getAmapBySlug } from "./amap";
 import { runAmapAction } from "./amap-action";
+import { sendCampaign } from "./email/campaigns";
 import { reminderNotification } from "./order-reminders";
-import { sendNotification } from "./email/notify";
 import {
   closeOrderPeriod,
   planReminders,
@@ -87,29 +86,33 @@ export async function remindHouseholdsAction(
 
   const amapRow = await getAmapBySlug(amap);
   const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  const counts = { sent: 0, skipped: 0, failed: 0 };
-  for (const recipient of plan.recipients) {
-    const result = await withAmapContext(getDatabase(), ctx, (tx) =>
-      sendNotification(
-        tx,
-        reminderNotification({
-          amap: {
-            id: ctx.amapId!,
-            slug: amap,
-            name: amapRow?.name ?? "",
-            theme: amapRow?.theme ?? null,
-          },
-          periodId: plan.periodId,
-          month: plan.month,
-          closesOn: plan.closesOn,
-          recipient,
-          baseUrl,
-        }),
-      ),
-    );
-    if (result.status === "sent") counts.sent += 1;
-    else if (result.status === "duplicate") counts.skipped += 1;
-    else counts.failed += 1;
-  }
+  const notifications = plan.recipients.map((recipient) =>
+    reminderNotification({
+      amap: {
+        id: ctx.amapId!,
+        slug: amap,
+        name: amapRow?.name ?? "",
+        theme: amapRow?.theme ?? null,
+      },
+      periodId: plan.periodId,
+      month: plan.month,
+      closesOn: plan.closesOn,
+      recipient,
+      baseUrl,
+    }),
+  );
+  // Inscrit dans l'historique des envois (story H1), au nom de l'admin qui relance.
+  const { sent, skipped, failed } = await sendCampaign(
+    getDatabase(),
+    ctx,
+    {
+      audience: "households_without_order",
+      subject: notifications[0]?.content.subject ?? "",
+      sentBy: ctx.userId,
+      automatic: false,
+    },
+    notifications,
+  );
+  const counts = { sent, skipped, failed };
   return { status: "sent", ...counts };
 }

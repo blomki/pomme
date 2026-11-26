@@ -18,6 +18,8 @@ const screens = [
     fullPage: false,
   },
   { name: "referent", path: "/hommesdeterre/referent", viewport: "desktop" },
+  // Envoyer un email (H1) : page de démonstration aux données fixes (historique daté).
+  { name: "admin-emails", path: "/plateforme/demo/emails", viewport: "desktop" },
   { name: "theme-cambremer", path: "/plateforme/theme/hommesdeterre", viewport: "desktop" },
   { name: "theme-pays-d-auge", path: "/plateforme/theme/pays-d-auge-demo", viewport: "desktop" },
 ] as const satisfies ReadonlyArray<{

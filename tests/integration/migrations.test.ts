@@ -36,6 +36,7 @@ describe("Migrations", () => {
       "duty_plan",
       "duty_response",
       "duty_slot",
+      "email_campaign",
       "household",
       "household_invitation",
       "household_member",

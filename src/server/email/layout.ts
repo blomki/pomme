@@ -57,8 +57,8 @@ export function renderEmail(brand: EmailBrand, body: EmailBody): EmailContent {
   const e = escapeHtml;
 
   const text = [
-    body.greeting,
-    "",
+    // Sans formule d'appel (email groupé, story H1 : le message la contient), pas de ligne vide.
+    ...(body.greeting ? [body.greeting, ""] : []),
     ...body.paragraphs.flatMap((paragraph) => [paragraph, ""]),
     ...(body.action ? [`${body.action.label} :`, body.action.url, ""] : []),
     ...(body.notes ?? []),
@@ -95,7 +95,7 @@ ${body.preview ? `<div style="display:none;max-height:0;overflow:hidden;">${e(bo
 <p style="margin:0;font-family:${FONT};font-size:20px;font-weight:bold;color:${c.onHeader};">${e(brand.name)}</p>
 </td></tr>
 <tr><td style="padding:24px;">
-${paragraph(e(body.greeting))}
+${body.greeting ? paragraph(e(body.greeting)) : ""}
 ${body.paragraphs.map((p) => paragraph(e(p))).join("\n")}
 ${button}
 ${(body.notes ?? []).map((note) => paragraph(e(note), c.muted, 14)).join("\n")}

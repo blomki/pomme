@@ -8,7 +8,8 @@ import { dedupeKey } from "@/domain/notifications";
 import { effectiveStatus, parisDay, periodDays, reminderDue } from "@/domain/order-periods";
 import { formatDate } from "@/i18n/dates";
 
-import { sendNotification, type Notification, type NotifyDeps } from "./email/notify";
+import { sendCampaign } from "./email/campaigns";
+import { type Notification, type NotifyDeps } from "./email/notify";
 import { orderReminderEmail } from "./email/order-reminder-email";
 import { reminderRecipients, type ReminderRecipient } from "./order-periods";
 
@@ -93,27 +94,31 @@ export async function runOrderReminders(
       return Promise.all(
         due.map(async (p) => ({
           periodId: p.id,
+          // Auteur de l'envoi automatique dans l'historique : qui a créé la période (H1).
+          createdBy: p.createdBy,
           month: p.month.slice(0, 7),
           closesOn: periodDays(p).closesOn,
           recipients: await reminderRecipients(tx, p.month.slice(0, 7)),
         })),
       );
     });
-    for (const plan of plans) {
-      const counts = { sent: 0, skipped: 0, failed: 0 };
-      for (const recipient of plan.recipients) {
-        // Une transaction par email : un échec n'annule pas les autres envois.
-        const result = await withAmapContext(db, ctx, (tx) =>
-          sendNotification(
-            tx,
-            reminderNotification({ amap: target, ...plan, recipient, baseUrl }),
-            deps,
-          ),
-        );
-        if (result.status === "sent") counts.sent += 1;
-        else if (result.status === "duplicate") counts.skipped += 1;
-        else counts.failed += 1;
-      }
+    for (const { createdBy, ...plan } of plans) {
+      const notifications = plan.recipients.map((recipient) =>
+        reminderNotification({ amap: target, ...plan, recipient, baseUrl }),
+      );
+      const { sent, skipped, failed } = await sendCampaign(
+        db,
+        ctx,
+        {
+          audience: "households_without_order",
+          subject: notifications[0]?.content.subject ?? "",
+          sentBy: createdBy,
+          automatic: true,
+        },
+        notifications,
+        deps,
+      );
+      const counts = { sent, skipped, failed };
       report.push({ amapId: target.id, month: plan.month, ...counts });
     }
   }

@@ -32,6 +32,8 @@ export const NOTIFICATION_TEMPLATES = [
   "duty_change",
   "household_invitation",
   "member_removed",
+  "group_email",
+  "group_email_test",
 ] as const;
 
 export type NotificationTemplate = (typeof NOTIFICATION_TEMPLATES)[number];
