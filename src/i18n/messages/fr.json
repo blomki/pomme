@@ -1409,7 +1409,28 @@
     "contrastFail": "{count, plural, one {# combinaison ne passe pas} other {# combinaisons ne passent pas}} le contraste minimal ({modes}) : choisissez une couleur plus foncée ou plus claire.",
     "previewFollowUp": "À suivre",
     "forbidden": "Action réservée aux gestionnaires de la plateforme.",
-    "pickColor": "Choisir la {label}"
+    "pickColor": "Choisir la {label}",
+    "accounts": {
+      "title": "Comptes",
+      "intro": "Retrouvez un compte par son adresse email, par exemple pour l'admin d'une AMAP qui a perdu son téléphone et n'a pas d'autre admin pour l'aider. Avant de réinitialiser sa deuxième vérification, assurez-vous que c'est bien la personne : appelez-la, ou faites-la confirmer par quelqu'un de son AMAP.",
+      "email": "Adresse email du compte",
+      "search": "Rechercher",
+      "invalid": "Saisissez une adresse email valable.",
+      "notFound": "Aucun compte avec cette adresse.",
+      "forbidden": "Action réservée aux gestionnaires de la plateforme.",
+      "amaps": "AMAP : {names}",
+      "noAmap": "Aucune AMAP pour ce compte.",
+      "hasSecondFactor": "Deuxième vérification : activée.",
+      "noSecondFactor": "Deuxième vérification : aucune pour l'instant.",
+      "platformAdmin": "Compte d'un gestionnaire de la plateforme : sa deuxième vérification ne se réinitialise pas depuis cet écran.",
+      "reset": "Réinitialiser la deuxième vérification",
+      "dialogTitle": "Réinitialiser la deuxième vérification de {name} ?",
+      "dialogIntro": "À faire seulement après avoir vérifié que c'est bien {name} qui le demande : son application d'authentification et ses passkeys seront retirées, et la personne sera déconnectée de tous ses appareils. À sa prochaine connexion, elle choisira une nouvelle deuxième vérification. Cette action est inscrite au journal de la plateforme.",
+      "confirm": "Réinitialiser",
+      "cancel": "Annuler",
+      "done": "Deuxième vérification de {name} réinitialisée.",
+      "failed": "Réinitialisation impossible : ce compte n'existe plus."
+    }
   },
   "ColorMode": {
     "label": "Apparence",
@@ -1458,6 +1479,7 @@
     "platform": {
       "label": "Menu de la plateforme",
       "dashboard": "Tableau de bord",
+      "accounts": "Comptes",
       "themeDemo": "Thème (démonstration)"
     },
     "areaSwitch": {

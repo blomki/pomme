@@ -7,6 +7,7 @@ import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
 import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
 import MailOutlined from "@mui/icons-material/MailOutlined";
+import ManageAccountsOutlined from "@mui/icons-material/ManageAccountsOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import PaletteOutlined from "@mui/icons-material/PaletteOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
@@ -75,6 +76,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
     case "platform":
       return [
         { key: "dashboard", icon: <DashboardOutlined />, href: "/plateforme" },
+        { key: "accounts", icon: <ManageAccountsOutlined />, href: "/plateforme/comptes" },
         { key: "themeDemo", icon: <PaletteOutlined />, href: "/plateforme/theme/hommesdeterre" },
       ];
   }
