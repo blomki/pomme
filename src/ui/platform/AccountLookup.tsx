@@ -1,12 +1,8 @@
 "use client";
 
+import LockResetOutlined from "@mui/icons-material/LockResetOutlined";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
 import Paper from "@mui/material/Paper";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
@@ -17,6 +13,7 @@ import { useState, type FormEvent } from "react";
 import type { PlatformAccount } from "@/server/platform-accounts";
 import { findAccountAction, platformResetSecondFactorAction } from "@/server/platform-actions";
 
+import { ConfirmDialog } from "../feedback/ConfirmDialog";
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
 type Lookup =
@@ -136,37 +133,21 @@ export function AccountLookup() {
         </Paper>
       )}
 
-      {account && confirming && (
-        <Dialog
-          open
+      {account && (
+        <ConfirmDialog
+          open={confirming}
+          destructive
+          icon={<LockResetOutlined />}
+          title={t("dialogTitle", { name })}
+          confirmLabel={t("confirm")}
+          cancelLabel={t("cancel")}
+          onConfirm={() => void reset()}
           onClose={() => setConfirming(false)}
-          aria-labelledby="platform-reset-title"
-          fullWidth
-          maxWidth="sm"
+          pending={resetting}
+          error={resetError}
         >
-          <DialogTitle id="platform-reset-title">{t("dialogTitle", { name })}</DialogTitle>
-          <DialogContent>
-            <DialogContentText>{t("dialogIntro", { name })}</DialogContentText>
-            <div role="status" aria-live="polite">
-              {resetError && (
-                <Alert severity="error" sx={{ mt: 2 }}>
-                  {resetError}
-                </Alert>
-              )}
-            </div>
-          </DialogContent>
-          <DialogActions>
-            <Button onClick={() => setConfirming(false)}>{t("cancel")}</Button>
-            <Button
-              variant="contained"
-              color="error"
-              disabled={resetting}
-              onClick={() => void reset()}
-            >
-              {t("confirm")}
-            </Button>
-          </DialogActions>
-        </Dialog>
+          {t("dialogIntro", { name })}
+        </ConfirmDialog>
       )}
     </Stack>
   );

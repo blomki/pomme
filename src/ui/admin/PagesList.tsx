@@ -77,7 +77,7 @@ export function PagesList({
     setPending(true);
     const result = await run();
     setPending(false);
-    if (result.status !== "saved") showSnackbar({ message: t("error") });
+    if (result.status !== "saved") showSnackbar({ message: t("error"), severity: "error" });
     router.refresh();
   };
 

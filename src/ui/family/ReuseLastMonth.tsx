@@ -40,7 +40,7 @@ export function ReuseLastMonth({ amapSlug, month }: { amapSlug: string; month: s
     setPending(false);
     if (result.status === "ready") setPlan(result.plan);
     else if (result.status === "nothing") setEmpty(true);
-    else showSnackbar({ message: t("error") });
+    else showSnackbar({ message: t("error"), severity: "error" });
   };
 
   const apply = async () => {
@@ -49,7 +49,7 @@ export function ReuseLastMonth({ amapSlug, month }: { amapSlug: string; month: s
     setPending(false);
     setPlan(null);
     if (result.status !== "applied") {
-      showSnackbar({ message: t("error") });
+      showSnackbar({ message: t("error"), severity: "error" });
       return;
     }
     showSnackbar({

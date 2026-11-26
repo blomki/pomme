@@ -43,6 +43,22 @@ s'adapte à la largeur de l'écran.
 - **Tiroir MUI sur téléphone** : refaire à la main le piège à focus et la fermeture par Échap
   serait plus risqué que d'utiliser un composant déjà testé.
 
+## Complément (deuxième PR de la fiche #115)
+
+- **Réglages faits une fois dans le thème**, pas écran par écran :
+  - boutons pilule de 40 px (au-dessus des 24 px du critère WCAG 2.5.8) ;
+  - cartes `Paper variant="outlined"` : fond de surface, bordure `outlineVariant`, coins de 16 px ;
+  - en-têtes de tableau sur `surfaceContainerLow`, survol léger des lignes ;
+  - puces pilules ;
+  - dialogues aux coins de 24 px ;
+  - snackbar aux coins de 16 px, avec une icône d'état (`severity`, réussite par défaut).
+- **Deux composants partagés** :
+  - `ConfirmDialog` : icône ronde, titre, résumé, « Annuler » et action principale ; variante
+    `destructive` pour ce qui est difficile à défaire ;
+  - `SectionTitle` : feuille décorative, titre dans la police de l'AMAP, compteur en pastille.
+- **Deux colonnes seulement à partir de 1 280 px** (éditeur de page, « Mes producteurs ») : en
+  dessous, le menu de 256 px laisse trop peu de place.
+
 ## Conséquences
 
 - Les autres points de la charte (bandeaux sur chaque écran, boutons, cartes, deux colonnes à

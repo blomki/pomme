@@ -1,17 +1,12 @@
 "use client";
 
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
-import Dialog from "@mui/material/Dialog";
-import DialogActions from "@mui/material/DialogActions";
-import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
-import DialogTitle from "@mui/material/DialogTitle";
+import LockResetOutlined from "@mui/icons-material/LockResetOutlined";
 import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import { resetSecondFactorAction } from "@/server/members-actions";
 
+import { ConfirmDialog } from "../feedback/ConfirmDialog";
 import { useSnackbar } from "../feedback/SnackbarProvider";
 
 /**
@@ -46,24 +41,19 @@ export function ResetSecondFactorDialog({
   };
 
   return (
-    <Dialog open onClose={onClose} aria-labelledby="reset-factor-title" fullWidth maxWidth="sm">
-      <DialogTitle id="reset-factor-title">{t("dialogTitle", { name })}</DialogTitle>
-      <DialogContent>
-        <DialogContentText>{t("dialogIntro", { name })}</DialogContentText>
-        <div role="status" aria-live="polite">
-          {error && (
-            <Alert severity="error" sx={{ mt: 2 }}>
-              {error}
-            </Alert>
-          )}
-        </div>
-      </DialogContent>
-      <DialogActions>
-        <Button onClick={onClose}>{t("cancel")}</Button>
-        <Button variant="contained" color="error" disabled={pending} onClick={() => void confirm()}>
-          {t("confirm")}
-        </Button>
-      </DialogActions>
-    </Dialog>
+    <ConfirmDialog
+      open
+      destructive
+      icon={<LockResetOutlined />}
+      title={t("dialogTitle", { name })}
+      confirmLabel={t("confirm")}
+      cancelLabel={t("cancel")}
+      onConfirm={() => void confirm()}
+      onClose={onClose}
+      pending={pending}
+      error={error}
+    >
+      {t("dialogIntro", { name })}
+    </ConfirmDialog>
   );
 }

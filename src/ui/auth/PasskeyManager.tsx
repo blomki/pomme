@@ -50,7 +50,7 @@ export function PasskeyManager({ lastUsed = {} }: { lastUsed?: Record<string, st
   const add = async () => {
     const result = await authClient.passkey.addPasskey();
     if (result?.error) {
-      showSnackbar({ message: t("passkeyAddError") });
+      showSnackbar({ message: t("passkeyAddError"), severity: "error" });
       return;
     }
     showSnackbar({ message: t("passkeyAdded") });
