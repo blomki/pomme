@@ -1261,6 +1261,21 @@
           "body": "Bonjour {{prenom}},\n\n{{producteur}} vous donne des nouvelles :\n\n\n\nÀ bientôt à la distribution !"
         }
       }
+    },
+    "bannerImages": {
+      "title": "Images des bandeaux",
+      "intro": "Une image par famille d'écrans, en haut de chaque page de l'administration et des référents : un personnage, une illustration ou une simple icône. Sans image, le bandeau montre le logo de l'AMAP.",
+      "groups": {
+        "dashboard": "Tableaux de bord et réglages",
+        "households": "Foyers et adhésions",
+        "producers": "Producteurs, catalogues et bons de commande",
+        "planning": "Distributions et permanences",
+        "money": "Chèques, avoirs et signalements",
+        "communication": "Emails et pages du site"
+      },
+      "alt": "Image du bandeau « {group} »",
+      "saved": "Image du bandeau « {group} » enregistrée.",
+      "removed": "Image du bandeau « {group} » retirée : le logo la remplace."
     }
   },
   "Producer": {

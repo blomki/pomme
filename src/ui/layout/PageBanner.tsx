@@ -3,15 +3,23 @@
 import LeafOutlined from "@mui/icons-material/EnergySavingsLeafOutlined";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
+import { usePathname } from "next/navigation";
 import { createContext, useContext, type ReactNode } from "react";
+
+import { bannerImageFor, type BannerImages } from "@/domain/banner-images";
 
 import { m3 } from "../theme/create-theme";
 
+/** Images des bandeaux d'un espace : par famille d'écrans (story S14), et le logo par défaut. */
+export type BannerSource = { images: BannerImages; logoUrl: string | null };
+
+export const NO_BANNER: BannerSource = { images: {}, logoUrl: null };
+
 /**
- * Image par défaut des bandeaux d'un espace (le logo de l'AMAP), posée une fois par le gabarit
- * (`DesktopShell`) : les pages n'ont pas à la transmettre.
+ * Images des bandeaux, posées une fois par le gabarit (`DesktopShell`) : les pages n'ont pas à
+ * les transmettre. Le bandeau choisit celle de la famille de l'écran ouvert, sinon le logo.
  */
-export const BannerImageContext = createContext<string | null>(null);
+export const BannerImageContext = createContext<BannerSource>(NO_BANNER);
 
 /**
  * Bandeau d'en-tête de page (charte du 2026-11-26, stories H1 et S14) : titre h1 dans la police
@@ -27,11 +35,13 @@ export function PageBanner({
   title: string;
   /** Phrase d'explication sous le titre. */
   children?: ReactNode;
-  /** Image propre à cet écran ; sinon celle de l'espace (logo de l'AMAP), s'il y en a une. */
+  /** Image propre à cet écran ; sinon celle de sa famille d'écrans, ou le logo de l'AMAP. */
   imageUrl?: string | null;
 }) {
-  const fallback = useContext(BannerImageContext);
-  const image = imageUrl === undefined ? fallback : imageUrl;
+  const source = useContext(BannerImageContext);
+  const pathname = usePathname();
+  const image =
+    imageUrl === undefined ? bannerImageFor(pathname, source.images, source.logoUrl) : imageUrl;
   return (
     <Box
       sx={{

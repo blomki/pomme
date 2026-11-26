@@ -7,8 +7,10 @@ import { amap, auditLog } from "@/db/schema";
 import {
   getAmapSettings,
   removeAmapLogo,
+  removeBannerImage,
   saveAmapLogo,
   saveAmapSettings,
+  saveBannerImage,
 } from "@/server/amap-settings";
 import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors";
 import type { FileStore } from "@/server/files/storage";
@@ -206,6 +208,61 @@ describe("Réglages de l'AMAP (A4)", () => {
     expect(actions.map((a) => a.action)).toEqual(
       expect.arrayContaining(["update_logo", "update_logo", "remove_logo"]),
     );
+  });
+
+  it("les images des bandeaux sont enregistrées par famille, remplacées puis retirées, journalisées (S14)", async () => {
+    const file = await logo();
+    const first = await run(as(admin.id), (tx, c) =>
+      saveBannerImage(tx, c, { group: "households", file }, store),
+    );
+    expect(first).toMatchObject({ status: "saved", previousUrl: null });
+    if (first.status !== "saved") return;
+    const key = store.keyFromUrl(first.url)!;
+    expect(key).toMatch(/^bandeaux\/.+\.webp$/);
+    expect(await sharp(store.files.get(key)!).metadata()).toMatchObject({
+      format: "webp",
+      width: 512,
+    });
+
+    await run(as(admin.id), (tx, c) => saveBannerImage(tx, c, { group: "money", file }, store));
+    const second = await run(as(admin.id), (tx, c) =>
+      saveBannerImage(tx, c, { group: "households", file }, store),
+    );
+    expect(second).toMatchObject({ status: "saved", previousUrl: first.url });
+    expect(
+      await run(as(admin.id), (tx, c) => saveBannerImage(tx, c, { group: "logo", file }, store)),
+    ).toEqual({ status: "invalid" });
+
+    const removed = await run(as(admin.id), (tx, c) =>
+      removeBannerImage(tx, c, { group: "households" }),
+    );
+    expect(removed).toMatchObject({ status: "removed" });
+    const [row] = await db.owner
+      .select({ bannerImages: amap.bannerImages })
+      .from(amap)
+      .where(eq(amap.id, amapA.id));
+    // Seule la famille retirée disparaît ; l'autre reste.
+    expect(Object.keys(row!.bannerImages)).toEqual(["money"]);
+    expect((await run(as(admin.id), (tx, c) => getAmapSettings(tx, c))).bannerImages).toEqual(
+      row!.bannerImages,
+    );
+    const actions = await db.owner
+      .select({ action: auditLog.action })
+      .from(auditLog)
+      .where(eq(auditLog.amapId, amapA.id));
+    expect(actions.map((a) => a.action)).toEqual(
+      expect.arrayContaining(["update_banner_image", "remove_banner_image"]),
+    );
+  });
+
+  it("images des bandeaux : refusées au référent et à l'admin sans deuxième vérification (accès refusé)", async () => {
+    const file = await logo();
+    await expect(
+      run(as(referent.id), (tx, c) => saveBannerImage(tx, c, { group: "money", file }, store)),
+    ).rejects.toThrow(ForbiddenError);
+    await expect(
+      run(as(admin.id, false), (tx, c) => removeBannerImage(tx, c, { group: "money" })),
+    ).rejects.toThrow(SecondFactorRequiredError);
   });
 
   it("refuse le référent, l'admin sans deuxième vérification et l'admin d'une autre AMAP (accès refusé)", async () => {

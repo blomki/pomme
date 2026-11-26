@@ -52,6 +52,8 @@ export const IMAGE_USAGES = {
   product_photo: { folder: "produits", maxWidth: 800, maxHeight: 800 },
   // Logo de l'AMAP : petit, dans l'en-tête et les emails.
   amap_logo: { folder: "logos", maxWidth: 512, maxHeight: 512 },
+  // Image d'un bandeau d'en-tête (story S14) : affichée en 96 points, gardée nette sur écran dense.
+  banner_image: { folder: "bandeaux", maxWidth: 512, maxHeight: 512 },
   // Image d'une page du site (image principale ou photo dans le texte, story H2).
   page_image: { folder: "pages", maxWidth: 1600, maxHeight: 1600 },
 } as const;

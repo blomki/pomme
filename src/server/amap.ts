@@ -9,7 +9,7 @@ import { validateAmapSlug } from "@/domain/amap-slug";
 /** Informations publiques d'une AMAP : de quoi afficher sa page et appliquer son thème. */
 export type PublicAmap = Pick<
   typeof amap.$inferSelect,
-  "id" | "slug" | "name" | "theme" | "logoUrl"
+  "id" | "slug" | "name" | "theme" | "logoUrl" | "bannerImages"
 >;
 
 const publicColumns = {
@@ -18,6 +18,8 @@ const publicColumns = {
   name: amap.name,
   theme: amap.theme,
   logoUrl: amap.logoUrl,
+  // Images décoratives déjà publiques (stockage en lecture seule), comme le logo.
+  bannerImages: amap.bannerImages,
 };
 
 /**
