@@ -129,8 +129,10 @@ test.describe("images des bandeaux (ordinateur)", () => {
     })
       .png()
       .toBuffer();
-    // Image décorative du bandeau : sans texte alternatif, on la reconnaît à son adresse.
-    const bannerImage = page.locator('main img[src*="/bandeaux/"]');
+    // Image décorative du bandeau : sans texte alternatif, on la reconnaît à son adresse. Seule
+    // l'image visible compte : pendant l'envoi progressif de la page (streaming), Next.js garde un
+    // instant une copie cachée du contenu.
+    const bannerImage = page.locator('main img[src*="/bandeaux/"]').filter({ visible: true });
 
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin/reglages");

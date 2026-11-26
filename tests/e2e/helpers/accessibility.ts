@@ -15,6 +15,19 @@ export async function expectNoSeriousA11yViolations(page: Page): Promise<void> {
   // de la page, et son contraste une fois affichée est vérifié par le thème (create-theme.ts).
   await page.mouse.move(0, 0);
   await expect(page.locator(".MuiTooltip-popper")).toHaveCount(0);
+  // Même cause, autre élément : une puce qui vient de changer d'état (« Contactée »,
+  // « Publié ») passe d'une couleur à l'autre en 300 ms. axe mesurait parfois le contraste d'une
+  // couleur intermédiaire, surtout avec le build de production, plus rapide. On attend la fin
+  // des animations et transitions en cours (les animations infinies, comme un indicateur de
+  // chargement, sont ignorées).
+  await page.evaluate(() =>
+    Promise.all(
+      document
+        .getAnimations()
+        .filter((animation) => animation.effect?.getTiming().iterations !== Infinity)
+        .map((animation) => animation.finished.catch(() => undefined)),
+    ),
+  );
   const results = await new AxeBuilder({ page })
     .withTags(WCAG_TAGS)
     // Balise ajoutée par Next.js quand une page redirige après avoir commencé à envoyer son HTML
