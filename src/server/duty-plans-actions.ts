@@ -88,6 +88,8 @@ export async function remindDutyAction(
       now,
     },
     plan.recipients,
+    undefined,
+    { sentBy: ctx.userId, automatic: false },
   );
   revalidatePath(adminPath(amap));
   return { status: "sent", ...counts };

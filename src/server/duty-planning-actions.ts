@@ -3,8 +3,8 @@
 import { revalidatePath } from "next/cache";
 
 import { getDatabase } from "@/db/client";
-import { withAmapContext, type AmapContext } from "@/db/context";
-import { dedupeKey } from "@/domain/notifications";
+import type { AmapContext } from "@/db/context";
+import { dedupeKey, type NotificationTemplate } from "@/domain/notifications";
 import { formatDate } from "@/i18n/dates";
 
 import { runAmapAction } from "./amap-action";
@@ -20,7 +20,7 @@ import {
   type SavePlanningResult,
 } from "./duty-planning";
 import { dutyPlanningEmail } from "./email/duty-planning-email";
-import { sendNotification } from "./email/notify";
+import { sendCampaign } from "./email/campaigns";
 
 // Actions de l'éditeur du planning des permanences (story G2, ADR 0043).
 
@@ -39,35 +39,41 @@ async function sendNotices(
 ): Promise<NoticeCounts> {
   const amapRow = await getAmapBySlug(amap);
   const baseUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000";
-  const template = notice.kind === "planning" ? "duty_planning" : "duty_change";
+  const template: NotificationTemplate =
+    notice.kind === "planning" ? "duty_planning" : "duty_change";
   // Envoi du planning : une fois par planning. Changement : chaque prévenance est une occasion
   // à part (horodatée) ; un double clic ne renvoie rien, car la liste des personnes à prévenir
   // est vidée dans la même transaction que la préparation des emails.
   const occasion =
     notice.kind === "planning" ? notice.planId : `${notice.planId}:${now.toISOString()}`;
-  const counts: NoticeCounts = { sent: 0, skipped: 0, failed: 0 };
-  for (const r of notice.recipients) {
-    const result = await withAmapContext(getDatabase(), ctx, (tx) =>
-      sendNotification(tx, {
-        amapId: ctx.amapId!,
-        userId: r.userId,
-        template,
-        dedupeKey: dedupeKey(template, r.userId, occasion),
-        to: r.email,
-        content: dutyPlanningEmail({
-          kind: notice.kind,
-          amap: { name: amapRow?.name ?? "", theme: amapRow?.theme ?? null },
-          firstName: r.firstName,
-          quarter: quarterLabel(notice.quarterStart),
-          dates: r.dates.map((d) => formatDate(`${d}T12:00:00Z`, "EEEE d MMMM")),
-          url: new URL(`/${amap}/famille`, baseUrl).toString(),
-        }),
-      }),
-    );
-    if (result.status === "sent") counts.sent += 1;
-    else if (result.status === "duplicate") counts.skipped += 1;
-    else counts.failed += 1;
-  }
+  const notifications = notice.recipients.map((r) => ({
+    amapId: ctx.amapId!,
+    userId: r.userId,
+    template,
+    dedupeKey: dedupeKey(template, r.userId, occasion),
+    to: r.email,
+    content: dutyPlanningEmail({
+      kind: notice.kind,
+      amap: { name: amapRow?.name ?? "", theme: amapRow?.theme ?? null },
+      firstName: r.firstName,
+      quarter: quarterLabel(notice.quarterStart),
+      dates: r.dates.map((d) => formatDate(`${d}T12:00:00Z`, "EEEE d MMMM")),
+      url: new URL(`/${amap}/famille`, baseUrl).toString(),
+    }),
+  }));
+  // Inscrit dans l'historique des envois (story H1), au nom de l'admin.
+  const { sent, skipped, failed } = await sendCampaign(
+    getDatabase(),
+    ctx,
+    {
+      audience: notice.kind === "planning" ? "duty_volunteers" : "duty_changes",
+      subject: notifications[0]?.content.subject ?? "",
+      sentBy: ctx.userId,
+      automatic: false,
+    },
+    notifications,
+  );
+  const counts: NoticeCounts = { sent, skipped, failed };
   return counts;
 }
 

@@ -6,6 +6,7 @@ import CalendarMonthOutlined from "@mui/icons-material/CalendarMonthOutlined";
 import DashboardOutlined from "@mui/icons-material/DashboardOutlined";
 import FactCheckOutlined from "@mui/icons-material/FactCheckOutlined";
 import GroupsOutlined from "@mui/icons-material/GroupsOutlined";
+import MailOutlined from "@mui/icons-material/MailOutlined";
 import Inventory2Outlined from "@mui/icons-material/Inventory2Outlined";
 import PaletteOutlined from "@mui/icons-material/PaletteOutlined";
 import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
@@ -57,6 +58,7 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
         { key: "planning", icon: <CalendarMonthOutlined />, href: `${base}/admin/planning` },
         { key: "producers", icon: <AgricultureOutlined />, href: `${base}/admin/producteurs` },
         { key: "households", icon: <GroupsOutlined />, href: `${base}/admin/foyers` },
+        { key: "emails", icon: <MailOutlined />, href: `${base}/admin/emails` },
         { key: "cheques", icon: <FactCheckOutlined />, href: `${base}/admin/cheques` },
         { key: "pages", icon: <ArticleOutlined />, href: `${base}/admin/pages` },
         { key: "settings", icon: <SettingsOutlined />, href: `${base}/admin/reglages` },

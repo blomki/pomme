@@ -11,7 +11,8 @@ import { formatDate } from "@/i18n/dates";
 
 import { dutyPeople, markReminded, planDays, withoutAnswer, type DutyPerson } from "./duty-plans";
 import { dutyEmail } from "./email/duty-email";
-import { sendNotification, type Notification, type NotifyDeps } from "./email/notify";
+import { sendCampaign } from "./email/campaigns";
+import { type Notification, type NotifyDeps } from "./email/notify";
 
 // Emails des indisponibilités du trimestre (story G1, ADR 0042) : ouverture de la période de
 // réponse, relance automatique 3 jours avant la date limite, relance manuelle de l'admin.
@@ -73,21 +74,25 @@ export async function sendDutyEmails(
   params: Omit<Parameters<typeof dutyNotification>[0], "person">,
   people: DutyPerson[],
   deps?: NotifyDeps,
+  /** Qui envoie (admin) ou a programmé l'envoi (tâche horaire) : pour l'historique (H1). */
+  origin: { sentBy: string | null; automatic: boolean } = { sentBy: null, automatic: true },
 ): Promise<SendCounts> {
-  const counts: SendCounts = { sent: 0, skipped: 0, failed: 0 };
-  for (const person of people) {
-    const result = await withAmapContext(db, ctx, async (tx) => {
-      const sent = await sendNotification(tx, dutyNotification({ ...params, person }), deps);
-      if (sent.status === "sent" && params.kind === "reminder") {
-        await markReminded(tx, params.amap.id, params.planId, person.userId, params.now);
-      }
-      return sent;
-    });
-    if (result.status === "sent") counts.sent += 1;
-    else if (result.status === "duplicate") counts.skipped += 1;
-    else counts.failed += 1;
-  }
-  return counts;
+  const notifications = people.map((person) => dutyNotification({ ...params, person }));
+  const { sent, skipped, failed } = await sendCampaign(
+    db,
+    ctx,
+    {
+      audience: params.kind === "opening" ? "duty_all" : "duty_no_answer",
+      subject: notifications[0]?.content.subject ?? "",
+      ...origin,
+    },
+    notifications,
+    deps,
+    params.kind === "reminder"
+      ? (tx, n) => markReminded(tx, params.amap.id, params.planId, n.userId!, params.now)
+      : undefined,
+  );
+  return { sent, skipped, failed };
 }
 
 export type DutyNoticeReport = SendCounts & {
@@ -143,6 +148,8 @@ export async function runDutyNotices(
           quarterStart: plan.quarterStart,
           deadlineOn,
           distributionCount: n?.n ?? 0,
+          // Auteur de l'envoi automatique dans l'historique : qui a créé le planning (H1).
+          createdBy: plan.createdBy,
         };
         if (!plan.openingNoticeAt) {
           found.push({ ...base, kind: "opening" as const, people: await dutyPeople(tx) });
@@ -158,13 +165,14 @@ export async function runDutyNotices(
       }
       return found;
     });
-    for (const { people, ...job } of jobs) {
+    for (const { people, createdBy, ...job } of jobs) {
       const counts = await sendDutyEmails(
         db,
         ctx,
         { ...job, amap: target, baseUrl, now },
         people,
         deps,
+        { sentBy: createdBy, automatic: true },
       );
       report.push({ amapId: target.id, quarterStart: job.quarterStart, kind: job.kind, ...counts });
     }

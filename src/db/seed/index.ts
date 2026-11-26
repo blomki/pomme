@@ -14,7 +14,9 @@ import {
   cheque,
   credit,
   distribution,
+  emailCampaign,
   household,
+  householdInvitation,
   householdMember,
   joinRequest,
   membership,
@@ -83,6 +85,8 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.delete(page);
     await tx.delete(joinRequest);
     await tx.delete(notificationLog);
+    // Après les emails (qui y renvoient) : historique des envois groupés (H1).
+    await tx.delete(emailCampaign);
     await tx.delete(credit);
     await tx.delete(report);
     await tx.delete(cheque);
@@ -104,6 +108,8 @@ export async function seedDatabase(db: Database, authSecret: string) {
     await tx.delete(amapProducer);
     await tx.delete(producer);
     await tx.delete(membership);
+    // Invitations dans un foyer (A3), avant les foyers.
+    await tx.delete(householdInvitation);
     await tx.delete(householdMember);
     await tx.delete(household);
     await tx.delete(amapRole);

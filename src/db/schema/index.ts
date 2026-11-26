@@ -37,6 +37,7 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { JOIN_REQUEST_STATUSES } from "@/domain/join-requests";
+import { EMAIL_AUDIENCES } from "@/domain/email-campaigns";
 import { NOTIFICATION_STATUSES } from "@/domain/notifications";
 import { ORDER_PERIOD_STATUSES } from "@/domain/order-periods";
 import { CHILDREN_ORDERS, PAGE_ROLES, PAGE_STATUSES, type RichDoc } from "@/domain/pages";
@@ -1807,6 +1808,49 @@ export const auditLog = pgTable(
   ],
 );
 
+// --- email_campaign : envoi groupé ------------------------------------------------------------
+// Story H1, ADR 0046 ; modèle de données, section 9. Une ligne par envoi groupé : email écrit
+// par un admin (tous les adhérents, clients d'un producteur) ou envoi automatique (rappels,
+// disponibilités, planning). Chaque email envoyé est relié à son envoi (notification_log.
+// campaign_id) : l'historique en tire « Tout distribué » ou « N adresses en échec ».
+
+export const emailCampaignAudience = pgEnum("email_campaign_audience", EMAIL_AUDIENCES);
+
+export const emailCampaign = pgTable(
+  "email_campaign",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    audience: emailCampaignAudience("audience").notNull(),
+    // Clients de ce producteur (audience producer_customers).
+    producerId: uuid("producer_id").references(() => producer.id),
+    subject: text("subject").notNull(),
+    // Texte écrit par l'admin, balises comprises ; vide pour un envoi automatique.
+    body: text("body").notNull().default(""),
+    // Toujours une personne : l'admin qui envoie, ou celle qui a programmé l'envoi automatique
+    // (vide seulement si on ne la connaît pas, par exemple pour les données de démonstration).
+    sentBy: uuid("sent_by").references(() => user.id),
+    automatic: boolean("automatic").notNull().default(false),
+    recipientCount: integer("recipient_count").notNull().default(0),
+    householdCount: integer("household_count"),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    index("email_campaign_amap_idx").on(t.amapId, t.sentAt),
+    // Lecture : les admins (historique). Écriture : les admins, et les tâches automatiques
+    // (accès de confiance « closing_job »).
+    ...scopedPolicies("email_campaign", t.amapId, {
+      select: isCurrentAmapAdmin,
+      insert: sql`(${isCurrentAmapAdmin} or ${trustedAccess} = 'closing_job')`,
+      update: sql`(${isCurrentAmapAdmin} or ${trustedAccess} = 'closing_job')`,
+    }),
+  ],
+);
+
 // --- notification_log : journal des emails --------------------------------------------------
 // Une ligne par email envoyé (ou tenté) : sert à tracer les envois et à ne jamais relancer deux
 // fois (index unique sur la clé de dédoublonnage). Jamais supprimée ni archivée : c'est un
@@ -1828,6 +1872,8 @@ export const notificationLog = pgTable(
     dedupeKey: text("dedupe_key"),
     status: notificationStatus("status").notNull().default("pending"),
     providerId: text("provider_id"), // identifiant du message chez Brevo
+    // Envoi groupé dont fait partie cet email (story H1), s'il y en a un.
+    campaignId: uuid("campaign_id").references(() => emailCampaign.id),
     error: text("error"),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     createdAt: createdAt(),

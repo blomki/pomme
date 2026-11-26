@@ -1163,6 +1163,104 @@
       "problem_member_elsewhere": "Déjà membre du foyer « {household} ».",
       "problem_producer_unknown": "Producteur « {producer} » absent de l'AMAP : importez d'abord les producteurs.",
       "back": "Réglages"
+    },
+    "emails": {
+      "title": "Envoyer un email",
+      "intro": "À tous les adhérents ou aux clients d'un producteur. Chaque destinataire reçoit un email personnel, aux couleurs de l'AMAP.",
+      "step1": "Destinataires",
+      "step2": "Message",
+      "step3": "Aperçu",
+      "audienceLegend": "À qui envoyer ?",
+      "allMembers": "Tous les adhérents",
+      "allMembersHint": "adhésion active",
+      "producerCustomers": "Les clients d'un producteur",
+      "producerCustomersHint": "ayant commandé le mois en cours ou ces 3 derniers mois",
+      "producerLabel": "Producteur",
+      "count": "{recipients, plural, =0 {Aucun destinataire} one {# destinataire} other {# destinataires}} ({households, plural, =0 {aucun foyer} one {# foyer} other {# foyers}})",
+      "countHelp": "Un email par personne, pas par foyer.",
+      "templateLabel": "Modèle",
+      "templateHelp": "Choisir un modèle remplace l'objet et le message. Les modèles eux-mêmes ne se modifient pas.",
+      "template": {
+        "free": "Message libre",
+        "order_opening": "Ouverture de la période de commande",
+        "duty_opening": "Ouverture des disponibilités",
+        "duty_reminder": "Relance des disponibilités",
+        "producer_info": "Information d'un producteur"
+      },
+      "subjectLabel": "Objet",
+      "bodyLabel": "Message",
+      "tagsLabel": "Insérer une balise (remplacée pour chaque destinataire)",
+      "insertTag": "Insérer {tag}",
+      "warnUnknown": "Balise inconnue, laissée telle quelle : {tags}.",
+      "warnProducer": "La balise '{{producteur}}' ne sert qu'aux envois aux clients d'un producteur : retirez-la ou changez de destinataires.",
+      "warnOrderPeriod": "La période de commande n'est pas encore définie : les balises de commande ne peuvent pas être remplies. Envoi impossible.",
+      "warnDutyPeriod": "La période de déclaration des disponibilités n'est pas encore définie : les balises de disponibilités ne peuvent pas être remplies. Envoi impossible.",
+      "noSubject": "Indiquez un objet pour pouvoir envoyer.",
+      "viewerLabel": "Vu par",
+      "from": "De",
+      "to": "À",
+      "noRecipient": "Aucun destinataire pour ce choix.",
+      "footer": "Vous recevez cet email en tant qu'adhérent de {amap}.",
+      "spaceLink": "Mon espace adhérent",
+      "sendTest": "M'envoyer un test",
+      "send": "{count, plural, =0 {Envoyer} one {Envoyer à # destinataire} other {Envoyer à # destinataires}}",
+      "confirmTitle": "Confirmer l'envoi groupé ?",
+      "confirmText": "« {subject} » sera envoyé individuellement à {recipients, plural, one {# destinataire} other {# destinataires}} ({households, plural, one {# foyer} other {# foyers}}).",
+      "cancel": "Annuler",
+      "confirm": "Envoyer",
+      "sent": "{count, plural, one {Email envoyé à # destinataire.} other {Email envoyé à # destinataires.}}",
+      "sentWithFailures": "Email envoyé ; {failed, plural, one {# adresse en échec} other {# adresses en échec}}.",
+      "testSent": "Email de test envoyé à {email}.",
+      "refused_no_subject": "Indiquez un objet.",
+      "refused_blocked": "Envoi impossible : corrigez les balises signalées.",
+      "refused_no_recipient": "Aucun destinataire pour ce choix.",
+      "refused_invalid": "Envoi impossible. Rechargez la page.",
+      "refused_failed": "L'email de test n'est pas parti. Réessayez plus tard.",
+      "refused_forbidden": "Action réservée aux admins de l'AMAP.",
+      "historyTitle": "Historique des envois",
+      "historyCount": "{count, plural, =0 {aucun envoi} one {# envoi} other {# envois}}",
+      "historyEmpty": "Aucun envoi pour l'instant.",
+      "historyLabel": "Historique des envois",
+      "colDate": "Date",
+      "colSubject": "Objet",
+      "colRecipients": "Destinataires",
+      "colAuthor": "Envoyé par",
+      "colStatus": "Distribution",
+      "audience": {
+        "all_members": "Tous les adhérents ({count})",
+        "producer_customers": "Clients de {producer} ({count})",
+        "households_without_order": "{count, plural, one {# personne sans commande} other {# personnes sans commande}}",
+        "duty_all": "{count, plural, one {# amapien} other {# amapiens}} (disponibilités)",
+        "duty_no_answer": "{count, plural, one {# amapien sans réponse} other {# amapiens sans réponse}}",
+        "duty_volunteers": "{count, plural, one {# bénévole} other {# bénévoles}} (planning)",
+        "duty_changes": "{count, plural, one {# bénévole prévenu} other {# bénévoles prévenus}}"
+      },
+      "automatic": "{author} · automatique",
+      "automaticUnknown": "Envoi automatique",
+      "allDelivered": "Tout distribué",
+      "failures": "{count, plural, one {# adresse en échec} other {# adresses en échec}}",
+      "templates": {
+        "free": {
+          "subject": "",
+          "body": "Bonjour {{prenom}},\n\n\n\nÀ bientôt à la distribution !"
+        },
+        "order_opening": {
+          "subject": "Les commandes sont ouvertes jusqu'au {{finPeriodeCommande}}",
+          "body": "Bonjour {{prenom}},\n\nLes commandes du mois sont ouvertes du {{debutPeriodeCommande}} au {{finPeriodeCommande}}. Passez votre commande depuis votre espace adhérent.\n\nÀ bientôt à la distribution !"
+        },
+        "duty_opening": {
+          "subject": "Vos disponibilités pour les permanences, avant le {{finDeclarationDisponibilites}}",
+          "body": "Bonjour {{prenom}},\n\nLe planning des permanences du prochain trimestre se prépare. Indiquez les distributions où vous ne pouvez pas tenir de permanence, entre le {{debutDeclarationDisponibilites}} et le {{finDeclarationDisponibilites}}, depuis votre espace adhérent.\n\nMerci !"
+        },
+        "duty_reminder": {
+          "subject": "Rappel : vos disponibilités avant le {{finDeclarationDisponibilites}}",
+          "body": "Bonjour {{prenom}},\n\nNous n'avons pas encore vos disponibilités pour les permanences du prochain trimestre. Il vous reste jusqu'au {{finDeclarationDisponibilites}} pour les indiquer depuis votre espace adhérent.\n\nMerci !"
+        },
+        "producer_info": {
+          "subject": "Des nouvelles de {{producteur}}",
+          "body": "Bonjour {{prenom}},\n\n{{producteur}} vous donne des nouvelles :\n\n\n\nÀ bientôt à la distribution !"
+        }
+      }
     }
   },
   "Producer": {
@@ -1345,7 +1443,8 @@
       "households": "Foyers et adhésions",
       "pages": "Pages",
       "cheques": "Chèques",
-      "settings": "Réglages"
+      "settings": "Réglages",
+      "emails": "Emails"
     },
     "referent": {
       "label": "Menu du référent",

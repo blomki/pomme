@@ -19,6 +19,8 @@ export type Notification = {
   dedupeKey?: string;
   to: string;
   content: EmailContent;
+  /** Envoi groupé dont fait partie cet email (story H1). */
+  campaignId?: string;
 };
 
 export type NotificationResult = {
@@ -66,6 +68,7 @@ export async function sendNotification(
     userId: notification.userId,
     template: notification.template,
     dedupeKey: notification.dedupeKey ?? null,
+    campaignId: notification.campaignId ?? null,
   };
 
   const recipient = notification.to.toLowerCase();
