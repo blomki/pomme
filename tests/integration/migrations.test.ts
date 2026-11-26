@@ -50,6 +50,7 @@ describe("Migrations", () => {
       "page",
       "page_redirect",
       "passkey",
+      "platform_audit_log",
       "producer",
       "producer_user",
       "product",

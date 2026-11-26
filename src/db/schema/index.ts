@@ -1808,6 +1808,39 @@ export const auditLog = pgTable(
   ],
 );
 
+// --- platform_audit_log : journal de la plateforme ---------------------------------------------
+// Story S10b, ADR 0047. Actions du gestionnaire de la plateforme qui ne concernent pas une seule
+// AMAP : la réinitialisation de la deuxième vérification d'un compte (un compte est unique sur
+// toute la plateforme). Pas d'amap_id, donc à part de audit_log. Pas de updated_at ni
+// d'archived_at : un journal ne se modifie pas et ne s'efface pas.
+
+/** L'utilisateur connecté est gestionnaire de la plateforme (il lit toujours sa propre ligne). */
+const isPlatformAdmin = sql`exists (
+  select 1 from "user" where "user"."id" = ${currentUserId} and "user"."is_platform_admin"
+)`;
+
+export const platformAuditLog = pgTable(
+  "platform_audit_log",
+  {
+    id: id(),
+    actorUserId: uuid("actor_user_id")
+      .notNull()
+      .references(() => user.id),
+    entityType: text("entity_type").notNull(), // ex. "user"
+    entityId: uuid("entity_id").notNull(),
+    action: text("action").notNull(), // ex. "reset_second_factor"
+    before: jsonb("before"),
+    after: jsonb("after"),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    index("platform_audit_log_entity_idx").on(t.entityType, t.entityId),
+    // Lecture : les gestionnaires seulement. Aucune écriture par l'application : seules les
+    // fonctions de base réservées aux gestionnaires y écrivent (migration 0046).
+    pgPolicy("platform_audit_log_select", { for: "select", using: isPlatformAdmin }),
+  ],
+);
+
 // --- email_campaign : envoi groupé ------------------------------------------------------------
 // Story H1, ADR 0046 ; modèle de données, section 9. Une ligne par envoi groupé : email écrit
 // par un admin (tous les adhérents, clients d'un producteur) ou envoi automatique (rappels,

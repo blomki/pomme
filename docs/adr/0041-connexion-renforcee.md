@@ -50,9 +50,8 @@ demander un lien de connexion à sa place. Pour les admins, une deuxième vérif
 ## Conséquences
 
 - Une AMAP doit avoir au moins deux admins pour qu'un admin bloqué retrouve l'accès sans aide.
-- **Réinitialisation par le gestionnaire de la plateforme : pas encore faite.** Le journal
-  (`audit_log`) est rangé par AMAP et le gestionnaire ne voit pas les membres des AMAP. Il faudra
-  une fiche dédiée (journal de la plateforme, recherche d'un compte par email).
+- **Réinitialisation par le gestionnaire de la plateforme** : faite par la story S10b, voir
+  l'ADR 0047 (journal de la plateforme, recherche d'un compte par email).
 - Les référents de démonstration : `referent.demo` a l'application de démonstration ;
   `referent2.demo` n'a aucun moyen de vérification (test de l'invitation à en activer un).
 - Un cookie effacé fait passer l'appareil pour nouveau : une alerte de plus, sans gravité.

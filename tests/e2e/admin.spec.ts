@@ -123,10 +123,12 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByRole("navigation", { name: "Menu de l'administration" })).toBeVisible();
   });
 
-  test("le gestionnaire accède à la plateforme après la deuxième vérification", async ({
+  test("le gestionnaire crée une AMAP, puis réinitialise la deuxième vérification de son admin (J1, S10b)", async ({
     page,
     request,
   }) => {
+    // Deux parcours à la suite (J1 puis S10b, qui réutilise l'admin créé) : plus de temps.
+    test.slow();
     await signInWithSecondFactor(page, request, PLATFORM_ADMIN_DEMO);
     await page.goto("/plateforme");
     await expect(
@@ -181,6 +183,41 @@ test.describe("administration (ordinateur)", () => {
     ).toBeVisible();
     // L'invitation est arrivée.
     await expect.poll(() => countMessagesTo(request, adminEmail)).toBe(1);
+
+    // S10b : le seul admin de cette AMAP a perdu son téléphone. Le gestionnaire retrouve son
+    // compte et réinitialise sa deuxième vérification. Un compte créé par ce test : aucun autre
+    // test n'est déconnecté.
+    await page
+      .getByRole("navigation", { name: "Menu de la plateforme" })
+      .getByRole("link", { name: "Comptes" })
+      .click();
+    await expect(page.getByRole("heading", { level: 1, name: "Comptes" })).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+    const emailField = page.getByRole("textbox", { name: "Adresse email du compte" });
+
+    // Le compte d'un gestionnaire ne se réinitialise pas ainsi.
+    await emailField.fill(PLATFORM_ADMIN_DEMO);
+    await emailField.press("Enter");
+    await expect(page.getByText(/^Compte d'un gestionnaire de la plateforme/)).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: "Réinitialiser la deuxième vérification" }),
+    ).toHaveCount(0);
+
+    await emailField.fill(adminEmail);
+    await emailField.press("Enter");
+    const account = page.getByRole("region", { name: "Dominique" });
+    await expect(account).toContainText(`AMAP : ${name}`);
+    await account.getByRole("button", { name: "Réinitialiser la deuxième vérification" }).click();
+    const dialog = page.getByRole("dialog", {
+      name: "Réinitialiser la deuxième vérification de Dominique ?",
+    });
+    await expect(dialog).toContainText("journal de la plateforme");
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+    await expectNoSeriousA11yViolations(page);
+    await dialog.getByRole("button", { name: "Réinitialiser" }).click();
+    await expect(page.getByText("Deuxième vérification de Dominique réinitialisée.")).toBeVisible();
+    await expect(dialog).toBeHidden();
+    await expect(account).toContainText("Deuxième vérification : aucune pour l'instant.");
   });
 
   test("un nouvel admin active l'application d'authentification et note ses codes", async ({
