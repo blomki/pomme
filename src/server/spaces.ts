@@ -30,14 +30,15 @@ export async function listMySpaces(
   return { amapSpaces, isProducer: rows.some((row) => row.kind === "producteur") };
 }
 
-/** Espaces « ordinateur » (administration, référent) du compte dans une AMAP. */
-export async function deskAreasIn(
+/**
+ * Modes de cette AMAP auxquels le compte a accès (administration, référent, famille), pour le
+ * bouton « Mode » des espaces admin et référent (stories A3 et S14). Vide sans connexion.
+ */
+export async function modesIn(
   userId: string | undefined,
   amapSlug: string,
-): Promise<("admin" | "referent")[]> {
+): Promise<AmapSpaceKind[]> {
   if (!userId) return [];
   const { amapSpaces } = await listMySpaces(userId);
-  return amapSpaces.flatMap((space) =>
-    space.amapSlug === amapSlug && space.kind !== "famille" ? [space.kind] : [],
-  );
+  return amapSpaces.flatMap((space) => (space.amapSlug === amapSlug ? [space.kind] : []));
 }

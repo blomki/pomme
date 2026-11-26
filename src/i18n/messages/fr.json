@@ -1456,7 +1456,7 @@
       "payments": "Paiements"
     },
     "admin": {
-      "label": "Menu de l'administration",
+      "label": "Navigation administrateur",
       "dashboard": "Tableau de bord",
       "reports": "Signalements",
       "planning": "Planning des permanences",
@@ -1468,7 +1468,7 @@
       "emails": "Emails"
     },
     "referent": {
-      "label": "Menu du référent",
+      "label": "Navigation référent",
       "dashboard": "Tableau de bord",
       "cheques": "Pointage des chèques",
       "credits": "Avoirs",
@@ -1477,15 +1477,10 @@
       "producers": "Mes producteurs"
     },
     "platform": {
-      "label": "Menu de la plateforme",
+      "label": "Navigation de la plateforme",
       "dashboard": "Tableau de bord",
       "accounts": "Comptes",
       "themeDemo": "Thème (démonstration)"
-    },
-    "areaSwitch": {
-      "label": "Changer d'espace",
-      "admin": "Administration",
-      "referent": "Référent"
     },
     "account": "Mon compte",
     "family": {
@@ -1493,7 +1488,20 @@
       "home": "Accueil",
       "cheques": "Chèques",
       "profile": "Profil"
-    }
+    },
+    "menuOpen": "Ouvrir le menu de navigation",
+    "menuClose": "Fermer le menu de navigation",
+    "mode": {
+      "admin": "Mode administrateur",
+      "referent": "Mode référent",
+      "famille": "Mode consomm'acteur",
+      "short": {
+        "admin": "Admin",
+        "referent": "Référent",
+        "famille": "Conso"
+      }
+    },
+    "amapCard": "{households, plural, one {# foyer actif} other {# foyers actifs}} · {producers, plural, one {# producteur} other {# producteurs}}"
   },
   "ThemeDemo": {
     "title": "Thème de {amap}",

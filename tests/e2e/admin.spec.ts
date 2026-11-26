@@ -28,13 +28,22 @@ test("un référent arrive sur son tableau de bord, avec le menu", async ({ page
   await signInWithSecondFactor(page, request, "referent.demo@example.org");
   await page.goto("/hommesdeterre/referent");
   await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
-  const menu = page.getByRole("navigation", { name: "Menu du référent" });
+  // Sur téléphone, le menu est replié derrière un bouton (S14).
+  const toggle = page.getByRole("button", { name: "Ouvrir le menu de navigation" });
+  const folded = await toggle.isVisible();
+  if (folded) await toggle.click();
+  const menu = page.getByRole("navigation", { name: "Navigation référent" });
   await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
     "aria-current",
     "page",
   );
-  // Référent seulement : pas de sélecteur vers l'administration.
-  await expect(page.getByRole("navigation", { name: "Changer d'espace" })).toHaveCount(0);
+  if (folded) await page.keyboard.press("Escape");
+  // Référent et membre d'un foyer : le bouton « Mode » propose ces deux modes, pas
+  // l'administration (S14).
+  await page.getByRole("button", { name: "Mode référent" }).click();
+  await expect(page.getByRole("menuitem", { name: "Mode consomm'acteur" })).toBeVisible();
+  await expect(page.getByRole("menuitem", { name: "Mode administrateur" })).toHaveCount(0);
+  await page.keyboard.press("Escape");
   await page.getByRole("link", { name: "Mon compte" }).click();
   await expect(page.getByRole("link", { name: /— Référent$/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();
@@ -97,7 +106,7 @@ test.describe("administration (ordinateur)", () => {
     await expectNoSeriousA11yViolations(page);
   });
 
-  test("le menu latéral et le sélecteur d'espace mènent du référent à l'administration", async ({
+  test("le menu latéral et le bouton « Mode » mènent de l'administration au référent et retour", async ({
     page,
     request,
   }) => {
@@ -105,22 +114,22 @@ test.describe("administration (ordinateur)", () => {
     // à l'autre avec le sélecteur.
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
-    await page
-      .getByRole("navigation", { name: "Changer d'espace" })
-      .getByRole("link", { name: "Référent" })
-      .click();
+    await page.getByRole("button", { name: "Mode administrateur" }).click();
+    await page.getByRole("menuitem", { name: "Mode référent" }).click();
     await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
-    const menu = page.getByRole("navigation", { name: "Menu du référent" });
+    const menu = page.getByRole("navigation", { name: "Navigation référent" });
     await expect(menu.getByRole("link", { name: "Tableau de bord" })).toHaveAttribute(
       "aria-current",
       "page",
     );
-    await page
-      .getByRole("navigation", { name: "Changer d'espace" })
-      .getByRole("link", { name: "Administration" })
-      .click();
+    // Au clavier : le menu s'ouvre avec Entrée, se parcourt avec les flèches.
+    await page.getByRole("button", { name: "Mode référent" }).focus();
+    await page.keyboard.press("Enter");
+    await expect(page.getByRole("menuitem", { name: "Mode administrateur" })).toBeVisible();
+    await page.getByRole("menuitem", { name: "Mode administrateur" }).focus();
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
-    await expect(page.getByRole("navigation", { name: "Menu de l'administration" })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "Navigation administrateur" })).toBeVisible();
   });
 
   test("le gestionnaire crée une AMAP, puis réinitialise la deuxième vérification de son admin (J1, S10b)", async ({
@@ -188,7 +197,7 @@ test.describe("administration (ordinateur)", () => {
     // compte et réinitialise sa deuxième vérification. Un compte créé par ce test : aucun autre
     // test n'est déconnecté.
     await page
-      .getByRole("navigation", { name: "Menu de la plateforme" })
+      .getByRole("navigation", { name: "Navigation de la plateforme" })
       .getByRole("link", { name: "Comptes" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: "Comptes" })).toBeVisible();
@@ -325,7 +334,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Foyers et adhésions" })
       .click();
     await expect(
@@ -465,7 +474,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Réglages" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: "Réglages de l'AMAP" })).toBeVisible();
@@ -595,7 +604,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Pages" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: "Pages" })).toBeVisible();
@@ -726,7 +735,7 @@ test.describe("administration (ordinateur)", () => {
     await expectNoSeriousA11yViolations(page);
 
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Producteurs et référents" })
       .click();
     await expect(
@@ -833,7 +842,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await page
-      .getByRole("navigation", { name: "Menu du référent" })
+      .getByRole("navigation", { name: "Navigation référent" })
       .getByRole("link", { name: "Mes producteurs" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: "Mes producteurs" })).toBeVisible();
@@ -890,7 +899,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Planning des permanences" })
       .click();
     await expect(
@@ -958,7 +967,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, "referent.demo@example.org");
     await page.goto("/hommesdeterre/referent");
     await page
-      .getByRole("navigation", { name: "Menu du référent" })
+      .getByRole("navigation", { name: "Navigation référent" })
       .getByRole("link", { name: "Catalogues" })
       .click();
     await expect(page.getByRole("heading", { level: 1, name: /^Catalogue de / })).toBeVisible();
@@ -1230,7 +1239,7 @@ test.describe("administration (ordinateur)", () => {
     await page.goto("/hommesdeterre/referent");
     await press(
       page
-        .getByRole("navigation", { name: "Menu du référent" })
+        .getByRole("navigation", { name: "Navigation référent" })
         .getByRole("link", { name: "Bons de commande" }),
     );
     // Par défaut : le mois en cours de commande, provisoire, sans export.
@@ -1453,7 +1462,7 @@ test.describe("administration (ordinateur)", () => {
     await page.goto("/hommesdeterre/referent");
     await press(
       page
-        .getByRole("navigation", { name: "Menu du référent" })
+        .getByRole("navigation", { name: "Navigation référent" })
         .getByRole("link", { name: "Pointage des chèques" }),
     );
     // Par défaut : le mois de la dernière clôture (jeu de données : le mois en cours).
@@ -1537,7 +1546,7 @@ test.describe("administration (ordinateur)", () => {
     await page.goto("/hommesdeterre/admin");
     await press(
       page
-        .getByRole("navigation", { name: "Menu de l'administration" })
+        .getByRole("navigation", { name: "Navigation administrateur" })
         .getByRole("link", { name: "Signalements" }),
     );
     await expect(page.getByRole("heading", { level: 1, name: "Signalements" })).toBeVisible();
@@ -1594,7 +1603,7 @@ test.describe("administration (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     await page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Chèques" })
       .click();
     await expect(page).toHaveURL(/\/admin\/cheques/);
