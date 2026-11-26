@@ -45,6 +45,9 @@ const FACTOR_MANAGEMENT_PATHS = new Set([
 /** Fin de l'enregistrement d'une passkey. */
 const PASSKEY_REGISTERED_PATHS = new Set(["/passkey/verify-registration", "/passkey/register"]);
 
+/** Connexion avec une passkey (story A3 : date de dernière utilisation). */
+const PASSKEY_SIGN_IN_PATHS = new Set(["/passkey/verify-authentication", "/passkey/authenticate"]);
+
 /** Durée de validité d'un lien de connexion : 15 minutes. */
 export const MAGIC_LINK_TTL_MINUTES = 15;
 /** Durée d'une session sans activité avant reconnexion : 30 jours, prolongée chaque jour d'usage. */
@@ -129,6 +132,20 @@ export function createAuth(options: AuthOptions) {
       // Première passkey d'un admin, créée juste après un lien magique : la session est
       // vérifiée (choix validé pour la story A1, voir ADR 0005).
       after: createAuthMiddleware(async (ctx) => {
+        // Connexion par passkey : date de dernière utilisation, affichée dans « Connexion et
+        // sécurité » (story A3). Une erreur ici ne doit jamais empêcher la connexion.
+        if (PASSKEY_SIGN_IN_PATHS.has(ctx.path)) {
+          const credentialId = (ctx.body as { response?: { id?: unknown } } | undefined)?.response
+            ?.id;
+          if (typeof credentialId === "string") {
+            await options.db
+              .update(passkeyTable)
+              .set({ lastUsedAt: new Date() })
+              .where(eq(passkeyTable.credentialID, credentialId))
+              .catch((error: unknown) => console.error("Passkey : date d'usage non notée", error));
+          }
+          return;
+        }
         if (!PASSKEY_REGISTERED_PATHS.has(ctx.path)) return;
         const current = await getSessionFromCtx(ctx);
         if (!current) return;

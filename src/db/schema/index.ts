@@ -199,6 +199,9 @@ export const user = pgTable(
     // Application d'authentification (TOTP) activée : nom imposé par le plugin twoFactor.
     twoFactorEnabled: boolean("two_factor_enabled").notNull().default(false),
     isPlatformAdmin: boolean("is_platform_admin").notNull().default(false),
+    // Mode choisi dans « Mon profil » (story A3), par exemple « hommesdeterre/referent » :
+    // l'espace ouvert après la connexion. Ignoré s'il n'est plus un espace du compte.
+    preferredSpace: text("preferred_space"),
     // AMAP courante de l'espace producteur (story C4) : le lien producteur–AMAP choisi dans la
     // liste de l'accueil. Gardé avec le compte, pour le retrouver sur un autre appareil. Vide,
     // ou lien qui n'est plus le sien : l'application prend la première AMAP de sa liste.
@@ -1727,6 +1730,49 @@ export const dutyHistory = pgTable(
   ],
 );
 
+// --- household_invitation : invitation dans un foyer ------------------------------------------
+// Story A3, ADR 0045. Un membre invite une personne dans son foyer : elle reçoit un lien
+// valable 7 jours et ne rejoint le foyer qu'en l'acceptant, connectée avec cet email (ce qui
+// prouve que l'adresse est la sienne). On garde l'empreinte du jeton, jamais le jeton.
+
+export const householdInvitation = pgTable(
+  "household_invitation",
+  {
+    id: id(),
+    amapId: uuid("amap_id")
+      .notNull()
+      .references(() => amap.id),
+    householdId: uuid("household_id").notNull(),
+    email: text("email").notNull(),
+    invitedBy: uuid("invited_by")
+      .notNull()
+      .references(() => user.id),
+    tokenHash: text("token_hash").notNull().unique(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    foreignKey({
+      name: "household_invitation_household_fk",
+      columns: [t.householdId, t.amapId],
+      foreignColumns: [household.id, household.amapId],
+    }),
+    check("household_invitation_email_lowercase", sql`${t.email} = lower(${t.email})`),
+    index("household_invitation_household_idx").on(t.householdId),
+    // Lecture et annulation : les membres du foyer et les admins. Création : un membre du
+    // foyer, en son nom. L'acceptation passe par la fonction accept_household_invitation.
+    ...scopedPolicies("household_invitation", t.amapId, {
+      select: sql`(${t.householdId} in (select my_household_ids()) or ${isCurrentAmapAdmin})`,
+      insert: sql`(${t.householdId} in (select my_household_ids())
+        and ${t.invitedBy} = ${currentUserId})`,
+      update: sql`(${t.householdId} in (select my_household_ids()) or ${isCurrentAmapAdmin})`,
+    }),
+  ],
+);
+
 // --- audit_log : journal ---------------------------------------------------------------------
 // Une ligne par action financière ou correction, écrite dans la même transaction que l'action
 // (voir src/server/audit.ts). Jamais modifiée ni supprimée : pas de politique UPDATE ou DELETE.
@@ -1899,6 +1945,8 @@ export const passkey = pgTable(
     transports: text("transports"),
     aaguid: text("aaguid"),
     createdAt: timestamp("created_at", { withTimezone: true }),
+    // Dernière connexion avec cette passkey (story A3), notée par un crochet de Better Auth.
+    lastUsedAt: timestamp("last_used_at", { withTimezone: true }),
   },
   (t) => [index("passkey_user_idx").on(t.userId), authFullAccess("passkey_auth")],
 );

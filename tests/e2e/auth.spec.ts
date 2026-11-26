@@ -41,12 +41,15 @@ test("connexion par lien magique au clavier, puis déconnexion de tous les appar
   await expect(page.getByRole("heading", { level: 1, name: "Espace famille" })).toBeVisible();
 
   await page.getByRole("link", { name: "Mon compte" }).click();
-  await expect(page.getByRole("heading", { level: 1, name: "Mon compte" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Mon profil" })).toBeVisible();
   await expect(page.getByText(email)).toBeVisible();
   await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();
   await expectNoSeriousA11yViolations(page);
 
+  // Déconnexion de tous les appareils : dans « Connexion et sécurité », avec confirmation (A3).
+  await page.getByRole("link", { name: "Connexion et sécurité" }).click();
   await page.getByRole("button", { name: "Me déconnecter de tous mes appareils" }).click();
+  await page.getByRole("button", { name: "Tout déconnecter" }).click();
   await expect(page.getByText("Vous êtes déconnecté de tous vos appareils.")).toBeVisible();
   await page.goto("/compte");
   await expect(page).toHaveURL(/\/connexion$/);
@@ -102,7 +105,7 @@ test("passkey : création après connexion, puis connexion sans email", async ({
 
   await page.getByRole("button", { name: "Créer une passkey" }).click();
   await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
-  await page.goto("/compte");
+  await page.goto("/compte/securite");
   await expect(page.getByText("Passkey 1")).toBeVisible();
 
   await page.getByRole("button", { name: "Me déconnecter", exact: true }).click();
@@ -110,9 +113,12 @@ test("passkey : création après connexion, puis connexion sans email", async ({
 
   await page.getByRole("button", { name: "Se connecter avec une passkey" }).click();
   await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
-  await page.goto("/compte");
+  await page.goto("/compte/securite");
+  // La passkey vient de servir : sa date d'utilisation est affichée (A3).
+  await expect(page.getByText(/utilisée le /)).toBeVisible();
 
-  // Ménage : la passkey ne doit pas gêner les autres tests.
-  await page.getByRole("button", { name: /^Supprimer/ }).click();
+  // Ménage : la passkey ne doit pas gêner les autres tests (suppression avec confirmation).
+  await page.getByRole("button", { name: /^Supprimer « / }).click();
+  await page.getByRole("button", { name: "Supprimer", exact: true }).click();
   await expect(page.getByText("Aucune passkey enregistrée.")).toBeVisible();
 });

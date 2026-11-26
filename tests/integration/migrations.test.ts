@@ -37,6 +37,7 @@ describe("Migrations", () => {
       "duty_response",
       "duty_slot",
       "household",
+      "household_invitation",
       "household_member",
       "join_request",
       "known_device",

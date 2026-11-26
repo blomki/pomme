@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 
-import { landingPath, sortSpaces, spacePath, type AmapSpace } from "./spaces";
+import {
+  landingPath,
+  modeChoices,
+  parsePreferredSpace,
+  preferredSpaceValue,
+  sortSpaces,
+  spacePath,
+  type AmapSpace,
+} from "./spaces";
 
 const referent: AmapSpace = { amapSlug: "hommesdeterre", amapName: "Cambremer", kind: "referent" };
 const famille: AmapSpace = { amapSlug: "hommesdeterre", amapName: "Cambremer", kind: "famille" };
@@ -58,5 +66,37 @@ describe("landingPath", () => {
 describe("sortSpaces", () => {
   it("trie par AMAP, puis administration, référent, famille", () => {
     expect(sortSpaces([famille, referent, admin])).toEqual([admin, referent, famille]);
+  });
+});
+
+describe("mode choisi dans « Mon profil » (A3)", () => {
+  const spaces = [
+    { amapSlug: "hommesdeterre", amapName: "Hommes de Terre", kind: "admin" as const },
+    { amapSlug: "hommesdeterre", amapName: "Hommes de Terre", kind: "famille" as const },
+    { amapSlug: "autre", amapName: "Autre", kind: "famille" as const },
+  ];
+  const none = { isPlatformAdmin: false, isProducer: false };
+
+  it("ouvre l'espace choisi s'il est toujours un espace du compte", () => {
+    expect(landingPath(spaces, none, "hommesdeterre/famille")).toBe("/hommesdeterre/famille");
+    // Plus référent : le choix est ignoré.
+    expect(landingPath(spaces, none, "hommesdeterre/referent")).toBe("/compte");
+    expect(landingPath(spaces, none, "n'importe quoi")).toBe("/compte");
+  });
+
+  it("lit et écrit la valeur mémorisée", () => {
+    expect(parsePreferredSpace("hommesdeterre/referent")).toEqual({
+      amapSlug: "hommesdeterre",
+      kind: "referent",
+    });
+    expect(parsePreferredSpace("hommesdeterre/plateforme")).toBeNull();
+    expect(parsePreferredSpace(null)).toBeNull();
+    expect(preferredSpaceValue({ amapSlug: "a", kind: "admin" })).toBe("a/admin");
+  });
+
+  it("ne propose de choisir que dans une AMAP où le compte a plusieurs espaces", () => {
+    expect(modeChoices(spaces).map((group) => group.map((s) => s.kind))).toEqual([
+      ["admin", "famille"],
+    ]);
   });
 });
