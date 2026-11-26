@@ -17,7 +17,7 @@ test.describe("Envoyer un email (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     const menu = page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Emails" });
     await menu.focus();
     await page.keyboard.press("Enter");

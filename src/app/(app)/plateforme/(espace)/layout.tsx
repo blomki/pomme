@@ -9,11 +9,11 @@ import { PLATFORM_THEME } from "@/ui/theme/key-colors";
 // Gestion de la plateforme : thème Pomme, gabarit ordinateur. Réservée aux gestionnaires,
 // après la deuxième vérification (story A1).
 export default async function PlatformLayout({ children }: { children: ReactNode }) {
-  await requirePlatformAdminPage();
+  const state = await requirePlatformAdminPage();
   const t = await getTranslations("Platform");
   return (
     <AppThemeProvider config={PLATFORM_THEME}>
-      <DesktopShell title={t("shortTitle")} area="platform">
+      <DesktopShell title={t("shortTitle")} area="platform" firstName={state.user.name}>
         {children}
       </DesktopShell>
     </AppThemeProvider>

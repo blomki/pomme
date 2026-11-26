@@ -193,7 +193,7 @@ test.describe("Calendrier du mois (ordinateur)", () => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
     await page.goto("/hommesdeterre/admin");
     const menu = page
-      .getByRole("navigation", { name: "Menu de l'administration" })
+      .getByRole("navigation", { name: "Navigation administrateur" })
       .getByRole("link", { name: "Planning des permanences" });
     await menu.focus();
     await page.keyboard.press("Enter");

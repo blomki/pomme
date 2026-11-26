@@ -14,31 +14,35 @@ import ReceiptLongOutlined from "@mui/icons-material/ReceiptLongOutlined";
 import ReportProblemOutlined from "@mui/icons-material/ReportProblemOutlined";
 import SettingsOutlined from "@mui/icons-material/SettingsOutlined";
 import UndoOutlined from "@mui/icons-material/UndoOutlined";
+import CloseOutlined from "@mui/icons-material/CloseOutlined";
+import MenuOutlined from "@mui/icons-material/MenuOutlined";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
-import Button from "@mui/material/Button";
 import Drawer from "@mui/material/Drawer";
+import IconButton from "@mui/material/IconButton";
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
 import ListItemButton from "@mui/material/ListItemButton";
 import ListItemIcon from "@mui/material/ListItemIcon";
 import ListItemText from "@mui/material/ListItemText";
-import Stack from "@mui/material/Stack";
 import Toolbar from "@mui/material/Toolbar";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactElement, ReactNode } from "react";
+import { useId, useState, type ReactElement, type ReactNode } from "react";
 
-import { setModeAction } from "@/server/my-account-actions";
+import type { AmapSpaceKind } from "@/domain/spaces";
+import type { AmapSummary } from "@/server/amap-summary";
 
 import { AccountLink } from "../navigation/AccountLink";
 import { ColorModeToggle } from "../theme/ColorModeToggle";
+import { m3 } from "../theme/create-theme";
 
 import { activeHref } from "./active-href";
+import { ModeMenu } from "./ModeMenu";
 
-const DRAWER_WIDTH = 288;
+const DRAWER_WIDTH = 256;
 
 type NavItem = {
   key: string;
@@ -83,23 +87,154 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
 }
 
 /**
- * Gabarit ordinateur (référents, administrateurs, gestion de la plateforme) : menu latéral
- * permanent, barre du haut avec le nom de l'AMAP, le sélecteur d'espace (administration ou
- * référent) et le choix du mode d'affichage.
+ * Gabarit des espaces de travail (référents, administrateurs, gestion de la plateforme), charte du
+ * 2026-11-26 (story S14). À partir de 1 024 px (`lg`), le menu est une colonne fixe à gauche ;
+ * en dessous, il se replie derrière un bouton menu et glisse depuis la gauche, au-dessus d'un
+ * voile. Le tiroir de MUI garde le focus à l'intérieur, se ferme avec Échap et rend le focus au
+ * bouton. En-tête collant : bouton menu et nom de l'AMAP à gauche ; mode, affichage, prénom et
+ * compte à droite.
  */
 export function DesktopShell({
   title,
   area,
   amapSlug,
-  switchAreas = [],
+  modes = [],
+  firstName,
+  summary,
   children,
 }: {
   title: string;
   area: DesktopArea;
   amapSlug?: string;
-  /** Espaces de cette AMAP auxquels le compte a accès ; le sélecteur n'apparaît qu'à partir de deux. */
-  switchAreas?: readonly ("admin" | "referent")[];
+  /** Modes de cette AMAP auxquels le compte a accès ; le bouton « Mode » apparaît à partir de deux. */
+  modes?: readonly AmapSpaceKind[];
+  /** Prénom affiché dans l'en-tête, à partir de 600 px. */
+  firstName?: string;
+  /** Carte de l'AMAP sous le menu : foyers actifs et producteurs. */
+  summary?: AmapSummary;
   children: ReactNode;
+}) {
+  const t = useTranslations("Nav");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuId = useId();
+
+  return (
+    <Box sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
+      <AppBar
+        position="sticky"
+        component="header"
+        sx={{ bgcolor: m3("surface"), borderBottom: 1, borderColor: m3("outlineVariant") }}
+      >
+        <Toolbar sx={{ gap: { xs: 1, sm: 2 }, minHeight: { xs: 64, sm: 64 } }}>
+          <IconButton
+            edge="start"
+            aria-label={menuOpen ? t("menuClose") : t("menuOpen")}
+            aria-expanded={menuOpen}
+            aria-controls={menuId}
+            onClick={() => setMenuOpen((open) => !open)}
+            sx={{ display: { lg: "none" } }}
+          >
+            {menuOpen ? <CloseOutlined /> : <MenuOutlined />}
+          </IconButton>
+          <Typography component="p" variant="titleLarge" noWrap sx={{ flex: 1, minWidth: 0 }}>
+            {title}
+          </Typography>
+          {amapSlug && area !== "platform" && modes.length > 1 && (
+            <ModeMenu amapSlug={amapSlug} current={area} modes={modes} />
+          )}
+          <ColorModeToggle />
+          {firstName && (
+            <Typography
+              component="span"
+              variant="bodyMedium"
+              sx={{ color: m3("onSurfaceVariant"), display: { xs: "none", sm: "inline" } }}
+            >
+              {firstName}
+            </Typography>
+          )}
+          <AccountLink />
+        </Toolbar>
+      </AppBar>
+
+      <Box sx={{ flex: 1, display: "flex", minWidth: 0 }}>
+        {/* Ordinateur : colonne fixe, collée sous l'en-tête. */}
+        <Box
+          component="aside"
+          sx={{
+            display: { xs: "none", lg: "block" },
+            width: DRAWER_WIDTH,
+            flexShrink: 0,
+            position: "sticky",
+            top: 64,
+            alignSelf: "flex-start",
+            height: "calc(100dvh - 64px)",
+            overflowY: "auto",
+            borderRight: 1,
+            borderColor: m3("outlineVariant"),
+            bgcolor: m3("surface"),
+          }}
+        >
+          <NavPanel area={area} amapSlug={amapSlug} title={title} summary={summary} />
+        </Box>
+
+        {/* Téléphone et tablette : tiroir au-dessus d'un voile, fermé par le voile ou une entrée. */}
+        <Drawer
+          variant="temporary"
+          open={menuOpen}
+          onClose={() => setMenuOpen(false)}
+          transitionDuration={200}
+          sx={{ display: { lg: "none" } }}
+          slotProps={{
+            paper: {
+              id: menuId,
+              sx: { width: DRAWER_WIDTH, maxWidth: "85vw", bgcolor: m3("surface") },
+            },
+          }}
+        >
+          <NavPanel
+            area={area}
+            amapSlug={amapSlug}
+            title={title}
+            summary={summary}
+            onNavigate={() => setMenuOpen(false)}
+          />
+        </Drawer>
+
+        <Box
+          component="main"
+          id="contenu"
+          tabIndex={-1}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            px: { xs: 2, sm: 4, lg: 5 },
+            py: 3,
+            outline: "none",
+          }}
+        >
+          <Box sx={{ maxWidth: 1150, mx: "auto" }}>{children}</Box>
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/**
+ * Contenu du menu : entrées en pilule (l'entrée active porte un point de la couleur secondaire
+ * et `aria-current`), puis la carte de l'AMAP.
+ */
+function NavPanel({
+  area,
+  amapSlug,
+  title,
+  summary,
+  onNavigate,
+}: {
+  area: DesktopArea;
+  amapSlug?: string;
+  title: string;
+  summary?: AmapSummary;
+  onNavigate?: () => void;
 }) {
   const t = useTranslations("Nav");
   const pathname = usePathname();
@@ -110,99 +245,79 @@ export function DesktopShell({
   );
 
   return (
-    <Box sx={{ display: "flex", minHeight: "100dvh" }}>
-      <Drawer
-        variant="permanent"
-        sx={{ width: DRAWER_WIDTH, flexShrink: 0, "& .MuiDrawer-paper": { width: DRAWER_WIDTH } }}
-      >
-        <Toolbar sx={{ minHeight: 64 }}>
-          <Typography component="p" variant="headlineSmall" noWrap>
-            {title}
-          </Typography>
-        </Toolbar>
-        <Box component="nav" aria-label={t(`${area}.label`)} sx={{ px: 1.5 }}>
-          <List>
-            {items.map((item) => (
+    <Box sx={{ px: 1.5, py: 2 }}>
+      <Box component="nav" aria-label={t(`${area}.label`)}>
+        <List disablePadding>
+          {items.map((item) => {
+            const current = active === item.href;
+            return (
               <ListItem key={item.key} disablePadding sx={{ mb: 0.5 }}>
                 {item.href ? (
                   <ListItemButton
                     component={Link}
                     href={item.href}
                     nativeButton={false}
-                    selected={active === item.href}
-                    aria-current={active === item.href ? "page" : undefined}
+                    selected={current}
+                    aria-current={current ? "page" : undefined}
+                    onClick={onNavigate}
+                    sx={{
+                      minHeight: 48,
+                      color: m3("onSurfaceVariant"),
+                      "&:hover": { bgcolor: m3("surfaceContainerLow") },
+                      "&.Mui-selected": { fontWeight: 700 },
+                    }}
                   >
-                    <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
-                    <ListItemText primary={t(`${area}.${item.key}`)} />
+                    <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>{item.icon}</ListItemIcon>
+                    <ListItemText
+                      primary={t(`${area}.${item.key}`)}
+                      slotProps={{
+                        primary: { variant: "bodyMedium", sx: { fontWeight: "inherit" } },
+                      }}
+                    />
+                    {current && (
+                      <Box
+                        component="span"
+                        aria-hidden
+                        sx={{
+                          width: 8,
+                          height: 8,
+                          borderRadius: "50%",
+                          bgcolor: m3("secondary"),
+                          flexShrink: 0,
+                        }}
+                      />
+                    )}
                   </ListItemButton>
                 ) : (
-                  <ListItemButton disabled>
-                    <ListItemIcon sx={{ color: "inherit" }}>{item.icon}</ListItemIcon>
+                  <ListItemButton disabled sx={{ minHeight: 48 }}>
+                    <ListItemIcon sx={{ color: "inherit", minWidth: 40 }}>{item.icon}</ListItemIcon>
                     <ListItemText primary={t(`${area}.${item.key}`)} secondary={t("comingSoon")} />
                   </ListItemButton>
                 )}
               </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      <Box sx={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-        <AppBar position="sticky" component="header">
-          <Toolbar sx={{ gap: 2, minHeight: 64 }}>
-            <Box sx={{ flex: 1 }} />
-            {amapSlug && area !== "platform" && switchAreas.length > 1 && (
-              <AreaSwitch amapSlug={amapSlug} area={area} areas={switchAreas} />
-            )}
-            <ColorModeToggle />
-            <AccountLink />
-          </Toolbar>
-        </AppBar>
-        <Box
-          component="main"
-          id="contenu"
-          tabIndex={-1}
-          sx={{ flex: 1, px: 4, py: 3, maxWidth: 1200, width: "100%", outline: "none" }}
-        >
-          {children}
-        </Box>
+            );
+          })}
+        </List>
       </Box>
-    </Box>
-  );
-}
-
-/**
- * Sélecteur d'espace : une personne à la fois administratrice et référente passe de l'un à
- * l'autre. Affiché seulement à ceux qui ont les deux rôles dans cette AMAP. Le choix est
- * mémorisé (story A3).
- */
-function AreaSwitch({
-  amapSlug,
-  area,
-  areas: allowed,
-}: {
-  amapSlug: string;
-  area: "admin" | "referent";
-  areas: readonly ("admin" | "referent")[];
-}) {
-  const t = useTranslations("Nav.areaSwitch");
-  const areas = allowed.map((value) => ({ value, href: `/${amapSlug}/${value}` }));
-  return (
-    <Stack component="nav" direction="row" spacing={1} aria-label={t("label")}>
-      {areas.map((item) => (
-        <Button
-          key={item.value}
-          component={Link}
-          href={item.href}
-          nativeButton={false}
-          variant={item.value === area ? "tonal" : "text"}
-          aria-current={item.value === area ? "page" : undefined}
-          // Mode mémorisé, comme dans « Mon profil » (story A3) : rouvert après la connexion.
-          onClick={() => void setModeAction(`${amapSlug}/${item.value}`)}
+      {summary && (
+        <Box
+          sx={{
+            mt: 2,
+            p: 2,
+            borderRadius: "16px",
+            bgcolor: m3("surfaceContainerLow"),
+            border: 1,
+            borderColor: m3("outlineVariant"),
+          }}
         >
-          {t(item.value)}
-        </Button>
-      ))}
-    </Stack>
+          <Typography variant="titleSmall" component="p">
+            {title}
+          </Typography>
+          <Typography variant="bodySmall" component="p" sx={{ color: m3("onSurfaceVariant") }}>
+            {t("amapCard", summary)}
+          </Typography>
+        </Box>
+      )}
+    </Box>
   );
 }

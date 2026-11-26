@@ -194,7 +194,17 @@ export function createAmapTheme(config: ThemeConfig): Theme {
       },
       MuiDialog: {
         styleOverrides: {
-          paper: { borderRadius: M3_SHAPE.extraLarge, backgroundColor: m3("surfaceContainerHigh") },
+          paper: {
+            borderRadius: M3_SHAPE.extraLarge,
+            backgroundColor: m3("surfaceContainerHigh"),
+            // Téléphone (sous 600 px) : presque plein écran, 16 px de marge (charte S14). MUI
+            // laisse sinon 32 px de chaque côté, trop sur un écran de 360 px.
+            "@media (max-width: 599.95px)": {
+              margin: 16,
+              width: "calc(100% - 32px)",
+              maxWidth: "calc(100% - 32px)",
+            },
+          },
         },
       },
       MuiSnackbarContent: {
