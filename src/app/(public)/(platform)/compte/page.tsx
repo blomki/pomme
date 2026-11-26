@@ -1,54 +1,70 @@
-import Alert from "@mui/material/Alert";
-import Button from "@mui/material/Button";
+import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
+import LockOutlined from "@mui/icons-material/LockOutlined";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
-import { signOutAction, signOutEverywhereAction } from "@/server/auth/actions";
-import { getSecondFactorState, verificationUrl } from "@/server/auth/second-factor";
+import { getDatabase } from "@/db/client";
+import { withAmapContext } from "@/db/context";
+import { modeChoices } from "@/domain/spaces";
+import { getAmapBySlug } from "@/server/amap";
+import { getSecondFactorState } from "@/server/auth/second-factor";
+import { getMyHousehold, getMyProfile, type MyHouseholdView } from "@/server/my-account";
 import { listMySpaces } from "@/server/spaces";
-import { PasskeyManager } from "@/ui/auth/PasskeyManager";
+import { ModeSelect } from "@/ui/account/ModeSelect";
+import { MyHousehold } from "@/ui/account/MyHousehold";
+import { ProfileForm } from "@/ui/account/ProfileForm";
 import { MySpaces } from "@/ui/auth/MySpaces";
-import { TotpSection } from "@/ui/auth/TotpSection";
+import { LinkButton } from "@/ui/navigation/LinkButton";
 
-// [domaine]/compte : mon compte (passkeys, application d'authentification, déconnexion).
-// Le profil complet viendra avec A3.
-export default async function AccountPage() {
+// [domaine]/compte : « Mon profil » (story A3, écran 8) : mode, mes informations, mon foyer,
+// mes espaces ; passkeys et déconnexion sont dans « Connexion et sécurité » (/compte/securite).
+export default async function ProfilePage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
   const { user, factors } = state;
-  const { amapSpaces, isProducer } = await listMySpaces(user.id);
+  const db = getDatabase();
+  const [{ amapSpaces, isProducer }, profile] = await Promise.all([
+    listMySpaces(user.id),
+    withAmapContext(db, { amapId: null, userId: user.id }, (tx, ctx) => getMyProfile(tx, ctx)),
+  ]);
+  // Un foyer par AMAP où la personne est membre.
+  const households: MyHouseholdView[] = [];
+  for (const space of amapSpaces.filter((s) => s.kind === "famille")) {
+    const amap = await getAmapBySlug(space.amapSlug);
+    if (!amap) continue;
+    const home = await withAmapContext(db, { amapId: amap.id, userId: user.id }, (tx, ctx) =>
+      getMyHousehold(tx, ctx, { slug: amap.slug, name: amap.name }),
+    );
+    if (home) households.push(home);
+  }
+  const groups = modeChoices(amapSpaces);
   const t = await getTranslations("Auth.account");
   return (
     <Stack spacing={4}>
-      <div>
-        <Typography variant="h1" gutterBottom>
-          {t("title")}
-        </Typography>
-        <Typography>{t("signedInAs", { email: user.email })}</Typography>
-      </div>
+      <Typography variant="h1">{t("profileTitle")}</Typography>
 
-      {state.status === "challenge" && (
-        <Alert
-          severity="info"
-          action={
-            <Button
-              component={Link}
-              href={verificationUrl("/compte")}
-              nativeButton={false}
-              color="inherit"
-              size="small"
-            >
-              {t("verifyNow")}
-            </Button>
-          }
-        >
-          {t("verifyFirst")}
-        </Alert>
+      {groups.length > 0 && (
+        <Stack component="section" aria-labelledby="mode" spacing={1.5}>
+          <Typography id="mode" variant="h2">
+            {t("modeTitle")}
+          </Typography>
+          <ModeSelect groups={groups} current={profile.preferredSpace} />
+        </Stack>
       )}
+
+      <Stack component="section" aria-labelledby="infos" spacing={1.5}>
+        <Typography id="infos" variant="h2">
+          {t("infoTitle")}
+        </Typography>
+        <ProfileForm profile={profile} />
+      </Stack>
+
+      {households.map((home) => (
+        <MyHousehold key={home.amapSlug} household={home} />
+      ))}
 
       <MySpaces
         spaces={amapSpaces}
@@ -56,30 +72,20 @@ export default async function AccountPage() {
         isProducer={isProducer}
       />
 
-      <PasskeyManager />
-
-      {/* L'application ne sert qu'aux comptes soumis à la deuxième vérification. */}
-      {(factors.required || factors.totp) && <TotpSection active={factors.totp} />}
-
       <Divider />
 
-      <Stack component="section" aria-labelledby="sessions" spacing={2}>
-        <Typography id="sessions" variant="h2">
-          {t("sessions")}
+      <div>
+        <LinkButton
+          href="/compte/securite"
+          startIcon={<LockOutlined />}
+          endIcon={<KeyboardArrowRight />}
+        >
+          {t("securityLink")}
+        </LinkButton>
+        <Typography variant="bodySmall" color="text.secondary" component="p">
+          {t("securityHint")}
         </Typography>
-        <Stack direction="row" spacing={1} useFlexGap sx={{ flexWrap: "wrap" }}>
-          <form action={signOutAction}>
-            <Button type="submit" variant="outlined">
-              {t("signOut")}
-            </Button>
-          </form>
-          <form action={signOutEverywhereAction}>
-            <Button type="submit" variant="text" color="error">
-              {t("signOutEverywhere")}
-            </Button>
-          </form>
-        </Stack>
-      </Stack>
+      </div>
     </Stack>
   );
 }

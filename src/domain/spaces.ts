@@ -22,11 +22,19 @@ export function spacePath(space: Pick<AmapSpace, "amapSlug" | "kind">): string {
  *   l'espace producteur ;
  * - plusieurs AMAP, ou plateforme / producteur et AMAP : « Mon compte », qui liste tout ;
  * - aucun espace (compte sans rôle ni foyer) : « Mon compte ».
+ *
+ * Le mode choisi dans « Mon profil » (story A3) passe avant ces règles, s'il est toujours valable.
  */
 export function landingPath(
   spaces: readonly AmapSpace[],
   other: { isPlatformAdmin: boolean; isProducer: boolean },
+  /** Mode choisi dans « Mon profil » (story A3) : prioritaire s'il est encore un espace du compte. */
+  preferred: string | null = null,
 ): string {
+  const chosen = parsePreferredSpace(preferred);
+  if (chosen && spaces.some((s) => s.amapSlug === chosen.amapSlug && s.kind === chosen.kind)) {
+    return spacePath(chosen);
+  }
   const global = [
     ...(other.isPlatformAdmin ? ["/plateforme"] : []),
     ...(other.isProducer ? ["/producteur"] : []),
@@ -47,4 +55,29 @@ export function sortSpaces(spaces: readonly AmapSpace[]): AmapSpace[] {
       a.amapName.localeCompare(b.amapName, "fr") ||
       AMAP_SPACES.indexOf(a.kind) - AMAP_SPACES.indexOf(b.kind),
   );
+}
+
+/** Mode mémorisé (« hommesdeterre/referent ») : AMAP et espace, ou null s'il est mal formé. */
+export function parsePreferredSpace(
+  value: string | null | undefined,
+): Pick<AmapSpace, "amapSlug" | "kind"> | null {
+  const match = /^([a-z0-9-]+)\/(admin|referent|famille)$/.exec(value ?? "");
+  return match ? { amapSlug: match[1]!, kind: match[2] as AmapSpaceKind } : null;
+}
+
+/** Valeur enregistrée pour un mode : « hommesdeterre/referent ». */
+export function preferredSpaceValue(space: Pick<AmapSpace, "amapSlug" | "kind">): string {
+  return `${space.amapSlug}/${space.kind}`;
+}
+
+/**
+ * Modes proposés dans « Mon profil » (story A3), AMAP par AMAP : seulement là où le compte a
+ * plusieurs espaces (consomm'acteur, référent, administrateur).
+ */
+export function modeChoices(spaces: readonly AmapSpace[]): AmapSpace[][] {
+  const byAmap = new Map<string, AmapSpace[]>();
+  for (const space of sortSpaces(spaces)) {
+    byAmap.set(space.amapSlug, [...(byAmap.get(space.amapSlug) ?? []), space]);
+  }
+  return [...byAmap.values()].filter((group) => group.length > 1);
 }

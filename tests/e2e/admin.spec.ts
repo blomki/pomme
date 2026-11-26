@@ -214,7 +214,7 @@ test.describe("administration (ordinateur)", () => {
     // Ménage : le compte doit rester sans moyen de vérification pour la prochaine fois (sinon
     // chaque nouvel essai échoue). Un clic avant que la page ne soit prête est perdu : on
     // recommence tant que l'application n'est pas désactivée.
-    await page.goto("/compte");
+    await page.goto("/compte/securite");
     const disable = page.getByRole("button", { name: "Désactiver l'application" });
     const enable = page.getByRole("button", { name: "Activer l'application d'authentification" });
     await expect(async () => {

@@ -29,6 +29,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactElement, ReactNode } from "react";
 
+import { setModeAction } from "@/server/my-account-actions";
+
 import { AccountLink } from "../navigation/AccountLink";
 import { ColorModeToggle } from "../theme/ColorModeToggle";
 
@@ -167,7 +169,8 @@ export function DesktopShell({
 
 /**
  * Sélecteur d'espace : une personne à la fois administratrice et référente passe de l'un à
- * l'autre. Affiché seulement à ceux qui ont les deux rôles dans cette AMAP.
+ * l'autre. Affiché seulement à ceux qui ont les deux rôles dans cette AMAP. Le choix est
+ * mémorisé (story A3).
  */
 function AreaSwitch({
   amapSlug,
@@ -190,6 +193,8 @@ function AreaSwitch({
           nativeButton={false}
           variant={item.value === area ? "tonal" : "text"}
           aria-current={item.value === area ? "page" : undefined}
+          // Mode mémorisé, comme dans « Mon profil » (story A3) : rouvert après la connexion.
+          onClick={() => void setModeAction(`${amapSlug}/${item.value}`)}
         >
           {t(item.value)}
         </Button>

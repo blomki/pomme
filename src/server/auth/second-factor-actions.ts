@@ -105,9 +105,9 @@ export async function confirmTotpSetupAction(
   return { status: ok ? "confirmed" : "wrong_code" };
 }
 
-/** « Désactiver l'application d'authentification » (Mon compte). */
+/** « Désactiver l'application d'authentification » (« Connexion et sécurité », story A3). */
 export async function disableTotpAction(): Promise<void> {
   const { auth } = getAuthInstance();
   await auth.api.disableTwoFactor({ body: {}, headers: await headers() });
-  redirect("/compte?application=desactivee");
+  redirect("/compte/securite?application=desactivee");
 }
