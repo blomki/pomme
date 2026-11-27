@@ -8,6 +8,9 @@ import { describe, expect, it } from "vitest";
 // qu'à l'affichage, en production, par une page d'erreur. On le vérifie donc ici, pour toutes
 // les fichiers de src/ : dans un fichier sans "use client", aucun `component={…}` n'est permis. Utiliser
 // `LinkButton` (src/ui/navigation/), qui est un composant client.
+// Les chemins lus viennent du dossier src/ lui-même, jamais d'une saisie : la règle ESLint
+// « detect-non-literal-fs-filename » ne s'applique pas ici.
+/* eslint-disable security/detect-non-literal-fs-filename */
 function serverFiles(directory: string): string[] {
   return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(directory, entry.name);
