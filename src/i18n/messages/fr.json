@@ -1461,6 +1461,13 @@
     "title": "Page introuvable",
     "text": "Cette adresse ne correspond à aucune page ni à aucune AMAP."
   },
+  "ErrorPage": {
+    "title": "Cette page n'a pas pu s'afficher",
+    "text": "Une erreur est survenue de notre côté. Réessayez dans un instant ; si le problème continue, signalez-le en donnant la référence ci-dessous.",
+    "reference": "Référence : {digest}",
+    "retry": "Réessayer",
+    "back": "Revenir à mon espace"
+  },
   "Nav": {
     "comingSoon": "à venir",
     "producer": {

@@ -4,7 +4,6 @@ import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import Typography from "@mui/material/Typography";
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 
@@ -40,15 +39,9 @@ export default async function SecurityPage() {
         <Alert
           severity="info"
           action={
-            <Button
-              component={Link}
-              href={verificationUrl("/compte/securite")}
-              nativeButton={false}
-              color="inherit"
-              size="small"
-            >
+            <LinkButton href={verificationUrl("/compte/securite")} color="inherit" size="small">
               {t("verifyNow")}
-            </Button>
+            </LinkButton>
           }
         >
           {t("verifyFirst")}
