@@ -9,6 +9,7 @@ import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
 import { countMessagesTo, inboxSnapshot, newMessage } from "./helpers/mailpit";
 import {
   ADMIN_DEMO,
+  enrollTotp,
   enterDemoTotp,
   PLATFORM_ADMIN_DEMO,
   signInByEmail,
@@ -135,6 +136,7 @@ test.describe("administration (ordinateur)", () => {
   test("le gestionnaire crée une AMAP, puis réinitialise la deuxième vérification de son admin (J1, S10b)", async ({
     page,
     request,
+    browser,
   }) => {
     // Deux parcours à la suite (J1 puis S10b, qui réutilise l'admin créé) : plus de temps.
     test.slow();
@@ -212,11 +214,25 @@ test.describe("administration (ordinateur)", () => {
       page.getByRole("button", { name: "Réinitialiser la deuxième vérification" }),
     ).toHaveCount(0);
 
+    // Pas encore de moyen de vérification : rien à réinitialiser, pas de bouton (fiche #125).
     await emailField.fill(adminEmail);
     await emailField.press("Enter");
     const account = page.getByRole("region", { name: "Dominique" });
     await expect(account).toContainText(`AMAP : ${name}`);
-    await account.getByRole("button", { name: "Réinitialiser la deuxième vérification" }).click();
+    await expect(account).toContainText("Deuxième vérification : aucune pour l'instant.");
+    const resetButton = account.getByRole("button", {
+      name: "Réinitialiser la deuxième vérification",
+    });
+    await expect(resetButton).toHaveCount(0);
+
+    // L'admin se connecte (autre navigateur) et active son application d'authentification.
+    const adminPage = await browser.newPage();
+    await signInByEmail(adminPage, request, adminEmail);
+    await enrollTotp(adminPage);
+    await adminPage.close();
+
+    await emailField.press("Enter");
+    await resetButton.click();
     const dialog = page.getByRole("dialog", {
       name: "Réinitialiser la deuxième vérification de Dominique ?",
     });
@@ -227,6 +243,8 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByText("Deuxième vérification de Dominique réinitialisée.")).toBeVisible();
     await expect(dialog).toBeHidden();
     await expect(account).toContainText("Deuxième vérification : aucune pour l'instant.");
+    // Plus rien à réinitialiser : le bouton disparaît aussitôt (fiche #125).
+    await expect(resetButton).toHaveCount(0);
   });
 
   test("un nouvel admin active l'application d'authentification et note ses codes", async ({
@@ -300,16 +318,30 @@ test.describe("administration (ordinateur)", () => {
   test("un admin réinitialise la deuxième vérification d'un référent, avec confirmation (S10)", async ({
     page,
     request,
+    browser,
   }) => {
     await signInWithSecondFactor(page, request, ADMIN_DEMO);
-    await page.goto("/hommesdeterre/admin/foyers");
-    await page.getByRole("link", { name: "Foyer Démo (Lou)" }).click();
-    await expect(page.getByRole("heading", { level: 1, name: "Foyer Démo (Lou)" })).toBeVisible();
+    const openHousehold = async () => {
+      await page.goto("/hommesdeterre/admin/foyers");
+      await page.getByRole("link", { name: "Foyer Démo (Lou)" }).click();
+      await expect(page.getByRole("heading", { level: 1, name: "Foyer Démo (Lou)" })).toBeVisible();
+    };
+    const resetLou = page.getByRole("button", {
+      name: "Réinitialiser la deuxième vérification de Lou Démo",
+    });
 
-    // referent2.demo : sans deuxième vérification ; la réinitialiser ne change rien d'autre.
-    await page
-      .getByRole("button", { name: "Réinitialiser la deuxième vérification de Lou Démo" })
-      .click();
+    // referent2.demo n'a pas de moyen de vérification : rien à réinitialiser (fiche #125). Sur
+    // sa propre ligne, l'admin n'a pas le bouton non plus.
+    await openHousehold();
+    await expect(resetLou).toHaveCount(0);
+
+    // Lou active son application d'authentification (autre navigateur) : le bouton apparaît.
+    const louPage = await browser.newPage();
+    await signInByEmail(louPage, request, "referent2.demo@example.org");
+    await enrollTotp(louPage);
+    await louPage.close();
+    await openHousehold();
+    await resetLou.click();
     const dialog = page.getByRole("dialog", {
       name: "Réinitialiser la deuxième vérification de Lou Démo ?",
     });
@@ -319,6 +351,9 @@ test.describe("administration (ordinateur)", () => {
     await dialog.getByRole("button", { name: "Réinitialiser" }).click();
     await expect(page.getByText("Deuxième vérification de Lou Démo réinitialisée.")).toBeVisible();
     await expect(dialog).toBeHidden();
+    // Plus rien à réinitialiser : le bouton disparaît sans recharger la page. Lou retrouve
+    // aussi l'état du jeu de données (sans moyen de vérification) pour les passages suivants.
+    await expect(resetLou).toHaveCount(0);
   });
 
   test("un admin invite un foyer au clavier, lui donne un rôle, puis l'archive (A2)", async ({
