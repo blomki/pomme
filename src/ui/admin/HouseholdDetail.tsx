@@ -71,6 +71,9 @@ export function HouseholdDetail({
   const [rolesOf, setRolesOf] = useState<HouseholdMemberView | null>(null);
   const [emailOf, setEmailOf] = useState<HouseholdMemberView | null>(null);
   const [factorOf, setFactorOf] = useState<HouseholdMemberView | null>(null);
+  // Membres réinitialisés depuis l'affichage de la page : le bouton disparaît aussitôt, sans
+  // recharger (il n'y a plus rien à réinitialiser).
+  const [resetDone, setResetDone] = useState<ReadonlySet<string>>(new Set());
   const tf = useTranslations("Admin.resetSecondFactor");
   const tb = useTranslations("Banners");
   const archived = household.archivedAt !== null;
@@ -205,8 +208,8 @@ export function HouseholdDetail({
                         >
                           {tc("correctEmail")}
                         </Button>
-                        {/* Admins et référents : les rôles qui ont une deuxième vérification (S10). */}
-                        {member.roles.some((r) => r === "admin" || r === "referent") && (
+                        {/* Admin ou référent qui a un moyen de vérification, sauf soi-même (S10, #125). */}
+                        {member.canResetSecondFactor && !resetDone.has(member.userId) && (
                           <Button
                             size="small"
                             onClick={() => setFactorOf(member)}
@@ -302,6 +305,7 @@ export function HouseholdDetail({
           key={factorOf.userId}
           amapSlug={amapSlug}
           person={{ userId: factorOf.userId, name: fullName(factorOf) }}
+          onReset={() => setResetDone((done) => new Set(done).add(factorOf.userId))}
           onClose={() => setFactorOf(null)}
         />
       )}

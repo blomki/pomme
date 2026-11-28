@@ -337,6 +337,13 @@
       "when": 1795730724203,
       "tag": "0047_images-bandeaux",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1795817106602,
+      "tag": "0048_membres-deuxieme-verification",
+      "breakpoints": true
     }
   ]
 }

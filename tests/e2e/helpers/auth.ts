@@ -1,6 +1,6 @@
 import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
 
-import { totpCode } from "../../helpers/totp";
+import { totpCode, totpFromBase32 } from "../../helpers/totp";
 
 import { inboxSnapshot, newMagicLink } from "./mailpit";
 
@@ -59,4 +59,20 @@ export async function enterDemoTotp(page: Page) {
     .getByRole("textbox", { name: "Code de l'application d'authentification" })
     .fill(totpCode(DEMO_TOTP_SECRET));
   await page.getByRole("button", { name: "Vérifier" }).click();
+}
+
+/**
+ * Juste après la connexion d'un admin ou d'un référent sans moyen de vérification (« Sécurisez
+ * votre compte ») : active l'application d'authentification avec la clé affichée sous le QR
+ * code. Sert à préparer un compte qui a quelque chose à réinitialiser (fiche #125).
+ */
+export async function enrollTotp(page: Page) {
+  await expect(
+    page.getByRole("heading", { level: 1, name: "Sécurisez votre compte" }),
+  ).toBeVisible();
+  await page.getByRole("button", { name: "Activer l'application d'authentification" }).click();
+  const key = (await page.locator("code").textContent()) ?? "";
+  await page.getByRole("textbox", { name: "Code à 6 chiffres" }).fill(totpFromBase32(key));
+  await page.getByRole("button", { name: "Confirmer" }).click();
+  await expect(page).not.toHaveURL(/\/connexion\//);
 }
