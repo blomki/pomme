@@ -57,7 +57,7 @@ test.describe("Mon profil (téléphone)", () => {
     await other.getByRole("textbox", { name: "Prénom" }).fill("Invité");
     await expectNoSeriousA11yViolations(other);
     await other.getByRole("button", { name: "Rejoindre le foyer" }).click();
-    await expect(other.getByText(/^Vous faites maintenant partie du foyer/)).toBeVisible();
+    await expect(other.getByText(/^Vous avez rejoint le foyer/)).toBeVisible();
     await invitedContext.close();
 
     // De retour sur « Mon profil » : le nouveau membre est là ; on le retire, avec confirmation.

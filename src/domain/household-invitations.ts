@@ -22,3 +22,23 @@ export function invitationState(
   if (invitation.acceptedAt) return "accepted";
   return invitation.expiresAt <= now ? "expired" : "pending";
 }
+
+/**
+ * Qui est connecté dans ce navigateur, par rapport à l'adresse invitée (fiche #134) :
+ * - "none" : personne ; après l'acceptation, la personne invitée se connecte ;
+ * - "invitee" : la personne invitée elle-même ; après l'acceptation, elle va à son espace ;
+ * - "other" : un autre compte (souvent un membre du foyer, sur l'ordinateur partagé). On le
+ *   signale et on propose de fermer sa session avant d'accepter : sinon, la suite du parcours
+ *   reprendrait cette session, et la personne invitée arriverait dans l'espace d'un autre.
+ *
+ * Les adresses sont comparées sans tenir compte des majuscules (elles sont rangées en minuscules).
+ */
+export function invitationSessionCase(
+  sessionEmail: string | null | undefined,
+  invitedEmail: string,
+): "none" | "invitee" | "other" {
+  if (!sessionEmail) return "none";
+  return sessionEmail.trim().toLowerCase() === invitedEmail.trim().toLowerCase()
+    ? "invitee"
+    : "other";
+}
