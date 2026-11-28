@@ -7,7 +7,6 @@ import Typography from "@mui/material/Typography";
 import type { ReactNode } from "react";
 
 import { AccountLink } from "../navigation/AccountLink";
-import { ColorModeToggle } from "../theme/ColorModeToggle";
 
 /**
  * Gabarit mobile (familles, producteurs, pages publiques) : barre du haut avec le nom de
@@ -33,7 +32,6 @@ export function MobileShell({
             {title}
           </Typography>
           {modeMenu}
-          <ColorModeToggle />
           <AccountLink />
         </Toolbar>
       </AppBar>

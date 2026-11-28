@@ -1450,7 +1450,7 @@
   "ColorMode": {
     "label": "Apparence",
     "light": "Clair",
-    "system": "Automatique (comme l'appareil)",
+    "system": "Système",
     "dark": "Sombre"
   },
   "Snackbar": {
@@ -1626,6 +1626,8 @@
         "producer": "Espace producteur"
       },
       "profileTitle": "Mon profil",
+      "displayTitle": "Affichage",
+      "displayHelp": "Apparence de Pomme sur cet appareil. « Système » suit le réglage de l'appareil.",
       "infoTitle": "Mes informations",
       "firstName": "Prénom",
       "lastName": "Nom",

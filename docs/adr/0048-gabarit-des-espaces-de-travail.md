@@ -22,7 +22,12 @@ s'adapte à la largeur de l'écran.
    bouton porte `aria-expanded` et `aria-controls`. Un clic sur le voile ou sur une entrée ferme
    le menu.
 3. **En-tête collant de 64 px** : bouton menu et nom de l'AMAP à gauche ; bouton « Mode »,
-   affichage clair ou sombre, prénom (masqué sous 600 px) et « Mon compte » à droite.
+   prénom (masqué sous 600 px) et « Mon compte » à droite. Depuis la fiche #127, plus de choix
+   clair / système / sombre dans aucun en-tête (espaces, site public, plateforme) : il prenait
+   trop de place sur téléphone et tronquait le nom de l'AMAP, pour un réglage rarement changé.
+   Il est dans « Mon profil », section « Affichage » (bouton segmenté M3 avec libellés
+   visibles). Le choix reste gardé par le navigateur et appliqué avant l'affichage de chaque
+   page, connexion et pages publiques comprises ; sans choix, l'apparence suit le système.
 4. **Bouton « Mode »** à la place de l'ancien sélecteur d'espace : un menu déroulant avec les
    modes de cette AMAP, y compris le mode consomm'acteur (le foyer de la personne). Il
    n'apparaît qu'à partir de deux modes. Son nom accessible reste complet (« Mode

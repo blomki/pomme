@@ -194,7 +194,6 @@ export function ThemeDemo({
           <Typography component="p" variant="headlineSmall" noWrap sx={{ flex: 1 }}>
             {amapName}
           </Typography>
-          <ColorModeToggle />
         </Toolbar>
       </AppBar>
 
@@ -208,6 +207,11 @@ export function ThemeDemo({
           {t("title", { amap: amapName })}
         </Typography>
         <Typography sx={{ mb: 2 }}>{t("intro", { font: config.headingFont })}</Typography>
+        {/* Outil d'aperçu du thème : le choix clair / sombre reste à portée, dans la page (les
+            en-têtes n'en ont plus, fiche #127). */}
+        <Box sx={{ mb: 3 }}>
+          <ColorModeToggle />
+        </Box>
 
         <Stack
           component="nav"

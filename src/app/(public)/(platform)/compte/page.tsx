@@ -17,10 +17,11 @@ import { MyHousehold } from "@/ui/account/MyHousehold";
 import { ProfileForm } from "@/ui/account/ProfileForm";
 import { MySpaces } from "@/ui/auth/MySpaces";
 import { SmallTopAppBar } from "@/ui/layout/SmallTopAppBar";
+import { ColorModeToggle } from "@/ui/theme/ColorModeToggle";
 import { LinkButton } from "@/ui/navigation/LinkButton";
 
-// [domaine]/compte : « Mon profil » (story A3, écran 8) : mes informations, mon foyer, mes
-// espaces ; passkeys et déconnexion sont dans « Connexion et sécurité » (/compte/securite).
+// [domaine]/compte : « Mon profil » (story A3, écran 8) : mes informations, affichage, mon
+// foyer, mes espaces ; passkeys et déconnexion sont dans « Connexion et sécurité » (/compte/securite).
 // Le mode se choisit dans l'en-tête des espaces (fiche #126) ; la flèche « Retour » ramène à
 // l'accueil du mode courant.
 export default async function ProfilePage() {
@@ -55,6 +56,18 @@ export default async function ProfilePage() {
           {t("infoTitle")}
         </Typography>
         <ProfileForm profile={profile} />
+      </Stack>
+
+      {/* Apparence (fiche #127) : réglage rare, retiré des en-têtes pour laisser la place au
+          nom de l'AMAP. */}
+      <Stack component="section" aria-labelledby="affichage" spacing={1.5}>
+        <Typography id="affichage" variant="h2">
+          {t("displayTitle")}
+        </Typography>
+        <Typography color="text.secondary">{t("displayHelp")}</Typography>
+        <div>
+          <ColorModeToggle labelledBy="affichage" />
+        </div>
       </Stack>
 
       {households.map((home) => (
