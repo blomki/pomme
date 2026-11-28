@@ -108,3 +108,17 @@ export function createM3Schemes(keys: KeyColors): { light: M3Scheme; dark: M3Sch
 export function isHexColor(value: string): boolean {
   return /^#[0-9a-fA-F]{6}$/.test(value);
 }
+
+/**
+ * Couleur de succès d'une charte, au format MUI, en clair et en sombre : tons 40 / 80 de sa
+ * palette (comme les autres rôles), donc lisible sous un texte blanc ou foncé quelle que soit
+ * la couleur saisie.
+ */
+export function successColors(hex: string) {
+  const palette = TonalPalette.fromInt(argbFromHex(hex));
+  const tone = (t: number) => hexFromArgb(palette.tone(t));
+  return {
+    light: { main: tone(40), light: tone(90), on: tone(100) },
+    dark: { main: tone(80), light: tone(30), on: tone(20) },
+  };
+}

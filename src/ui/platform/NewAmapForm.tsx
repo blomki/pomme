@@ -20,7 +20,7 @@ import type { FieldProblem } from "@/server/amap-creation";
 import { createAmapAction } from "@/server/platform-actions";
 
 import { useSnackbar } from "../feedback/SnackbarProvider";
-import { HEADING_FONTS, PLATFORM_KEY_COLORS, type HeadingFont } from "../theme/key-colors";
+import { HEADING_FONTS, DEFAULT_AMAP_KEY_COLORS, type HeadingFont } from "../theme/key-colors";
 
 import { ThemePreview } from "./ThemePreview";
 
@@ -29,9 +29,9 @@ type Field = FieldProblem["field"];
 const EMPTY = {
   name: "",
   slug: "",
-  primary: PLATFORM_KEY_COLORS.primary,
-  secondary: PLATFORM_KEY_COLORS.secondary,
-  tertiary: PLATFORM_KEY_COLORS.tertiary,
+  primary: DEFAULT_AMAP_KEY_COLORS.primary,
+  secondary: DEFAULT_AMAP_KEY_COLORS.secondary,
+  tertiary: DEFAULT_AMAP_KEY_COLORS.tertiary,
   headingFont: "Carlito" as HeadingFont,
   place: "",
   weekday: "4",

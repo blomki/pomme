@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSession } from "@/server/auth/session";
 import { captchaWidgetConfig } from "@/server/captcha";
 import { LoginForm } from "@/ui/auth/LoginForm";
+import { CaptchaCard } from "@/ui/forms/CaptchaCard";
 
 type Props = {
   searchParams: Promise<{ erreur?: string; deconnexion?: string; email?: string }>;
@@ -23,8 +24,9 @@ export default async function LoginPage({ searchParams }: Props) {
         : deconnexion
           ? "signedOut"
           : undefined;
+  // Carte de la largeur du widget Friendly Captcha, sur le même fond (fiche #123).
   return (
-    <>
+    <CaptchaCard>
       <Typography variant="h1" gutterBottom>
         {t("title")}
       </Typography>
@@ -35,6 +37,6 @@ export default async function LoginPage({ searchParams }: Props) {
         captcha={captchaWidgetConfig()}
         defaultEmail={typeof email === "string" ? email.slice(0, 254) : undefined}
       />
-    </>
+    </CaptchaCard>
   );
 }

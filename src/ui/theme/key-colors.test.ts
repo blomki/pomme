@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import { buildSeedData } from "@/db/seed/data";
 
-import { AMAP_DEMO_KEY_COLORS, PLATFORM_KEY_COLORS, resolveThemeConfig } from "./key-colors";
+import { AMAP_DEMO_KEY_COLORS, DEFAULT_AMAP_KEY_COLORS, resolveThemeConfig } from "./key-colors";
 
 describe("resolveThemeConfig", () => {
   it("reprend les couleurs et la police de l'AMAP", () => {
@@ -20,14 +20,14 @@ describe("resolveThemeConfig", () => {
 
   it("complète un thème vide avec celui de la plateforme", () => {
     expect(resolveThemeConfig({})).toEqual({
-      keyColors: PLATFORM_KEY_COLORS,
+      keyColors: DEFAULT_AMAP_KEY_COLORS,
       headingFont: "Carlito",
     });
   });
 
   it("ignore une couleur mal formée et une police inconnue", () => {
     const config = resolveThemeConfig({ primary: "rouge", headingFont: "Comic Sans" });
-    expect(config.keyColors.primary).toBe(PLATFORM_KEY_COLORS.primary);
+    expect(config.keyColors.primary).toBe(DEFAULT_AMAP_KEY_COLORS.primary);
     expect(config.headingFont).toBe("Carlito");
   });
 

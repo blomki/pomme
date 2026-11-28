@@ -11,7 +11,7 @@ import { JOIN_REQUEST_LIMITS } from "@/domain/join-requests";
 import type { CaptchaWidgetConfig } from "@/server/captcha";
 import { submitJoinRequestAction, type JoinFormState } from "@/server/join-requests-actions";
 
-import { Captcha } from "../forms/Captcha";
+import { Captcha, CAPTCHA_WIDTH } from "../forms/Captcha";
 
 /**
  * Formulaire « Nous rejoindre » du site public (story B2) : nom, email, téléphone, message,
@@ -47,7 +47,13 @@ export function JoinForm({
   }
 
   return (
-    <Stack component="form" action={formAction} spacing={2.5} noValidate sx={{ maxWidth: 560 }}>
+    <Stack
+      component="form"
+      action={formAction}
+      spacing={2.5}
+      noValidate
+      sx={{ maxWidth: CAPTCHA_WIDTH }}
+    >
       <div ref={statusRef} tabIndex={-1} role="status" aria-live="polite">
         {state.status === "invalid" && <Alert severity="error">{t("fixErrors")}</Alert>}
         {state.status === "captcha" && <Alert severity="warning">{t("captcha")}</Alert>}

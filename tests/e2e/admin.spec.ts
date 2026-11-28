@@ -662,7 +662,7 @@ test.describe("administration (ordinateur)", () => {
     await expect(page.getByText("Tâche marquée comme faite.")).toBeVisible();
     await expect(row).toHaveCount(0);
     // Contrôle une fois le message de confirmation entièrement apparu (animation).
-    await expect(page.locator(".MuiSnackbarContent-root")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".MuiSnackbar-root .MuiAlert-root")).toHaveCSS("opacity", "1");
     const summary = tasks.getByText(/^Tâches terminées \(\d+\)$/);
     await summary.focus();
     await page.keyboard.press("Enter");
@@ -1004,7 +1004,7 @@ test.describe("administration (ordinateur)", () => {
     // 4 ou 5 jeudis selon le mois.
     await expect(region.getByRole("listitem").nth(3)).toBeVisible();
     // Contrôle une fois le message de confirmation entièrement apparu (animation).
-    await expect(page.locator(".MuiSnackbarContent-root")).toHaveCSS("opacity", "1");
+    await expect(page.locator(".MuiSnackbar-root .MuiAlert-root")).toHaveCSS("opacity", "1");
     await expectNoSeriousA11yViolations(page);
 
     // Fermer la première : le motif est obligatoire.
