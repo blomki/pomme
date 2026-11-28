@@ -15,10 +15,13 @@ import { ColorModeToggle } from "../theme/ColorModeToggle";
  */
 export function MobileShell({
   title,
+  modeMenu,
   bottomNavigation,
   children,
 }: {
   title: string;
+  /** Bouton « Mode » (fiche #126) : pas de menu « burger » ici, il reste dans l'en-tête. */
+  modeMenu?: ReactNode;
   bottomNavigation?: ReactNode;
   children: ReactNode;
 }) {
@@ -26,9 +29,10 @@ export function MobileShell({
     <Box sx={{ minHeight: "100dvh", display: "flex", flexDirection: "column" }}>
       <AppBar position="sticky" component="header">
         <Toolbar sx={{ gap: 1, minHeight: 64 }}>
-          <Typography component="p" variant="headlineSmall" noWrap sx={{ flex: 1 }}>
+          <Typography component="p" variant="headlineSmall" noWrap sx={{ flex: 1, minWidth: 0 }}>
             {title}
           </Typography>
+          {modeMenu}
           <ColorModeToggle />
           <AccountLink />
         </Toolbar>

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
-import { ADMIN_DEMO, signInByEmail, signInWithSecondFactor } from "./helpers/auth";
+import { signInByEmail, signInWithSecondFactor } from "./helpers/auth";
 import { inboxSnapshot, newMessage } from "./helpers/mailpit";
 
 // « Mon profil » et « Mon foyer » (story A3), avec le jeu de données (pnpm db:seed). Adresses
@@ -74,26 +74,54 @@ test.describe("Mon profil (téléphone)", () => {
   });
 });
 
-test.describe("Mode (ordinateur)", () => {
+test.describe("Mode et retour (ordinateur)", () => {
   test.skip(({ browserName }) => browserName !== "chromium", "écran d'ordinateur");
 
-  test("une personne à plusieurs rôles change de mode depuis son profil ; le choix est mémorisé (A3)", async ({
+  test("le mode se choisit dans l'en-tête de l'espace consomm'acteur ; « Retour » ramène à son accueil (#126)", async ({
     page,
     request,
   }) => {
-    await signInWithSecondFactor(page, request, ADMIN_DEMO);
-    await page.goto("/compte");
-    const mode = page.getByRole("combobox", { name: /^Changer de mode/ });
+    // referent.demo : référent et membre d'un foyer, donc deux modes.
+    await signInWithSecondFactor(page, request, "referent.demo@example.org");
+    await page.goto("/hommesdeterre/famille");
+    const header = page.getByRole("banner");
+    const mode = header.getByRole("button", { name: "Mode consomm'acteur" });
     await expect(mode).toBeVisible();
     await expectNoSeriousA11yViolations(page);
-    await mode.selectOption({ label: "Mode référent" });
+
+    // Au clavier : le menu s'ouvre avec Entrée ; le choix ouvre l'accueil du mode et le mémorise.
+    await mode.focus();
+    await page.keyboard.press("Enter");
+    await page.getByRole("menuitem", { name: "Mode référent" }).focus();
+    await page.keyboard.press("Enter");
     await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
 
-    // Ménage : l'administration redevient l'espace d'arrivée de ce compte pour les autres tests.
+    // « Mon profil » n'a plus de section « Mode » ; la flèche ramène à l'accueil du mode courant.
     await page.goto("/compte");
-    await page
-      .getByRole("combobox", { name: /^Changer de mode/ })
-      .selectOption({ label: "Mode administrateur" });
-    await expect(page).toHaveURL(/\/hommesdeterre\/admin$/);
+    await expect(page.getByRole("heading", { level: 1, name: "Mon profil" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Mode" })).toHaveCount(0);
+    await expect(page.getByRole("combobox", { name: /^Changer de mode/ })).toHaveCount(0);
+    await expectNoSeriousA11yViolations(page);
+    await page.getByRole("link", { name: "Retour" }).click();
+    await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
+
+    // « Connexion et sécurité » : la flèche ramène à « Mon profil ».
+    await page.goto("/compte/securite");
+    await page.getByRole("link", { name: "Retour" }).click();
+    await expect(page).toHaveURL(/\/compte$/);
+  });
+
+  test("avec un seul mode, pas de bouton « Mode » ; « Retour » mène à son espace", async ({
+    page,
+    request,
+  }) => {
+    await signInByEmail(page, request, FAMILY);
+    await page.goto("/hommesdeterre/famille");
+    await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Mode / })).toHaveCount(0);
+    // Sans mode mémorisé : /connexion/suite choisit l'accueil, l'espace unique ici.
+    await page.goto("/compte");
+    await page.getByRole("link", { name: "Retour" }).click();
+    await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
   });
 });

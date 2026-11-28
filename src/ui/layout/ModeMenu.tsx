@@ -20,16 +20,21 @@ import { m3 } from "../theme/create-theme";
 /**
  * Bouton « Mode » de l'en-tête (stories A3 et S14) : une personne qui est, dans cette AMAP,
  * administratrice, référente ou membre d'un foyer passe d'un mode à l'autre. Le choix est
- * mémorisé, comme dans « Mon profil ». Affiché seulement à partir de deux modes.
+ * mémorisé sur le compte (`user.preferred_space`, ADR 0045). Affiché seulement à partir de deux
+ * modes, dans l'en-tête de tous les espaces d'une AMAP, ou en tête du menu « burger » quand
+ * l'espace en a un (fiche #126, ADR 0048).
  */
 export function ModeMenu({
   amapSlug,
   current,
   modes,
+  fullWidth = false,
 }: {
   amapSlug: string;
-  current: "admin" | "referent";
+  current: AmapSpaceKind;
   modes: readonly AmapSpaceKind[];
+  /** Dans le menu « burger » : toute la largeur, libellé complet. */
+  fullWidth?: boolean;
 }) {
   const t = useTranslations("Nav.mode");
   const id = useId();
@@ -48,6 +53,7 @@ export function ModeMenu({
         aria-expanded={open}
         aria-controls={open ? `${id}-menu` : undefined}
         onClick={(event) => setAnchor(event.currentTarget)}
+        fullWidth={fullWidth}
         startIcon={
           <Box
             component="span"
@@ -56,23 +62,42 @@ export function ModeMenu({
           />
         }
         endIcon={<ExpandMoreOutlined />}
-        sx={{ color: m3("onSurfaceVariant"), borderColor: m3("outline"), paddingInline: 2 }}
+        sx={{
+          color: m3("onSurfaceVariant"),
+          borderColor: m3("outline"),
+          paddingInline: { xs: 1.5, sm: 2 },
+          flexShrink: 0,
+          // Très petit écran, dans l'en-tête : sans pastille, la place va au nom de l'AMAP.
+          ...(!fullWidth && {
+            "& .MuiButton-startIcon": { display: { xs: "none", sm: "inherit" } },
+          }),
+          ...(fullWidth && {
+            justifyContent: "flex-start",
+            "& .MuiButton-endIcon": { ml: "auto" },
+          }),
+        }}
       >
-        {/* Libellé raccourci sur très petit écran ; un seul des deux est lu (l'autre est masqué). */}
-        <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-          {t(current)}
-        </Box>
-        <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-          {t(`short.${current}`)}
-        </Box>
+        {fullWidth ? (
+          t(current)
+        ) : (
+          <>
+            {/* Libellé raccourci sur très petit écran ; un seul des deux est lu (l'autre est masqué). */}
+            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
+              {t(current)}
+            </Box>
+            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
+              {t(`short.${current}`)}
+            </Box>
+          </>
+        )}
       </Button>
       <Menu
         id={`${id}-menu`}
         anchorEl={anchor}
         open={open}
         onClose={() => setAnchor(null)}
-        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-        transformOrigin={{ vertical: "top", horizontal: "right" }}
+        anchorOrigin={{ vertical: "bottom", horizontal: fullWidth ? "left" : "right" }}
+        transformOrigin={{ vertical: "top", horizontal: fullWidth ? "left" : "right" }}
         slotProps={{
           list: { "aria-labelledby": `${id}-button` },
           paper: { sx: { borderRadius: "16px", mt: 1 } },

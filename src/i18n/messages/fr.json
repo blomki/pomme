@@ -1520,10 +1520,11 @@
       "short": {
         "admin": "Admin",
         "referent": "Référent",
-        "famille": "Conso"
+        "famille": "Consomm'acteur"
       }
     },
-    "amapCard": "{households, plural, one {# foyer actif} other {# foyers actifs}} · {producers, plural, one {# producteur} other {# producteurs}}"
+    "amapCard": "{households, plural, one {# foyer actif} other {# foyers actifs}} · {producers, plural, one {# producteur} other {# producteurs}}",
+    "back": "Retour"
   },
   "ThemeDemo": {
     "title": "Thème de {amap}",
@@ -1625,14 +1626,6 @@
         "producer": "Espace producteur"
       },
       "profileTitle": "Mon profil",
-      "modeTitle": "Mode",
-      "modeLabel": "Changer de mode ({amap})",
-      "modeHelp": "Le mode choisi est mémorisé : il s'ouvre aussi après la connexion.",
-      "mode": {
-        "admin": "Mode administrateur",
-        "referent": "Mode référent",
-        "famille": "Mode consomm'acteur"
-      },
       "infoTitle": "Mes informations",
       "firstName": "Prénom",
       "lastName": "Nom",
@@ -1678,7 +1671,6 @@
       "securityLink": "Connexion et sécurité",
       "securityHint": "Passkeys, appareils connectés, déconnexion",
       "securityTitle": "Connexion et sécurité",
-      "backToProfile": "Retour au profil",
       "passkeysIntro": "Une passkey vous connecte avec l'empreinte, le visage ou le code de votre appareil. Sans passkey, vous recevez un lien de connexion par email.",
       "lastUsedOn": "utilisée le {date}",
       "neverUsed": "jamais utilisée",
