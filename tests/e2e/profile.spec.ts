@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 
 import { expectNoSeriousA11yViolations } from "./helpers/accessibility";
 import { signInByEmail, signInWithSecondFactor } from "./helpers/auth";
@@ -74,6 +74,17 @@ test.describe("Mon profil (téléphone)", () => {
   });
 });
 
+/**
+ * Clique sur « Retour » jusqu'à arriver à destination : un clic donné avant que la page ne soit
+ * prête (serveur de développement) peut être perdu.
+ */
+async function goBack(page: Page, destination: RegExp) {
+  await expect(async () => {
+    await page.getByRole("link", { name: "Retour" }).click();
+    await expect(page).toHaveURL(destination, { timeout: 3_000 });
+  }).toPass({ timeout: 20_000 });
+}
+
 test.describe("Mode et retour (ordinateur)", () => {
   test.skip(({ browserName }) => browserName !== "chromium", "écran d'ordinateur");
 
@@ -102,13 +113,11 @@ test.describe("Mode et retour (ordinateur)", () => {
     await expect(page.getByRole("heading", { name: "Mode" })).toHaveCount(0);
     await expect(page.getByRole("combobox", { name: /^Changer de mode/ })).toHaveCount(0);
     await expectNoSeriousA11yViolations(page);
-    await page.getByRole("link", { name: "Retour" }).click();
-    await expect(page).toHaveURL(/\/hommesdeterre\/referent$/);
+    await goBack(page, /\/hommesdeterre\/referent$/);
 
     // « Connexion et sécurité » : la flèche ramène à « Mon profil ».
     await page.goto("/compte/securite");
-    await page.getByRole("link", { name: "Retour" }).click();
-    await expect(page).toHaveURL(/\/compte$/);
+    await goBack(page, /\/compte$/);
   });
 
   test("avec un seul mode, pas de bouton « Mode » ; « Retour » mène à son espace", async ({
@@ -121,7 +130,6 @@ test.describe("Mode et retour (ordinateur)", () => {
     await expect(page.getByRole("button", { name: /^Mode / })).toHaveCount(0);
     // Sans mode mémorisé : /connexion/suite choisit l'accueil, l'espace unique ici.
     await page.goto("/compte");
-    await page.getByRole("link", { name: "Retour" }).click();
-    await expect(page).toHaveURL(/\/hommesdeterre\/famille$/);
+    await goBack(page, /\/hommesdeterre\/famille$/);
   });
 });
