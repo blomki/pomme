@@ -1,7 +1,6 @@
 import { describe, expect, it } from "vitest";
 
 import {
-  canRevokeReferent,
   parseDistanceKm,
   pickCurrentAmap,
   producerAccess,
@@ -21,16 +20,6 @@ describe("producersWithoutReferent", () => {
       "Atelier fromager",
       "Œufs du Val",
     ]);
-  });
-});
-
-describe("canRevokeReferent", () => {
-  it("refuse tant que la personne suit des producteurs", () => {
-    expect(canRevokeReferent(["Boulangerie"])).toBe(false);
-  });
-
-  it("accepte sinon", () => {
-    expect(canRevokeReferent([])).toBe(true);
   });
 });
 

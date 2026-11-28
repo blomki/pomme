@@ -36,6 +36,13 @@ contraintes :
 5. **Rôles** (référent, administrateur) attribués personne par personne depuis la fiche du
    foyer, cumulables, chacun inscrit au journal (`audit_log`). On ne peut pas retirer le
    dernier administrateur d'une AMAP (vérifié sous verrou, pour deux retraits simultanés).
+   Depuis la fiche #138, la fenêtre « Rôles » a une case « Administrateur » et une case
+   « Référent : <producteur> » par producteur actif, enregistrées ensemble. Le rôle de référent
+   se déduit des producteurs suivis : cocher un producteur le donne, décocher le dernier le
+   retire, depuis la fiche du membre comme depuis celle du producteur (même table
+   `referent_assignment`, même transaction). Décocher le dernier référent d'un producteur est
+   permis, après un avertissement ; la tâche « Bloquant » prend le relais. Les affectations à un
+   producteur inactif, absentes de la fenêtre, sont gardées.
 6. **Archivage** du foyer et de ses membres (`archived_at`), jamais de suppression, avec
    « Annuler ». L'export et l'anonymisation RGPD feront l'objet d'une deuxième PR.
 
