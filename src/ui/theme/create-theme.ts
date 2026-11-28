@@ -2,7 +2,7 @@ import { createTheme, type Theme } from "@mui/material/styles";
 
 import { COLOR_SCHEME_ATTRIBUTE } from "./color-scheme";
 import type { ThemeConfig } from "./key-colors";
-import { createM3Schemes, type M3Role, type M3Scheme } from "./m3-colors";
+import { createM3Schemes, successColors, type M3Role, type M3Scheme } from "./m3-colors";
 import { createM3Typography } from "./typography";
 
 /** Variable CSS d'un rôle M3 : suit automatiquement le mode clair ou sombre. */
@@ -35,7 +35,7 @@ export const M3_EASING = {
   standardAccelerate: "cubic-bezier(0.3, 0, 1, 1)",
 };
 
-function toPalette(s: M3Scheme) {
+function toPalette(s: M3Scheme, success?: { main: string; light: string; on: string }) {
   // MUI attend main / light / dark / contrastText. « dark » sert au survol des boutons pleins :
   // on garde la même couleur et on ajoute une couche d'état (voir MuiButton plus bas).
   const color = (main: string, container: string, on: string) => ({
@@ -49,6 +49,7 @@ function toPalette(s: M3Scheme) {
     secondary: color(s.secondary, s.secondaryContainer, s.onSecondary),
     tertiary: color(s.tertiary, s.tertiaryContainer, s.onTertiary),
     error: color(s.error, s.errorContainer, s.onError),
+    ...(success && { success: color(success.main, success.light, success.on) }),
     background: { default: s.surface, paper: s.surfaceContainerLow },
     text: { primary: s.onSurface, secondary: s.onSurfaceVariant },
     divider: s.outlineVariant,
@@ -65,12 +66,14 @@ function toPalette(s: M3Scheme) {
  */
 export function createAmapTheme(config: ThemeConfig): Theme {
   const schemes = createM3Schemes(config.keyColors);
+  const light = { ...schemes.light, ...config.lightOverrides };
+  const success = config.success ? successColors(config.success) : undefined;
 
   return createTheme({
     cssVariables: { colorSchemeSelector: COLOR_SCHEME_ATTRIBUTE },
     colorSchemes: {
-      light: { palette: toPalette(schemes.light) },
-      dark: { palette: toPalette(schemes.dark) },
+      light: { palette: toPalette(light, success?.light) },
+      dark: { palette: toPalette(schemes.dark, success?.dark) },
     },
     shape: { borderRadius: M3_SHAPE.medium },
     typography: createM3Typography(config.headingFont),

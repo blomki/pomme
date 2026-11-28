@@ -1,13 +1,23 @@
 import type { TypographyVariantsOptions } from "@mui/material/styles";
 
-import type { HeadingFont } from "./key-colors";
+import type { ThemeHeadingFont } from "./key-colors";
 
 /** Pile de polices du texte courant (variable posée par fonts.ts). */
 export const BODY_FONT_FAMILY = "var(--font-carlito), Calibri, Arial, sans-serif";
 
-/** Pile de polices des titres, selon le réglage de l'AMAP. */
-export function headingFontFamily(font: HeadingFont): string {
-  return font === "Pattaya" ? "var(--font-pattaya), Georgia, serif" : BODY_FONT_FAMILY;
+/** Pile de polices des titres, selon le réglage de l'AMAP (ou Source Sans pour la plateforme). */
+export function headingFontFamily(font: ThemeHeadingFont): string {
+  if (font === "Pattaya") return "var(--font-pattaya), Georgia, serif";
+  if (font === "Source Sans") return "var(--font-source-sans), Arial, sans-serif";
+  return BODY_FONT_FAMILY;
+}
+
+/**
+ * Graisse des titres : Pattaya n'existe qu'en graisse normale, Carlito garde la sienne ; Source
+ * Sans est servie en semi-gras (charte de la plateforme).
+ */
+function headingWeightOf(font: ThemeHeadingFont): number {
+  return font === "Source Sans" ? 600 : 400;
 }
 
 const rem = (px: number) => `${px / 16}rem`;
@@ -30,10 +40,9 @@ function style(size: number, lineHeight: number, weight: number, tracking = 0): 
  * de Typography ; les variantes MUI habituelles (h1…, body1…) y sont rattachées.
  * Le texte courant fait au moins 16 px (bodyLarge) : Carlito est une police compacte.
  */
-export function createM3Typography(headingFont: HeadingFont): TypographyVariantsOptions {
+export function createM3Typography(headingFont: ThemeHeadingFont): TypographyVariantsOptions {
   const heading = { fontFamily: headingFontFamily(headingFont) };
-  // Pattaya n'existe qu'en graisse normale : on n'en demande pas d'autre.
-  const headingWeight = 400;
+  const headingWeight = headingWeightOf(headingFont);
   const scale = {
     displayLarge: { ...style(57, 64, headingWeight, -0.25), ...heading },
     displayMedium: { ...style(45, 52, headingWeight), ...heading },

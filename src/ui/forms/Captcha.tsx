@@ -7,6 +7,20 @@ import { useEffect, useRef } from "react";
 type Widget = { reset(): void; destroy(): void };
 
 /**
+ * Largeur du widget Friendly Captcha (316 px, fixée par sa bibliothèque, réduite seulement si
+ * l'écran est plus étroit). Les formulaires qui l'affichent s'alignent dessus (fiche #123) :
+ * leur largeur maximale ne dépend plus d'une valeur choisie au hasard.
+ */
+export const CAPTCHA_WIDTH = 316;
+
+/**
+ * Fond du widget, en clair et en sombre (valeurs de sa bibliothèque). Exception assumée à la
+ * règle « pas de couleur en dur » : la carte qui l'entoure doit avoir exactement le même fond,
+ * et ce fond n'est pas une couleur de notre thème.
+ */
+export const CAPTCHA_BACKGROUND = { light: "#fafafa", dark: "#171717" } as const;
+
+/**
  * Widget Friendly Captcha, à placer dans un formulaire public (voir ADR 0007).
  *
  * Il se lance dès qu'on commence à remplir le formulaire (startMode "focus") et place sa réponse

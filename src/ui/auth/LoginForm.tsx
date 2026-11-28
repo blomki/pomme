@@ -1,19 +1,19 @@
 "use client";
 
 import KeyOutlined from "@mui/icons-material/KeyOutlined";
-import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
 import Stack from "@mui/material/Stack";
 import TextField from "@mui/material/TextField";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect } from "react";
 
 import { requestMagicLinkAction } from "@/server/auth/actions";
 import type { RequestMagicLinkState } from "@/server/auth/request-magic-link";
 import type { CaptchaWidgetConfig } from "@/server/captcha";
 
+import { useSnackbar } from "../feedback/SnackbarProvider";
 import { Captcha } from "../forms/Captcha";
 
 import { authClient } from "./auth-client";
@@ -36,13 +36,34 @@ export function LoginForm({
     requestMagicLinkAction,
     { status: "idle" },
   );
-  const [passkeyError, setPasskeyError] = useState(false);
+  const showSnackbar = useSnackbar();
+
+  // Messages de la page (déconnexion, lien expiré) et du formulaire : tous dans le snackbar,
+  // comme les autres messages de l'application (fiche #123).
+  useEffect(() => {
+    if (notice) {
+      showSnackbar({
+        message: t(`notice.${notice}`),
+        severity: notice === "linkError" ? "warning" : "info",
+      });
+    }
+  }, [notice, showSnackbar, t]);
+
+  useEffect(() => {
+    if (state.status === "sent") {
+      showSnackbar({ message: t("sent"), severity: "success", persist: true });
+    } else if (state.status === "rate_limited" || state.status === "captcha") {
+      showSnackbar({
+        message: t(state.status === "captcha" ? "captcha" : "rateLimited"),
+        severity: "warning",
+      });
+    }
+  }, [state, showSnackbar, t]);
 
   const signInWithPasskey = async () => {
-    setPasskeyError(false);
     const result = await authClient.signIn.passkey();
     if (result?.error) {
-      setPasskeyError(true);
+      showSnackbar({ message: t("passkeyError"), severity: "error" });
       return;
     }
     router.push("/connexion/suite");
@@ -50,13 +71,7 @@ export function LoginForm({
   };
 
   return (
-    <Stack spacing={3} sx={{ maxWidth: 480 }}>
-      {notice && (
-        <Alert severity={notice === "linkError" ? "warning" : "info"}>
-          {t(`notice.${notice}`)}
-        </Alert>
-      )}
-
+    <Stack spacing={3}>
       <Stack component="form" action={formAction} spacing={2} noValidate>
         <TextField
           name="email"
@@ -72,11 +87,6 @@ export function LoginForm({
         <Button type="submit" variant="contained" disabled={pending}>
           {t("submit")}
         </Button>
-        <div role="status" aria-live="polite">
-          {state.status === "sent" && <Alert severity="success">{t("sent")}</Alert>}
-          {state.status === "rate_limited" && <Alert severity="warning">{t("rateLimited")}</Alert>}
-          {state.status === "captcha" && <Alert severity="warning">{t("captcha")}</Alert>}
-        </div>
       </Stack>
 
       <Divider>{t("or")}</Divider>
@@ -85,9 +95,6 @@ export function LoginForm({
         <Button variant="tonal" startIcon={<KeyOutlined />} onClick={signInWithPasskey}>
           {t("passkey")}
         </Button>
-        <div role="status" aria-live="polite">
-          {passkeyError && <Alert severity="error">{t("passkeyError")}</Alert>}
-        </div>
       </Stack>
     </Stack>
   );
