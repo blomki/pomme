@@ -118,17 +118,20 @@ export function AccountLookup() {
               {t("platformAdmin")}
             </Alert>
           ) : (
-            <Button
-              variant="outlined"
-              color="error"
-              sx={{ mt: 2 }}
-              onClick={() => {
-                setResetError(null);
-                setConfirming(true);
-              }}
-            >
-              {t("reset")}
-            </Button>
+            // Rien à réinitialiser sans application ni passkey (fiche #125) : pas de bouton.
+            account.hasSecondFactor && (
+              <Button
+                variant="outlined"
+                color="error"
+                sx={{ mt: 2 }}
+                onClick={() => {
+                  setResetError(null);
+                  setConfirming(true);
+                }}
+              >
+                {t("reset")}
+              </Button>
+            )
           )}
         </Paper>
       )}

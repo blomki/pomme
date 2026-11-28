@@ -15,6 +15,7 @@ import {
   type MembersProblem,
 } from "@/domain/households";
 import { normalizePhone } from "@/domain/phone";
+import { canResetMemberSecondFactor } from "@/domain/second-factor";
 import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
 
 import { canRevokeReferent } from "@/domain/producers";
@@ -38,6 +39,11 @@ export type HouseholdMemberView = {
   isPrimary: boolean;
   status: MemberStatus;
   roles: AmapRoleName[];
+  /**
+   * « Réinitialiser la deuxième vérification » proposé (fiche #125) : calculé seulement pour la
+   * fiche d'un foyer, faux dans la liste des foyers.
+   */
+  canResetSecondFactor: boolean;
 };
 
 export type HouseholdView = {
@@ -84,13 +90,18 @@ export async function getHousehold(
     .select(householdColumns)
     .from(household)
     .where(eq(household.id, householdId));
-  const [found] = await withMembers(tx, rows);
+  const [found] = await withMembers(tx, rows, ctx);
   return found ?? null;
 }
 
+/**
+ * Ajoute les membres et leurs rôles. Avec `resetFor` (la fiche d'un foyer), indique aussi pour
+ * chacun si l'admin connecté peut réinitialiser sa deuxième vérification.
+ */
 async function withMembers(
   tx: Transaction,
   households: Array<Omit<HouseholdView, "members">>,
+  resetFor?: AmapContext,
 ): Promise<HouseholdView[]> {
   if (households.length === 0) return [];
   const members = await tx
@@ -102,6 +113,7 @@ async function withMembers(
       email: user.email,
       phone: user.phone,
       emailVerified: user.emailVerified,
+      isPlatformAdmin: user.isPlatformAdmin,
       isPrimary: householdMember.isPrimary,
     })
     .from(householdMember)
@@ -126,6 +138,13 @@ async function withMembers(
     )
     .orderBy(asc(amapRole.role));
 
+  const withFactor = resetFor
+    ? await membersWithSecondFactor(
+        tx,
+        members.map((m) => m.userId),
+      )
+    : new Set<string>();
+
   return households.map((h) => ({
     ...h,
     members: members
@@ -139,8 +158,36 @@ async function withMembers(
         isPrimary: m.isPrimary,
         status: memberStatus(m),
         roles: roles.filter((r) => r.userId === m.userId).map((r) => r.role),
+      }))
+      .map((m) => ({
+        ...m,
+        canResetSecondFactor:
+          resetFor !== undefined &&
+          canResetMemberSecondFactor({
+            isSelf: m.userId === resetFor.userId,
+            isPlatformAdmin: members.find((x) => x.userId === m.userId)?.isPlatformAdmin ?? false,
+            roles: m.roles,
+            hasFactor: withFactor.has(m.userId),
+          }),
       })),
   }));
+}
+
+/**
+ * Membres qui ont au moins un moyen de deuxième vérification (application ou passkey). La table
+ * des passkeys appartient à Better Auth (ADR 0005) : une fonction de la base répond par un
+ * simple « oui », réservée aux admins de l'AMAP courante (migration 0048).
+ */
+async function membersWithSecondFactor(tx: Transaction, userIds: string[]): Promise<Set<string>> {
+  if (userIds.length === 0) return new Set();
+  const ids = sql.join(
+    userIds.map((id) => sql`${id}`),
+    sql`, `,
+  );
+  const rows = await tx.execute<{ id: string }>(
+    sql`select id from amap_members_with_second_factor(array[${ids}]::uuid[]) as id`,
+  );
+  return new Set(rows.rows.map((r) => r.id));
 }
 
 // --- Création d'un foyer et ajout d'un membre ------------------------------------------------
