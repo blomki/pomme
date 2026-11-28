@@ -55,3 +55,16 @@ demander un lien de connexion à sa place. Pour les admins, une deuxième vérif
 - Les référents de démonstration : `referent.demo` a l'application de démonstration ;
   `referent2.demo` n'a aucun moyen de vérification (test de l'invitation à en activer un).
 - Un cookie effacé fait passer l'appareil pour nouveau : une alerte de plus, sans gravité.
+
+## Mise à jour (fiche #125) : bouton affiché seulement s'il y a quelque chose à réinitialiser
+
+- Sur la fiche d'un foyer, « Réinitialiser la deuxième vérification » n'apparaît que pour un
+  admin ou un référent qui a une application d'authentification ou une passkey, jamais sur sa
+  propre ligne (règle `canResetMemberSecondFactor`, `src/domain/second-factor.ts`). Après la
+  réinitialisation, le bouton disparaît de la ligne sans recharger la page.
+- La table `passkey` reste réservée à Better Auth (ADR 0005). La fonction
+  `amap_members_with_second_factor` (migration 0048, `SECURITY DEFINER`, comme
+  `find_user_id_by_email`) répond à sa place par un simple « oui » : réservée aux admins de
+  l'AMAP courante, limitée aux personnes de cette AMAP, sans aucun autre détail.
+- Même logique sur `/plateforme/comptes` (ADR 0047) : pas de bouton pour un compte sans moyen de
+  vérification (l'information y était déjà).

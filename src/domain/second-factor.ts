@@ -102,3 +102,35 @@ export function normalizeBackupCode(input: string): string | null {
   const compact = input.replace(/[\s-]/g, "");
   return /^[A-Za-z0-9]{10}$/.test(compact) ? `${compact.slice(0, 5)}-${compact.slice(5)}` : null;
 }
+
+export type MemberResetFacts = {
+  /** La ligne est celle de l'admin connecté. */
+  isSelf: boolean;
+  /** Gestionnaire de la plateforme : une AMAP ne réinitialise pas son compte. */
+  isPlatformAdmin: boolean;
+  /** Rôles du membre dans l'AMAP courante. */
+  roles: readonly AmapRoleName[];
+  /** Le membre a au moins un moyen de vérification (passkey ou application). */
+  hasFactor: boolean;
+};
+
+/**
+ * Vrai si un admin peut proposer « Réinitialiser la deuxième vérification » pour ce membre
+ * (story S10, ADR 0041 ; fiche #125).
+ *
+ * Pourquoi ces conditions : pas pour soi-même (qui contrôle la boîte mail d'un admin lui
+ * retirerait sa protection) ; pas pour un gestionnaire de la plateforme ; seulement pour les
+ * rôles soumis à la deuxième vérification ; et seulement s'il y a quelque chose à
+ * réinitialiser, sinon le bouton reste affiché sans effet.
+ *
+ * @example canResetMemberSecondFactor({ isSelf: false, isPlatformAdmin: false, roles: ["referent"], hasFactor: true }) // true
+ * @example canResetMemberSecondFactor({ isSelf: false, isPlatformAdmin: false, roles: ["referent"], hasFactor: false }) // false
+ */
+export function canResetMemberSecondFactor(member: MemberResetFacts): boolean {
+  return (
+    !member.isSelf &&
+    !member.isPlatformAdmin &&
+    member.hasFactor &&
+    member.roles.some((role) => SECOND_FACTOR_ROLES.includes(role))
+  );
+}

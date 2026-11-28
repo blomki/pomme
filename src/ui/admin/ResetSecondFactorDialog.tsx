@@ -16,10 +16,13 @@ import { useSnackbar } from "../feedback/SnackbarProvider";
 export function ResetSecondFactorDialog({
   amapSlug,
   person,
+  onReset,
   onClose,
 }: {
   amapSlug: string;
   person: { userId: string; name: string };
+  /** Réinitialisation faite : la page retire le bouton de la ligne. */
+  onReset: () => void;
   onClose: () => void;
 }) {
   const t = useTranslations("Admin.resetSecondFactor");
@@ -34,6 +37,7 @@ export function ResetSecondFactorDialog({
     setPending(false);
     if (result.status === "reset") {
       showSnackbar({ message: t("done", { name }) });
+      onReset();
       onClose();
     } else {
       setError(result.status === "self" ? t("self") : t("forbidden"));
