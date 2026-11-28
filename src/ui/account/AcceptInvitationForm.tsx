@@ -7,42 +7,61 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 
 import { acceptInvitationAction, type AcceptState } from "@/server/my-account-actions";
 
 /**
  * « Rejoindre le foyer » (story A3) : un clic est nécessaire (les messageries ouvrent parfois les
  * liens pour les vérifier) ; le prénom est demandé si le compte n'en a pas encore.
+ *
+ * Après l'acceptation (fiche #134) : la personne invitée déjà connectée va à son espace ; sinon,
+ * une confirmation propose de se connecter, avec son adresse déjà remplie.
  */
 export function AcceptInvitationForm({
   token,
   email,
+  household,
   needsName,
+  signedInAsInvitee = false,
 }: {
   token: string;
   email: string;
+  household: string;
   needsName: boolean;
+  /** La session ouverte est celle de l'adresse invitée. */
+  signedInAsInvitee?: boolean;
 }) {
   const t = useTranslations("Auth.invitation");
+  const router = useRouter();
   const [state, formAction, pending] = useActionState<AcceptState, FormData>(
     acceptInvitationAction,
     { status: "idle" },
   );
+  const goToSpace = state.status === "accepted" && signedInAsInvitee;
+  useEffect(() => {
+    if (goToSpace) router.replace("/connexion/suite");
+  }, [goToSpace, router]);
+
   if (state.status === "accepted") {
     return (
       <Stack spacing={2} sx={{ alignItems: "flex-start" }}>
         <Alert severity="success" role="status">
-          {t("joined", { email })}
+          {signedInAsInvitee
+            ? t("joinedSignedIn", { household })
+            : t("joined", { household, email })}
         </Alert>
-        <Button
-          component={Link}
-          nativeButton={false}
-          href={`/connexion?email=${encodeURIComponent(email)}`}
-          variant="contained"
-        >
-          {t("signIn")}
-        </Button>
+        {!signedInAsInvitee && (
+          <Button
+            component={Link}
+            nativeButton={false}
+            href={`/connexion?email=${encodeURIComponent(email)}`}
+            variant="contained"
+          >
+            {t("signIn")}
+          </Button>
+        )}
       </Stack>
     );
   }

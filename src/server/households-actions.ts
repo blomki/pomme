@@ -14,14 +14,13 @@ import {
   createHousehold,
   invitationFor,
   setHouseholdArchived,
-  setMemberRole,
   setPrimaryContact,
   type AddMemberResult,
   type ArchiveResult,
   type CreateHouseholdResult,
-  type SetRoleResult,
 } from "./households";
 import { sendInvitations } from "./invitations";
+import { saveMemberRoles, type SaveMemberRolesResult } from "./member-roles";
 
 // Actions de l'écran « Foyers et adhésions » (story A2). Chacune : contexte de l'AMAP de
 // l'adresse, puis fonction de households.ts (qui vérifie le rôle admin dans la transaction).
@@ -120,19 +119,24 @@ export async function setPrimaryContactAction(input: {
   return outcome.result;
 }
 
-/** Attribue ou retire un rôle (référent, administrateur). */
-export async function setMemberRoleAction(input: {
+/**
+ * Enregistre la fenêtre « Rôles » d'un membre (fiche #138) : administrateur, et référent par
+ * producteur. Les fiches des producteurs lisent les mêmes données : elles sont rafraîchies aussi.
+ */
+export async function saveMemberRolesAction(input: {
   amap: string;
   householdId: string;
   userId: string;
-  role: string;
-  granted: boolean;
-}): Promise<SetRoleResult | { status: "forbidden" }> {
+  admin: boolean;
+  referentOf: string[];
+}): Promise<SaveMemberRolesResult | { status: "forbidden" }> {
   const outcome = await runAmapAction(input.amap, listPath(input.amap), (tx, ctx) =>
-    setMemberRole(tx, ctx, input),
+    saveMemberRoles(tx, ctx, input),
   );
   if ("status" in outcome) return outcome;
   revalidatePath(`${listPath(input.amap)}/${input.householdId}`);
+  revalidatePath(`/${input.amap}/admin/producteurs`, "layout");
+  revalidatePath(`/${input.amap}/admin`);
   return outcome.result;
 }
 

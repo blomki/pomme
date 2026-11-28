@@ -476,19 +476,31 @@ export async function setProducerReferents(
     before: { referents: before.map((b) => b.userId).sort() },
     after: { referents: [...userIds].sort() },
   });
-  return { status: "saved" };
-}
 
-/** Producteurs suivis par une personne dans l'AMAP courante (noms), pour le retrait du rôle. */
-export async function producersFollowedBy(tx: Transaction, userId: string): Promise<string[]> {
-  const rows = await tx
-    .select({ name: producer.name })
-    .from(referentAssignment)
-    .innerJoin(amapProducer, eq(amapProducer.id, referentAssignment.amapProducerId))
-    .innerJoin(producer, eq(producer.id, amapProducer.producerId))
-    .where(eq(referentAssignment.userId, userId))
-    .orderBy(asc(producer.name));
-  return rows.map((r) => r.name);
+  // Fiche #138 : on est référent tant qu'on suit au moins un producteur. Une personne retirée
+  // ici de son dernier producteur perd donc le rôle, comme depuis la fenêtre « Rôles » du membre.
+  const removed = before.map((b) => b.userId).filter((id) => !userIds.includes(id));
+  for (const userId of removed) {
+    const [still] = await tx
+      .select({ id: referentAssignment.id })
+      .from(referentAssignment)
+      .where(eq(referentAssignment.userId, userId))
+      .limit(1);
+    if (still) continue;
+    const revoked = await tx
+      .delete(amapRole)
+      .where(and(eq(amapRole.userId, userId), eq(amapRole.role, "referent")))
+      .returning({ id: amapRole.id });
+    if (revoked.length > 0) {
+      await writeAuditLog(tx, ctx, {
+        entityType: "amap_role",
+        entityId: userId,
+        action: "revoke_role",
+        after: { role: "referent" },
+      });
+    }
+  }
+  return { status: "saved" };
 }
 
 // --- Comptes producteurs (C1, partie 2) ------------------------------------------------------

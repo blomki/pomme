@@ -3,6 +3,7 @@
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 
 import { user } from "@/db/schema";
 
@@ -56,6 +57,22 @@ export async function requestMagicLinkAction(
 export async function signOutAction(): Promise<void> {
   await getAuthInstance().auth.api.signOut({ headers: await headers() });
   redirect("/connexion?deconnexion=1");
+}
+
+const invitationTokenSchema = z.string().trim().min(1).max(200);
+
+/**
+ * « Continuer en tant que [adresse invitée] » (fiche #134) : ferme la session ouverte sur cet
+ * appareil pour un autre compte, puis rouvre l'invitation. Sans cela, la personne invitée
+ * finirait dans l'espace de la personne déjà connectée (ordinateur partagé du foyer). Aucun
+ * rôle à vérifier : on ne fait que fermer sa propre session.
+ */
+export async function signOutForInvitationAction(formData: FormData): Promise<void> {
+  const token = invitationTokenSchema.safeParse(formData.get("jeton"));
+  await getAuthInstance().auth.api.signOut({ headers: await headers() });
+  redirect(
+    token.success ? `/connexion/invitation?jeton=${encodeURIComponent(token.data)}` : "/connexion",
+  );
 }
 
 /** « Me déconnecter de tous mes appareils » : ferme toutes les sessions du compte. */

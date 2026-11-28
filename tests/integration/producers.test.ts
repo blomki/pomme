@@ -12,7 +12,7 @@ import {
 } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import { ForbiddenError, SecondFactorRequiredError } from "@/server/auth/errors";
-import { anonymizeHousehold, setMemberRole } from "@/server/households";
+import { anonymizeHousehold } from "@/server/households";
 import {
   attachProducer,
   blockingTasks,
@@ -219,14 +219,6 @@ describe("Producteurs et référents (C1)", () => {
       ).toEqual({ status: "saved" });
       const detail = await inA((tx, ctx) => getAmapProducer(tx, ctx, amapProducerId));
       expect(detail?.referents.map((r) => r.userId)).toEqual([referent.id]);
-    });
-
-    it("refuse de retirer le rôle référent à une personne qui suit encore un producteur", async () => {
-      expect(
-        await inA((tx, ctx) =>
-          setMemberRole(tx, ctx, { userId: referent.id, role: "referent", granted: false }),
-        ),
-      ).toEqual({ status: "has_producers", producers: ["Vergers d'essai"] });
     });
 
     it("retire les affectations d'un référent dont le foyer est anonymisé (RGPD)", async () => {

@@ -184,9 +184,22 @@ describe("Mon profil et mon foyer (A3)", () => {
         needsName: true,
       });
       expect(await acceptInvitation(db.app, { token })).toEqual({ status: "name_required" });
+      const [inviterBefore] = await db.owner.select().from(user).where(eq(user.id, claire.id));
       expect(
         await acceptInvitation(db.app, { token, firstName: "Léa", lastName: "Fournier" }),
       ).toEqual({ status: "accepted" });
+      // Fiche #134 : le prénom et le nom saisis vont au seul compte invité, jamais à celui de la
+      // personne qui a invité (souvent connectée sur le même ordinateur).
+      const [invitee] = await db.owner
+        .select()
+        .from(user)
+        .where(eq(user.email, "lea.fournier@example.org"));
+      expect(invitee).toMatchObject({ firstName: "Léa", lastName: "Fournier" });
+      const [inviterAfter] = await db.owner.select().from(user).where(eq(user.id, claire.id));
+      expect(inviterAfter).toMatchObject({
+        firstName: inviterBefore?.firstName,
+        lastName: inviterBefore?.lastName,
+      });
       // Lien à usage unique.
       expect(await acceptInvitation(db.app, { token, firstName: "X" })).toEqual({
         status: "invalid",
