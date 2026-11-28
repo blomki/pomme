@@ -24,9 +24,13 @@ s'adapte à la largeur de l'écran.
 3. **En-tête collant de 64 px** : bouton menu et nom de l'AMAP à gauche ; bouton « Mode »,
    affichage clair ou sombre, prénom (masqué sous 600 px) et « Mon compte » à droite.
 4. **Bouton « Mode »** à la place de l'ancien sélecteur d'espace : un menu déroulant avec les
-   modes de cette AMAP, y compris le mode consomm'acteur (le foyer de la personne), comme dans
-   « Mon profil » (A3). Il n'apparaît qu'à partir de deux modes. Son nom accessible reste
-   complet (« Mode administrateur ») même quand le libellé affiché est raccourci (« Admin »).
+   modes de cette AMAP, y compris le mode consomm'acteur (le foyer de la personne). Il
+   n'apparaît qu'à partir de deux modes. Son nom accessible reste complet (« Mode
+   administrateur ») même quand le libellé affiché est raccourci (« Admin ») ; le libellé court
+   est toujours un mot du nom (WCAG 2.5.3 : « Consomm'acteur » et non « Conso »).
+   Depuis la fiche #126, c'est **le seul endroit où choisir le mode** : il est aussi dans
+   l'en-tête de l'espace consomm'acteur (gabarit mobile) ; dans les espaces admin et référent,
+   sous 1 024 px, il passe **en tête du menu replié**, ce qui laisse la place au nom de l'AMAP.
 5. **Carte de l'AMAP** sous le menu : nom, foyers actifs et producteurs (lecture filtrée par
    la RLS, `getAmapSummary`).
 6. **Menus nommés** « Navigation administrateur », « Navigation référent », « Navigation de la

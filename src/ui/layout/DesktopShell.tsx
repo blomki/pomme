@@ -92,8 +92,8 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
  * 2026-11-26 (story S14). À partir de 1 024 px (`lg`), le menu est une colonne fixe à gauche ;
  * en dessous, il se replie derrière un bouton menu et glisse depuis la gauche, au-dessus d'un
  * voile. Le tiroir de MUI garde le focus à l'intérieur, se ferme avec Échap et rend le focus au
- * bouton. En-tête collant : bouton menu et nom de l'AMAP à gauche ; mode, affichage, prénom et
- * compte à droite.
+ * bouton. En-tête collant : bouton menu et nom de l'AMAP à gauche ; mode (sur ordinateur ; en
+ * tête du menu sinon), affichage, prénom et compte à droite.
  */
 export function DesktopShell({
   title,
@@ -143,8 +143,12 @@ export function DesktopShell({
           <Typography component="p" variant="titleLarge" noWrap sx={{ flex: 1, minWidth: 0 }}>
             {title}
           </Typography>
+          {/* Ordinateur : bouton « Mode » dans l'en-tête ; en dessous de 1 024 px, il est en tête
+              du menu « burger » (fiche #126), ce qui laisse la place au nom de l'AMAP. */}
           {amapSlug && area !== "platform" && modes.length > 1 && (
-            <ModeMenu amapSlug={amapSlug} current={area} modes={modes} />
+            <Box sx={{ display: { xs: "none", lg: "block" } }}>
+              <ModeMenu amapSlug={amapSlug} current={area} modes={modes} />
+            </Box>
           )}
           <ColorModeToggle />
           {firstName && (
@@ -201,6 +205,11 @@ export function DesktopShell({
             title={title}
             summary={summary}
             onNavigate={() => setMenuOpen(false)}
+            modeMenu={
+              amapSlug && area !== "platform" && modes.length > 1 ? (
+                <ModeMenu amapSlug={amapSlug} current={area} modes={modes} fullWidth />
+              ) : undefined
+            }
           />
         </Drawer>
 
@@ -235,12 +244,15 @@ function NavPanel({
   title,
   summary,
   onNavigate,
+  modeMenu,
 }: {
   area: DesktopArea;
   amapSlug?: string;
   title: string;
   summary?: AmapSummary;
   onNavigate?: () => void;
+  /** Menu « burger » : sélecteur de mode, en tête des entrées (fiche #126). */
+  modeMenu?: ReactNode;
 }) {
   const t = useTranslations("Nav");
   const pathname = usePathname();
@@ -252,6 +264,7 @@ function NavPanel({
 
   return (
     <Box sx={{ px: 1.5, py: 2 }}>
+      {modeMenu && <Box sx={{ mb: 2 }}>{modeMenu}</Box>}
       <Box component="nav" aria-label={t(`${area}.label`)}>
         <List disablePadding>
           {items.map((item) => {

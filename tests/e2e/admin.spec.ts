@@ -38,13 +38,13 @@ test("un référent arrive sur son tableau de bord, avec le menu", async ({ page
     "aria-current",
     "page",
   );
-  if (folded) await page.keyboard.press("Escape");
   // Référent et membre d'un foyer : le bouton « Mode » propose ces deux modes, pas
-  // l'administration (S14).
+  // l'administration (S14). Sur téléphone, il est en tête du menu replié (fiche #126).
   await page.getByRole("button", { name: "Mode référent" }).click();
   await expect(page.getByRole("menuitem", { name: "Mode consomm'acteur" })).toBeVisible();
   await expect(page.getByRole("menuitem", { name: "Mode administrateur" })).toHaveCount(0);
   await page.keyboard.press("Escape");
+  if (folded) await page.keyboard.press("Escape");
   await page.getByRole("link", { name: "Mon compte" }).click();
   await expect(page.getByRole("link", { name: /— Référent$/ })).toBeVisible();
   await expect(page.getByRole("link", { name: /— Mon foyer$/ })).toBeVisible();

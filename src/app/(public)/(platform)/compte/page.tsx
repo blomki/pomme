@@ -8,19 +8,21 @@ import { redirect } from "next/navigation";
 
 import { getDatabase } from "@/db/client";
 import { withAmapContext } from "@/db/context";
-import { modeChoices } from "@/domain/spaces";
+import { profileBackPath } from "@/domain/spaces";
 import { getAmapBySlug } from "@/server/amap";
 import { getSecondFactorState } from "@/server/auth/second-factor";
 import { getMyHousehold, getMyProfile, type MyHouseholdView } from "@/server/my-account";
 import { listMySpaces } from "@/server/spaces";
-import { ModeSelect } from "@/ui/account/ModeSelect";
 import { MyHousehold } from "@/ui/account/MyHousehold";
 import { ProfileForm } from "@/ui/account/ProfileForm";
 import { MySpaces } from "@/ui/auth/MySpaces";
+import { SmallTopAppBar } from "@/ui/layout/SmallTopAppBar";
 import { LinkButton } from "@/ui/navigation/LinkButton";
 
-// [domaine]/compte : « Mon profil » (story A3, écran 8) : mode, mes informations, mon foyer,
-// mes espaces ; passkeys et déconnexion sont dans « Connexion et sécurité » (/compte/securite).
+// [domaine]/compte : « Mon profil » (story A3, écran 8) : mes informations, mon foyer, mes
+// espaces ; passkeys et déconnexion sont dans « Connexion et sécurité » (/compte/securite).
+// Le mode se choisit dans l'en-tête des espaces (fiche #126) ; la flèche « Retour » ramène à
+// l'accueil du mode courant.
 export default async function ProfilePage() {
   const state = await getSecondFactorState();
   if (!state) redirect("/connexion");
@@ -40,20 +42,13 @@ export default async function ProfilePage() {
     );
     if (home) households.push(home);
   }
-  const groups = modeChoices(amapSpaces);
   const t = await getTranslations("Auth.account");
   return (
     <Stack spacing={4}>
-      <Typography variant="h1">{t("profileTitle")}</Typography>
-
-      {groups.length > 0 && (
-        <Stack component="section" aria-labelledby="mode" spacing={1.5}>
-          <Typography id="mode" variant="h2">
-            {t("modeTitle")}
-          </Typography>
-          <ModeSelect groups={groups} current={profile.preferredSpace} />
-        </Stack>
-      )}
+      <SmallTopAppBar
+        title={t("profileTitle")}
+        backHref={profileBackPath(amapSpaces, profile.preferredSpace)}
+      />
 
       <Stack component="section" aria-labelledby="infos" spacing={1.5}>
         <Typography id="infos" variant="h2">

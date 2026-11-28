@@ -71,13 +71,19 @@ export function preferredSpaceValue(space: Pick<AmapSpace, "amapSlug" | "kind">)
 }
 
 /**
- * Modes proposés dans « Mon profil » (story A3), AMAP par AMAP : seulement là où le compte a
- * plusieurs espaces (consomm'acteur, référent, administrateur).
+ * Destination de la flèche « Retour » de « Mon profil » (fiche #126) : l'accueil du mode
+ * courant, c'est-à-dire du mode mémorisé s'il est toujours un espace du compte. Sans mode, on
+ * renvoie à /connexion/suite, qui choisit l'accueil comme après la connexion.
+ *
+ * Pourquoi pas l'historique du navigateur : on peut arriver sur « Mon profil » par un lien
+ * direct, et « Retour » ferait alors quitter l'application.
+ *
+ * @example profileBackPath(spaces, "hommesdeterre/referent") // "/hommesdeterre/referent"
+ * @example profileBackPath(spaces, null) // "/connexion/suite"
  */
-export function modeChoices(spaces: readonly AmapSpace[]): AmapSpace[][] {
-  const byAmap = new Map<string, AmapSpace[]>();
-  for (const space of sortSpaces(spaces)) {
-    byAmap.set(space.amapSlug, [...(byAmap.get(space.amapSlug) ?? []), space]);
-  }
-  return [...byAmap.values()].filter((group) => group.length > 1);
+export function profileBackPath(spaces: readonly AmapSpace[], preferred: string | null): string {
+  const chosen = parsePreferredSpace(preferred);
+  return chosen && spaces.some((s) => s.amapSlug === chosen.amapSlug && s.kind === chosen.kind)
+    ? spacePath(chosen)
+    : "/connexion/suite";
 }

@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 
 import {
   landingPath,
-  modeChoices,
   parsePreferredSpace,
+  profileBackPath,
   preferredSpaceValue,
   sortSpaces,
   spacePath,
@@ -94,9 +94,11 @@ describe("mode choisi dans « Mon profil » (A3)", () => {
     expect(preferredSpaceValue({ amapSlug: "a", kind: "admin" })).toBe("a/admin");
   });
 
-  it("ne propose de choisir que dans une AMAP où le compte a plusieurs espaces", () => {
-    expect(modeChoices(spaces).map((group) => group.map((s) => s.kind))).toEqual([
-      ["admin", "famille"],
-    ]);
+  it("« Retour » de Mon profil : accueil du mode mémorisé, sinon l'aiguillage d'après connexion", () => {
+    expect(profileBackPath(spaces, "hommesdeterre/admin")).toBe("/hommesdeterre/admin");
+    expect(profileBackPath(spaces, null)).toBe("/connexion/suite");
+    // Mode qui n'est plus un espace du compte (rôle retiré) : ignoré.
+    expect(profileBackPath(spaces, "hommesdeterre/referent")).toBe("/connexion/suite");
+    expect(profileBackPath(spaces, "n'importe quoi")).toBe("/connexion/suite");
   });
 });

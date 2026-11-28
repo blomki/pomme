@@ -1,4 +1,3 @@
-import ArrowBack from "@mui/icons-material/ArrowBack";
 import Alert from "@mui/material/Alert";
 import Button from "@mui/material/Button";
 import Divider from "@mui/material/Divider";
@@ -13,6 +12,7 @@ import { getSecondFactorState, verificationUrl } from "@/server/auth/second-fact
 import { SignOutEverywhere } from "@/ui/account/SignOutEverywhere";
 import { PasskeyManager } from "@/ui/auth/PasskeyManager";
 import { TotpSection } from "@/ui/auth/TotpSection";
+import { SmallTopAppBar } from "@/ui/layout/SmallTopAppBar";
 import { LinkButton } from "@/ui/navigation/LinkButton";
 
 // [domaine]/compte/securite : « Connexion et sécurité » (story A3, écran 9) : passkeys,
@@ -26,12 +26,8 @@ export default async function SecurityPage() {
   return (
     <Stack spacing={4}>
       <div>
-        <LinkButton href="/compte" startIcon={<ArrowBack />} sx={{ mb: 1 }}>
-          {t("backToProfile")}
-        </LinkButton>
-        <Typography variant="h1" gutterBottom>
-          {t("securityTitle")}
-        </Typography>
+        {/* Petite barre M3 : « Retour » ramène à « Mon profil » (fiche #126). */}
+        <SmallTopAppBar title={t("securityTitle")} backHref="/compte" />
         <Typography>{t("signedInAs", { email: user.email })}</Typography>
       </div>
 

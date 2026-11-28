@@ -14,7 +14,7 @@ lien pour rejoindre le foyer », valable 7 jours.
 
 ## Décision
 
-1. **Deux pages** : « Mon profil » (`/compte` : mode, mes informations, mon foyer, mes espaces)
+1. **Deux pages** : « Mon profil » (`/compte` : mes informations, mon foyer, mes espaces)
    et « Connexion et sécurité » (`/compte/securite` : passkeys avec date de dernière utilisation,
    application d'authentification, déconnexion de cet appareil ou de tous, avec confirmation).
 2. **Invitation avec acceptation** : table `household_invitation` (email, empreinte SHA-256 du
@@ -33,8 +33,12 @@ lien pour rejoindre le foyer », valable 7 jours.
      conservé) ; s'il était contact principal, la personne qui le retire le devient.
 4. **Retrait annoncé** : la personne retirée reçoit un email.
 5. **Mode mémorisé sur le compte** (`user.preferred_space`, par exemple
-   `hommesdeterre/referent`) : choisi dans « Mon profil » ou dans le sélecteur d'espace de
-   l'en-tête, il ouvre l'espace après la connexion, s'il est toujours un espace du compte.
+   `hommesdeterre/referent`) : choisi avec le bouton « Mode » de l'en-tête (ou en tête du menu
+   replié sur téléphone, voir ADR 0048), il ouvre l'espace après la connexion, s'il est toujours
+   un espace du compte. Depuis la fiche #126, « Mon profil » n'a plus de section « Mode » : une
+   petite barre M3 y porte une flèche « Retour » vers l'accueil du mode courant
+   (`profileBackPath` ; sans mode, `/connexion/suite`). « Connexion et sécurité » a la même
+   barre, avec un retour vers « Mon profil ».
 6. **Passkeys** : `passkey.last_used_at`, noté par un crochet de Better Auth à chaque connexion
    par passkey.
 
