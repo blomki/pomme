@@ -17,7 +17,6 @@ import { normalizePhone } from "@/domain/phone";
 import { canResetMemberSecondFactor } from "@/domain/second-factor";
 import { type AmapRoleName } from "@/domain/roles";
 
-
 import { emailSchema } from "./auth/request-magic-link";
 import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
