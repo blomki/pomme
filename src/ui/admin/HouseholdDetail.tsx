@@ -29,14 +29,16 @@ import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
 
 import { formatPhone } from "@/domain/phone";
-import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
+import { producersLeftWithoutReferent } from "@/domain/member-roles";
+import { type AmapRoleName } from "@/domain/roles";
 import type { FieldError, HouseholdMemberView, HouseholdView } from "@/server/households";
+import type { RoleProducer } from "@/server/member-roles";
 import {
   addMemberAction,
   anonymizeHouseholdAction,
   resendInvitationAction,
   setHouseholdArchivedAction,
-  setMemberRoleAction,
+  saveMemberRolesAction,
   setPrimaryContactAction,
   type AddMemberState,
 } from "@/server/households-actions";
@@ -54,11 +56,14 @@ const fullName = (m: { firstName: string; lastName: string }) =>
 export function HouseholdDetail({
   amapSlug,
   household,
+  roleProducers = [],
   memberships,
   orders,
 }: {
   amapSlug: string;
   household: HouseholdView;
+  /** Producteurs actifs et leurs référents, pour la fenêtre « Rôles » (fiche #138). */
+  roleProducers?: RoleProducer[];
   /** Section « Adhésion » (story B1), placée après les membres. */
   memberships?: ReactNode;
   /** Section « Commande du mois » (story D7), après l'adhésion. */
@@ -289,6 +294,7 @@ export function HouseholdDetail({
           amapSlug={amapSlug}
           householdId={household.id}
           member={rolesOf}
+          producers={roleProducers}
           onClose={() => setRolesOf(null)}
         />
       )}
@@ -321,59 +327,100 @@ function RoleNames({ roles }: { roles: AmapRoleName[] }) {
 }
 
 /**
- * Rôles d'un membre : une case par rôle. Chaque case enregistre aussitôt (et l'inscrit au
- * journal) ; un message confirme le changement.
+ * Rôles d'un membre (fiche #138) : « Administrateur », puis une case « Référent : <producteur> »
+ * par producteur actif, ceux que la personne suit en premier. Le rôle de référent se déduit des
+ * producteurs cochés. Rien n'est enregistré avant « Enregistrer » : la fenêtre annonce d'abord
+ * les producteurs qui n'auraient plus de référent.
  */
 function RolesDialog({
   amapSlug,
   householdId,
   member,
+  producers,
   onClose,
 }: {
   amapSlug: string;
   householdId: string;
   member: HouseholdMemberView;
+  producers: RoleProducer[];
   onClose: () => void;
 }) {
   const t = useTranslations("Admin.roles");
   const th = useTranslations("Admin.household");
   const showSnackbar = useSnackbar();
-  const [roles, setRoles] = useState<AmapRoleName[]>(member.roles);
+  const name = fullName(member);
+  const followedAtOpen = producers
+    .filter((p) => p.referentIds.includes(member.userId))
+    .map((p) => p.amapProducerId);
+  // Ordre fixé à l'ouverture : suivis d'abord, puis par nom (la liste arrive triée par nom).
+  const [ordered] = useState(() => [
+    ...producers.filter((p) => followedAtOpen.includes(p.amapProducerId)),
+    ...producers.filter((p) => !followedAtOpen.includes(p.amapProducerId)),
+  ]);
+  const [admin, setAdmin] = useState(member.roles.includes("admin"));
+  const [checked, setChecked] = useState<ReadonlySet<string>>(new Set(followedAtOpen));
   const [problem, setProblem] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
-  const name = fullName(member);
 
-  const toggle = async (role: AmapRoleName, granted: boolean) => {
-    // La case change tout de suite ; elle revient en arrière si le serveur refuse.
-    const previous = roles;
-    setRoles(granted ? [...new Set([...roles, role])] : roles.filter((r) => r !== role));
+  const unassigned = followedAtOpen.filter((id) => !checked.has(id));
+  const orphaned = producersLeftWithoutReferent(
+    unassigned,
+    new Map(producers.map((p) => [p.amapProducerId, p.referentIds.length])),
+  ).map((id) => producers.find((p) => p.amapProducerId === id)!.name);
+
+  const toggle = (amapProducerId: string, value: boolean) =>
+    setChecked((current) => {
+      const next = new Set(current);
+      if (value) next.add(amapProducerId);
+      else next.delete(amapProducerId);
+      return next;
+    });
+
+  const save = async () => {
     setPending(true);
     setProblem(null);
-    const result = await setMemberRoleAction({
+    const result = await saveMemberRolesAction({
       amap: amapSlug,
       householdId,
       userId: member.userId,
-      role,
-      granted,
+      admin,
+      referentOf: [...checked],
     });
     setPending(false);
-    if (result.status === "updated" || result.status === "unchanged") {
+    if (result.status === "saved") {
       showSnackbar({ message: t("updated", { name }) });
-      return;
-    }
-    setRoles(previous);
-    if (result.status === "last_admin") {
+      onClose();
+    } else if (result.status === "last_admin") {
       setProblem(t("lastAdmin"));
-    } else if (result.status === "has_producers") {
-      setProblem(
-        t("hasProducers", {
-          producers: new Intl.ListFormat("fr", { type: "conjunction" }).format(result.producers),
-        }),
-      );
     } else {
       setProblem(result.status === "forbidden" ? th("forbidden") : th("error"));
     }
   };
+
+  const option = (
+    id: string,
+    label: string,
+    help: string,
+    value: boolean,
+    onChange: (v: boolean) => void,
+  ) => (
+    <Box key={id} sx={{ mb: 1 }}>
+      <FormControlLabel
+        control={
+          <Checkbox
+            checked={value}
+            disabled={pending}
+            onChange={(e) => onChange(e.target.checked)}
+            slotProps={{ input: { "aria-describedby": `${id}-help` } }}
+          />
+        }
+        label={label}
+      />
+      <FormHelperText id={`${id}-help`} sx={{ mt: -0.5, ml: 4 }}>
+        {help}
+      </FormHelperText>
+    </Box>
+  );
 
   return (
     <Dialog open onClose={onClose} aria-labelledby="roles-title" fullWidth maxWidth="sm">
@@ -381,31 +428,40 @@ function RolesDialog({
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>{t("dialogIntro")}</DialogContentText>
         <FormGroup>
-          {AMAP_ROLES.map((role) => (
-            <Box key={role} sx={{ mb: 1 }}>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={roles.includes(role)}
-                    disabled={pending}
-                    onChange={(e) => void toggle(role, e.target.checked)}
-                    slotProps={{ input: { "aria-describedby": `role-${role}-help` } }}
-                  />
-                }
-                label={t(role)}
-              />
-              <FormHelperText id={`role-${role}-help`} sx={{ mt: -0.5, ml: 4 }}>
-                {t(`${role}Help`)}
-              </FormHelperText>
-            </Box>
-          ))}
+          {option("role-admin", t("admin"), t("adminHelp"), admin, setAdmin)}
+          {ordered.map((p) =>
+            option(
+              `role-referent-${p.amapProducerId}`,
+              t("referentOf", { producer: p.name }),
+              t("referentHelp"),
+              checked.has(p.amapProducerId),
+              (value) => toggle(p.amapProducerId, value),
+            ),
+          )}
         </FormGroup>
+        {producers.length === 0 && (
+          <DialogContentText sx={{ mt: 1 }}>{t("noProducers")}</DialogContentText>
+        )}
         <div role="status" aria-live="polite">
-          {problem && <Alert severity="warning">{problem}</Alert>}
+          {orphaned.length > 0 && (
+            <Alert severity="warning" sx={{ mt: 1 }}>
+              {orphaned.map((producer) => (
+                <div key={producer}>{t("orphaned", { producer })}</div>
+              ))}
+            </Alert>
+          )}
+          {problem && (
+            <Alert severity="error" sx={{ mt: 1 }}>
+              {problem}
+            </Alert>
+          )}
         </div>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>{t("close")}</Button>
+        <Button onClick={onClose}>{t("cancel")}</Button>
+        <Button variant="contained" onClick={() => void save()} disabled={pending}>
+          {t("save")}
+        </Button>
       </DialogActions>
     </Dialog>
   );

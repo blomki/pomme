@@ -6,6 +6,7 @@ import { defaultMembershipDays } from "@/domain/memberships";
 import { parisDay } from "@/domain/order-periods";
 import { requireAmapAdminPage } from "@/server/auth/guards";
 import { getHousehold } from "@/server/households";
+import { listRoleProducers } from "@/server/member-roles";
 import { listMemberships, membershipStates } from "@/server/memberships";
 import { getHouseholdOrderOverview } from "@/server/order-corrections";
 import { HouseholdDetail } from "@/ui/admin/HouseholdDetail";
@@ -26,14 +27,17 @@ export default async function HouseholdPage({ params }: Props) {
     const states = await membershipStates(tx, c, [id]);
     // Commande du mois, à corriger au besoin (story D7) : pas pour un foyer archivé.
     const orders = found.archivedAt ? null : await getHouseholdOrderOverview(tx, c, id);
-    return { found, memberships, state: states.get(id)!, orders };
+    // Fenêtre « Rôles » : une case « Référent » par producteur actif (fiche #138).
+    const roleProducers = await listRoleProducers(tx, c);
+    return { found, memberships, state: states.get(id)!, orders, roleProducers };
   });
   if (!data) notFound();
-  const { found, memberships, state, orders } = data;
+  const { found, memberships, state, orders, roleProducers } = data;
   return (
     <HouseholdDetail
       amapSlug={slug}
       household={found}
+      roleProducers={roleProducers}
       memberships={
         // Un foyer anonymisé n'a plus rien à montrer ; archivé, ses adhésions restent lisibles.
         found.anonymizedAt ? null : (

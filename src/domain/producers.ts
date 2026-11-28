@@ -26,15 +26,6 @@ export function producersWithoutReferent<T extends ProducerReferents>(
 }
 
 /**
- * Peut-on retirer le rôle de référent à cette personne ? Non tant qu'elle suit des
- * producteurs : il faut d'abord les confier à quelqu'un d'autre, pour qu'aucun ne se
- * retrouve sans référent par surprise.
- */
-export function canRevokeReferent(assignedProducers: readonly string[]): boolean {
-  return assignedProducers.length === 0;
-}
-
-/**
  * Distance de la ferme à l'AMAP, saisie en kilomètres (entier, facultatif). Renvoie null pour
  * un champ vide, undefined si la saisie n'est pas valable.
  *

@@ -14,9 +14,10 @@ import {
   invitationFor,
   listHouseholds,
   setHouseholdArchived,
-  setMemberRole,
   setPrimaryContact,
 } from "@/server/households";
+
+import { saveMemberRoles } from "@/server/member-roles";
 
 import { startDatabase, type TestDatabase } from "./helpers/database";
 import { fixtures } from "./helpers/fixtures";
@@ -295,46 +296,43 @@ describe("Foyers (A2)", () => {
       member = created.invitations[0]!.userId;
     });
 
-    const setRole = (userId: string, role: string, granted: boolean, actor = admin.id) =>
-      inA((tx, ctx) => setMemberRole(tx, ctx, { userId, role, granted }), actor);
+    // Fenêtre « Rôles » (fiche #138) : administrateur ici ; les référents par producteur sont
+    // testés dans member-roles.test.ts.
+    const setAdmin = (userId: string, wantsAdmin: boolean, actor = admin.id) =>
+      inA(
+        (tx, ctx) => saveMemberRoles(tx, ctx, { userId, admin: wantsAdmin, referentOf: [] }),
+        actor,
+      );
 
-    it("attribue puis retire des rôles cumulables, et journalise chaque changement", async () => {
-      expect(await setRole(member, "referent", true)).toEqual({ status: "updated" });
-      expect(await setRole(member, "admin", true)).toEqual({ status: "updated" });
-      expect(await setRole(member, "admin", true)).toEqual({ status: "unchanged" });
+    it("donne puis retire le rôle d'administrateur, et journalise chaque changement", async () => {
+      expect(await setAdmin(member, true)).toEqual({ status: "saved" });
+      expect(await setAdmin(member, true)).toEqual({ status: "saved" });
       const roles = await db.owner
         .select({ role: amapRole.role })
         .from(amapRole)
         .where(and(eq(amapRole.userId, member), eq(amapRole.amapId, amapA.id)));
-      expect(roles.map((r) => r.role).sort()).toEqual(["admin", "referent"]);
-
-      expect(await setRole(member, "referent", false)).toEqual({ status: "updated" });
+      expect(roles.map((r) => r.role)).toEqual(["admin"]);
       const entries = await db.owner
         .select({ action: auditLog.action, after: auditLog.after })
         .from(auditLog)
         .where(and(eq(auditLog.entityType, "amap_role"), eq(auditLog.entityId, member)));
-      expect(entries).toEqual([
-        { action: "grant_role", after: { role: "referent" } },
-        { action: "grant_role", after: { role: "admin" } },
-        { action: "revoke_role", after: { role: "referent" } },
-      ]);
+      // Le deuxième enregistrement ne change rien : une seule ligne au journal.
+      expect(entries).toEqual([{ action: "grant_role", after: { role: "admin" } }]);
     });
 
     it("refuse de retirer le dernier administrateur", async () => {
-      expect(await setRole(member, "admin", false)).toEqual({ status: "updated" });
-      expect(await setRole(admin.id, "admin", false)).toEqual({ status: "last_admin" });
+      expect(await setAdmin(member, false)).toEqual({ status: "saved" });
+      expect(await setAdmin(admin.id, false)).toEqual({ status: "last_admin" });
     });
 
     it("ne touche pas une personne d'une autre AMAP", async () => {
       const outsider = await fixtures(db.owner).createUser({ email: "dehors@example.org" });
       await fixtures(db.owner).grantRole(amapB.id, outsider.id, "admin");
-      expect(await setRole(outsider.id, "referent", true)).toEqual({ status: "not_found" });
+      expect(await setAdmin(outsider.id, true)).toEqual({ status: "not_found" });
     });
 
     it("est refusé à un référent", async () => {
-      await expect(setRole(member, "admin", true, referent.id)).rejects.toBeInstanceOf(
-        ForbiddenError,
-      );
+      await expect(setAdmin(member, true, referent.id)).rejects.toBeInstanceOf(ForbiddenError);
     });
   });
 

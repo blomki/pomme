@@ -474,15 +474,18 @@
     },
     "roles": {
       "dialogTitle": "Rôles de {name}",
-      "dialogIntro": "Les rôles valent pour cette AMAP seulement. Une personne peut cumuler les rôles. Chaque changement est inscrit au journal.",
+      "dialogIntro": "Les rôles valent pour cette AMAP seulement. Une personne peut cumuler les rôles ; elle est référente dès qu'un producteur est coché. Chaque changement est inscrit au journal.",
       "referent": "Référent",
-      "referentHelp": "Pointe les chèques, gère les avoirs et les bons de commande de ses producteurs.",
+      "referentHelp": "Pointe les chèques, gère les avoirs et les bons de commande du producteur.",
       "admin": "Administrateur",
       "adminHelp": "Gère l'AMAP : foyers, rôles, commandes, pages. Une deuxième vérification lui sera demandée à la connexion.",
-      "close": "Fermer",
       "updated": "Rôles de {name} mis à jour.",
       "lastAdmin": "C'est le dernier administrateur de l'AMAP : donnez d'abord ce rôle à quelqu'un d'autre.",
-      "hasProducers": "Cette personne suit encore {producers} : confiez-les d'abord à un autre référent (Producteurs et référents)."
+      "referentOf": "Référent : {producer}",
+      "noProducers": "Aucun producteur actif dans l'AMAP : aucun rôle de référent à donner pour l'instant.",
+      "orphaned": "{producer} n'aura plus de référent : personne ne pointera ses chèques.",
+      "cancel": "Annuler",
+      "save": "Enregistrer"
     },
     "anonymize": {
       "title": "Anonymiser « {name} » ?",
