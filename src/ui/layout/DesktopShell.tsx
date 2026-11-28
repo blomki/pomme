@@ -36,7 +36,6 @@ import type { AmapSpaceKind } from "@/domain/spaces";
 import type { AmapSummary } from "@/server/amap-summary";
 
 import { AccountLink } from "../navigation/AccountLink";
-import { ColorModeToggle } from "../theme/ColorModeToggle";
 import { m3 } from "../theme/create-theme";
 
 import { activeHref } from "./active-href";
@@ -93,7 +92,8 @@ function navItems(area: DesktopArea, amapSlug?: string): NavItem[] {
  * en dessous, il se replie derrière un bouton menu et glisse depuis la gauche, au-dessus d'un
  * voile. Le tiroir de MUI garde le focus à l'intérieur, se ferme avec Échap et rend le focus au
  * bouton. En-tête collant : bouton menu et nom de l'AMAP à gauche ; mode (sur ordinateur ; en
- * tête du menu sinon), affichage, prénom et compte à droite.
+ * tête du menu sinon), prénom et compte à droite. L'apparence se choisit dans « Mon profil »
+ * (fiche #127).
  */
 export function DesktopShell({
   title,
@@ -150,7 +150,6 @@ export function DesktopShell({
               <ModeMenu amapSlug={amapSlug} current={area} modes={modes} />
             </Box>
           )}
-          <ColorModeToggle />
           {firstName && (
             <Typography
               component="span"

@@ -13,7 +13,6 @@ import type { ReactNode } from "react";
 
 import { AccountLink } from "../navigation/AccountLink";
 import { m3 } from "../theme/create-theme";
-import { ColorModeToggle } from "../theme/ColorModeToggle";
 
 /**
  * Gabarit du site public d'une AMAP (story H2) : en-tête avec le logo et le nom (lien vers
@@ -65,7 +64,6 @@ export function PublicSiteShell({
               {amap.name}
             </Typography>
           </Box>
-          <ColorModeToggle />
           <AccountLink />
         </Toolbar>
         {menu.length > 0 && (
