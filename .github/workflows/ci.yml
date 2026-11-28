@@ -101,7 +101,11 @@ jobs:
       BETTER_AUTH_SECRET: secret-de-la-ci-uniquement-pour-les-tests-e2e
       SMTP_URL: smtp://localhost:1025
       EMAIL_FROM: Pomme <ne-pas-repondre@example.org>
-      RATE_LIMIT_FACTOR: "10"
+      # Toute la suite se connecte depuis la même adresse IP, avec les mêmes comptes de
+      # démonstration : admin.demo demande déjà une trentaine de liens par passage. Avec 10, la
+      # limite (3 liens par quart d'heure × 10) sautait dès qu'un test en ajoutait un. 30 laisse
+      # de la marge ; la production garde 1 (rate-limit-factor.ts).
+      RATE_LIMIT_FACTOR: "30"
       # Build de production sans clés Friendly Captcha : captcha désactivé (ADR 0007).
       CAPTCHA_DISABLED: "1"
       POMME_DEMO_PAGES: "1"

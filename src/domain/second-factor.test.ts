@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   actionNeedsSecondFactor,
   canManageFactors,
+  canResetMemberSecondFactor,
   normalizeBackupCode,
   normalizeTotpCode,
   requiresSecondFactor,
@@ -108,5 +109,29 @@ describe("normalizeBackupCode", () => {
   it("refuse un format inattendu", () => {
     expect(normalizeBackupCode("abc-123")).toBeNull();
     expect(normalizeBackupCode("abcde-1234!")).toBeNull();
+  });
+});
+
+describe("canResetMemberSecondFactor", () => {
+  const referent = {
+    isSelf: false,
+    isPlatformAdmin: false,
+    roles: ["referent"] as const,
+    hasFactor: true,
+  };
+
+  it("propose la réinitialisation pour un admin ou un référent qui a un moyen de vérification", () => {
+    expect(canResetMemberSecondFactor(referent)).toBe(true);
+    expect(canResetMemberSecondFactor({ ...referent, roles: ["admin"] })).toBe(true);
+  });
+
+  it("ne propose rien quand il n'y a rien à réinitialiser", () => {
+    expect(canResetMemberSecondFactor({ ...referent, hasFactor: false })).toBe(false);
+  });
+
+  it("ne propose rien pour soi-même, un gestionnaire de la plateforme ou un membre sans rôle", () => {
+    expect(canResetMemberSecondFactor({ ...referent, isSelf: true })).toBe(false);
+    expect(canResetMemberSecondFactor({ ...referent, isPlatformAdmin: true })).toBe(false);
+    expect(canResetMemberSecondFactor({ ...referent, roles: [] })).toBe(false);
   });
 });
