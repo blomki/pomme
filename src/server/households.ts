@@ -6,7 +6,6 @@ import type { AmapContext } from "@/db/context";
 import { amapRole, auditLog, household, householdMember, notificationLog, user } from "@/db/schema";
 import { uuidv7 } from "@/db/uuid";
 import {
-  canRevokeAdmin,
   checkNewMembers,
   confirmsAnonymization,
   memberStatus,
@@ -16,15 +15,13 @@ import {
 } from "@/domain/households";
 import { normalizePhone } from "@/domain/phone";
 import { canResetMemberSecondFactor } from "@/domain/second-factor";
-import { AMAP_ROLES, type AmapRoleName } from "@/domain/roles";
+import { type AmapRoleName } from "@/domain/roles";
 
-import { canRevokeReferent } from "@/domain/producers";
 
 import { emailSchema } from "./auth/request-magic-link";
 import { requireRole } from "./auth/require-role";
 import { writeAuditLog } from "./audit";
 import { uniqueViolation } from "./db-errors";
-import { producersFollowedBy } from "./producers";
 
 // Foyers et membres (story A2). Chaque fonction reçoit la transaction ouverte par
 // withAmapContext et commence par requireRole : réservé aux admins de l'AMAP. La Row Level
@@ -493,73 +490,6 @@ export async function setHouseholdArchived(
 }
 
 // --- Rôles ------------------------------------------------------------------------------------
-
-export const setRoleSchema = z.object({
-  userId: z.uuid(),
-  role: z.enum(AMAP_ROLES),
-  granted: z.boolean(),
-});
-
-export type SetRoleResult =
-  | { status: "updated" | "unchanged" | "invalid" | "not_found" | "last_admin" }
-  /** Retrait du rôle référent refusé : la personne suit encore ces producteurs (C1). */
-  | { status: "has_producers"; producers: string[] };
-
-/**
- * Attribue ou retire le rôle référent ou administrateur à une personne de l'AMAP courante.
- * Une personne peut cumuler les rôles. Toujours journalisé. On ne retire pas le rôle du dernier
- * administrateur : plus personne ne pourrait gérer l'AMAP.
- */
-export async function setMemberRole(
-  tx: Transaction,
-  ctx: AmapContext,
-  input: unknown,
-): Promise<SetRoleResult> {
-  await requireRole(tx, ctx, ["admin"]);
-  const parsed = setRoleSchema.safeParse(input);
-  if (!parsed.success) return { status: "invalid" };
-  const { userId, role, granted } = parsed.data;
-
-  // Visible seulement si la personne appartient à l'AMAP courante (RLS de user).
-  const [person] = await tx.select({ id: user.id }).from(user).where(eq(user.id, userId));
-  if (!person) return { status: "not_found" };
-
-  const ofPerson = and(eq(amapRole.userId, userId), eq(amapRole.role, role));
-  if (granted) {
-    const inserted = await tx
-      .insert(amapRole)
-      .values({ amapId: ctx.amapId!, userId, role, createdBy: ctx.userId })
-      .onConflictDoNothing()
-      .returning({ id: amapRole.id });
-    if (inserted.length === 0) return { status: "unchanged" };
-  } else {
-    if (role === "referent") {
-      const followed = await producersFollowedBy(tx, userId);
-      if (!canRevokeReferent(followed)) return { status: "has_producers", producers: followed };
-    }
-    if (role === "admin") {
-      // Verrou sur les lignes d'admin : deux retraits simultanés ne peuvent pas laisser l'AMAP
-      // sans administrateur.
-      const admins = await tx
-        .select({ userId: amapRole.userId })
-        .from(amapRole)
-        .where(eq(amapRole.role, "admin"))
-        .for("update");
-      if (admins.some((a) => a.userId === userId) && !canRevokeAdmin(admins.length)) {
-        return { status: "last_admin" };
-      }
-    }
-    const deleted = await tx.delete(amapRole).where(ofPerson).returning({ id: amapRole.id });
-    if (deleted.length === 0) return { status: "unchanged" };
-  }
-  await writeAuditLog(tx, ctx, {
-    entityType: "amap_role",
-    entityId: userId,
-    action: granted ? "grant_role" : "revoke_role",
-    after: { role },
-  });
-  return { status: "updated" };
-}
 
 // --- Invitation -------------------------------------------------------------------------------
 

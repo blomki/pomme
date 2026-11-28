@@ -356,6 +356,48 @@ test.describe("administration (ordinateur)", () => {
     await expect(resetLou).toHaveCount(0);
   });
 
+  test("un admin choisit les producteurs suivis par un référent, avec avertissement (#138)", async ({
+    page,
+    request,
+  }) => {
+    await signInWithSecondFactor(page, request, ADMIN_DEMO);
+    await page.goto("/hommesdeterre/admin/foyers");
+    await page.getByRole("link", { name: "Foyer Moreau (Sacha)" }).click();
+    const open = page.getByRole("button", { name: "Modifier les rôles de Sacha Moreau" });
+    await open.click();
+    const dialog = page.getByRole("dialog", { name: "Rôles de Sacha Moreau" });
+    await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
+
+    // Une case par producteur actif, au nom complet ; ceux que Sacha suit sont cochés, en tête.
+    const boxes = dialog.getByRole("checkbox");
+    await expect(boxes.nth(0)).toHaveAccessibleName("Administrateur");
+    await expect(boxes.nth(1)).toHaveAccessibleName("Référent : Chèvrerie des Hauts Prés");
+    await expect(boxes.nth(1)).toBeChecked();
+    await expect(
+      dialog.getByRole("checkbox", { name: "Référent : Les Ruches du Vallon" }),
+    ).not.toBeChecked();
+    await expectNoSeriousA11yViolations(page);
+
+    // Seul référent de la chèvrerie : la décocher l'annonce avant tout enregistrement.
+    await boxes.nth(1).focus();
+    await page.keyboard.press("Space");
+    await expect(
+      dialog.getByText(
+        "Chèvrerie des Hauts Prés n'aura plus de référent : personne ne pointera ses chèques.",
+      ),
+    ).toBeVisible();
+    await expectNoSeriousA11yViolations(page);
+
+    // « Annuler » n'enregistre rien.
+    await dialog.getByRole("button", { name: "Annuler" }).click();
+    await expect(dialog).toBeHidden();
+    await open.click();
+    await expect(
+      dialog.getByRole("checkbox", { name: "Référent : Chèvrerie des Hauts Prés" }),
+    ).toBeChecked();
+    await dialog.getByRole("button", { name: "Annuler" }).click();
+  });
+
   test("un admin invite un foyer au clavier, lui donne un rôle, puis l'archive (A2)", async ({
     page,
     request,
@@ -435,10 +477,19 @@ test.describe("administration (ordinateur)", () => {
     // Contrôle une fois le fondu d'ouverture terminé (sinon le texte est encore transparent).
     await expect(page.locator(".MuiDialog-container")).toHaveCSS("opacity", "1");
     await expectNoSeriousA11yViolations(page);
-    await dialog.getByRole("checkbox", { name: "Référent" }).check();
+    // Référent d'un producteur (fiche #138) : la case porte le nom du producteur.
+    const ruches = dialog.getByRole("checkbox", { name: "Référent : Les Ruches du Vallon" });
+    await ruches.check();
+    await dialog.getByRole("button", { name: "Enregistrer" }).click();
     await expect(page.getByText("Rôles de Claude Essai mis à jour.")).toBeVisible();
-    await dialog.getByRole("button", { name: "Fermer" }).click();
+    await expect(dialog).toBeHidden();
     await expect(page.getByRole("cell", { name: "Référent" })).toBeVisible();
+    // Ménage : Claude ne suit plus les Ruches avant l'archivage du foyer.
+    await page.getByRole("button", { name: "Modifier les rôles de Claude Essai" }).click();
+    await ruches.uncheck();
+    await dialog.getByRole("button", { name: "Enregistrer" }).click();
+    await expect(dialog).toBeHidden();
+    await expect(page.getByRole("cell", { name: "Référent" })).toHaveCount(0);
 
     // Archivage, annulation, puis archivage pour de bon (ménage).
     await page.getByRole("button", { name: "Archiver le foyer" }).click();
